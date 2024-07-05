@@ -13,6 +13,7 @@
 # Third Party
 import numpy.linalg.lapack_lite
 import torch
+import time
 
 a = torch.zeros(4, device="cuda:0")
 
@@ -81,8 +82,23 @@ parser.add_argument(
 args = parser.parse_args()
 
 ############################################################
+import sys
+import os
+exe_path = sys.executable
+sys_path = sys.path
+envv = ""
+print("==== exepath ====")
+print(sys.executable)
+print("==== syspath ====")
+for ppth in sys.path:
+    print(ppth)
+print("==== envh ====")
+for name, value in os.environ.items():
+    print("{0}: {1}".format(name, value))
+    envv += f"{name}: {value}\n"
 
 # Third Party
+pass
 from omni.isaac.kit import SimulationApp
 
 simulation_app = SimulationApp(
@@ -200,7 +216,7 @@ def main():
 
     trajopt_dt = None
     optimize_dt = True
-    trajopt_tsteps = 32
+    trajopt_tsteps = 16
     trim_steps = None
     max_attempts = 4
     interpolation_dt = 0.05
@@ -253,22 +269,29 @@ def main():
     target_orientation = None
     past_orientation = None
     pose_metric = None
+    step_index = 0
+    velmag = 0.0
+    start = time.time()
+    robot_static = True
     while simulation_app.is_running():
         my_world.step(render=True)
         if not my_world.is_playing():
             if i % 100 == 0:
-                print("**** Click Play to start simulation *****")
+                print(f"**** Click Play to start simulation ***** si:{step_index}")
             i += 1
             # if step_index == 0:
             #    my_world.play()
             continue
 
         step_index = my_world.current_time_step_index
-        # print(step_index)
+        if (step_index % 100) == 0:
+            elap = time.time() - start
+            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} robot_static:{robot_static}")
         if articulation_controller is None:
             # robot.initialize()
             articulation_controller = robot.get_articulation_controller()
         if step_index < 2:
+            print("resetting world")
             my_world.reset()
             robot._articulation_view.initialize()
             idx_list = [robot.get_dof_index(x) for x in j_names]
@@ -354,7 +377,8 @@ def main():
                         spheres[si].set_radius(float(s.radius))
 
         robot_static = False
-        if (np.max(np.abs(sim_js.velocities)) < 0.2) or args.reactive:
+        velmag = np.max(np.abs(sim_js.velocities))
+        if (velmag < 0.2) or args.reactive:
             robot_static = True
         if (
             (
@@ -365,6 +389,7 @@ def main():
             and np.linalg.norm(past_orientation - cube_orientation) == 0.0
             and robot_static
         ):
+            print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
             ee_translation_goal = cube_position
             ee_orientation_teleop_goal = cube_orientation
@@ -394,6 +419,7 @@ def main():
                 num_targets += 1
                 cmd_plan = result.get_interpolated_plan()
                 cmd_plan = motion_gen.get_full_js(cmd_plan)
+                print(f"Plan Success with {len(cmd_plan.position)} steps")
                 # get only joint names that are in both:
                 idx_list = []
                 common_js_names = []
@@ -408,12 +434,14 @@ def main():
                 cmd_idx = 0
 
             else:
+                print("Plan failed")
                 carb.log_warn("Plan did not converge to a solution.  No action is being taken.")
             target_pose = cube_position
             target_orientation = cube_orientation
         past_pose = cube_position
         past_orientation = cube_orientation
         if cmd_plan is not None:
+            print(f"Executing plan step {cmd_idx}/{len(cmd_plan.position)}")
             cmd_state = cmd_plan[cmd_idx]
             past_cmd = cmd_state.clone()
             # get full dof state
@@ -423,6 +451,7 @@ def main():
                 joint_indices=idx_list,
             )
             # set desired joint angles obtained from IK:
+            # print(f"Applying action: {art_action}")
             articulation_controller.apply_action(art_action)
             cmd_idx += 1
             for _ in range(2):

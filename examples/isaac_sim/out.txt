@@ -1,0 +1,496 @@
+[Info] [carb] Logging to file: c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/logs/Kit/Isaac-Sim/2023.1/kit_20240704_150646.log
+2024-07-04 13:06:46 [0ms] [Warning] [omni.kit.app.plugin] No crash reporter present, dumps uploading isn't available.
+[0.178s] [ext: omni.kit.async_engine-0.0.0] startup
+[0.508s] [ext: omni.activity.core-1.0.1] startup
+[0.515s] [ext: omni.assets.plugins-0.0.0] startup
+[0.519s] [ext: omni.stats-0.0.0] startup
+[0.520s] [ext: omni.client-1.0.1] startup
+[0.531s] [ext: omni.activity.profiler-1.0.2] startup
+[0.534s] [ext: omni.gpu_foundation-0.0.0] startup
+[0.565s] [ext: omni.rtx.shadercache.vulkan-1.0.0] startup
+[0.567s] [ext: omni.rtx.shadercache.d3d12-1.0.0] startup
+[0.569s] [ext: carb.windowing.plugins-1.0.0] startup
+[0.830s] [ext: omni.kit.renderer.init-0.0.0] startup
+[0.831s] [ext: omni.kit.pipapi-0.0.0] startup
+[0.835s] [ext: omni.kit.pip_archive-0.0.0] startup
+[0.835s] [ext: omni.pip.compute-1.2.0] startup
+[0.836s] [ext: omni.pip.torch-2_0_1-2.0.2] startup
+[0.901s] [ext: omni.pip.cloud-1.0.1] startup
+[0.903s] [ext: omni.isaac.core_archive-2.2.1] startup
+[0.903s] [ext: omni.isaac.ml_archive-1.1.3] startup
+[0.904s] [ext: omni.kit.loop-isaac-1.1.0] startup
+[0.906s] [ext: omni.kit.test-0.0.0] startup
+[0.907s] [ext: omni.kit.telemetry-0.5.0] startup
+[0.915s] [ext: omni.mtlx-0.1.0] startup
+[0.916s] [ext: omni.usd.config-1.0.3] startup
+[0.931s] [ext: omni.gpucompute.plugins-0.0.0] startup
+[0.933s] [ext: omni.usd.libs-1.0.0] startup
+[1.049s] [ext: omni.appwindow-1.1.5] startup
+[1.061s] [ext: omni.kit.renderer.core-0.0.0] startup
+[1.084s] [ext: omni.kit.renderer.capture-0.0.0] startup
+[1.090s] [ext: omni.kit.renderer.imgui-0.0.0] startup
+[1.103s] [ext: carb.audio-0.1.0] startup
+[1.104s] [ext: omni.ui-2.18.1] startup
+[1.118s] [ext: omni.uiaudio-1.0.0] startup
+[1.121s] [ext: omni.kit.mainwindow-1.0.1] startup
+[1.123s] [ext: omni.kit.uiapp-0.0.0] startup
+[1.123s] [ext: omni.usd.schema.physics-0.0.0] startup
+[1.223s] [ext: omni.usd.schema.isaac-2.0.1] startup
+[1.234s] [ext: omni.usd.schema.omnigraph-1.0.0] startup
+[1.243s] [ext: omni.usd.schema.audio-0.0.0] startup
+[1.252s] [ext: omni.usd.schema.semantics-0.0.0] startup
+[1.263s] [ext: omni.anim.navigation.schema-105.2.0] startup
+[1.268s] [ext: omni.usd.schema.anim-0.0.0] startup
+[1.286s] [ext: omni.usd.schema.physx-0.0.0] startup
+[1.304s] [ext: omni.usd.schema.forcefield-0.0.0] startup
+[1.309s] [ext: omni.anim.graph.schema-105.2.2] startup
+[1.316s] [ext: omni.usd.schema.scene.visualization-2.0.2] startup
+[1.320s] [ext: omni.usd.schema.geospatial-0.0.0] startup
+[1.325s] [ext: omni.usd.schema.omniscripting-1.0.0] startup
+[1.331s] [ext: omni.resourcemonitor-105.0.0] startup
+[1.335s] [ext: omni.timeline-1.0.9] startup
+[1.338s] [ext: omni.usd_resolver-1.0.0] startup
+[1.346s] [ext: omni.kit.window.popup_dialog-2.0.23] startup
+[1.353s] [ext: omni.graph.exec-0.3.0] startup
+[1.354s] [ext: omni.kit.actions.core-1.0.0] startup
+[1.358s] [ext: omni.usd.core-1.1.7] startup
+[1.360s] [ext: omni.kit.widget.nucleus_connector-1.1.4] startup
+[1.364s] [ext: omni.kit.audiodeviceenum-1.0.1] startup
+[1.366s] [ext: omni.kit.exec.core-0.5.0] startup
+[1.371s] [ext: omni.kit.commands-1.4.6] startup
+[1.381s] [ext: omni.hydra.usdrt_delegate-7.2.27] startup
+[1.394s] [ext: omni.hydra.scene_delegate-0.3.2] startup
+[1.397s] [ext: omni.usd-1.10.18] startup
+[1.452s] [ext: omni.kit.usd.layers-2.1.23] startup
+2024-07-04 13:06:47 [1,345ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Radeon(TM) Graphics
+2024-07-04 13:06:47 [1,345ms] [Warning] [gpu.foundation.plugin] Skipping unsupported non-NVIDIA GPU: AMD Radeon(TM) Graphics
+[1.466s] [ext: omni.kit.menu.utils-1.5.6] startup
+[1.477s] [ext: omni.kit.primitive.mesh-1.0.14] startup
+[1.484s] [ext: omni.ui.scene-1.6.15] startup
+[1.490s] [ext: omni.kit.widget.versioning-1.4.5] startup
+[1.495s] [ext: omni.kit.widget.nucleus_info-1.0.1] startup
+[1.497s] [ext: omni.kit.helper.file_utils-0.1.6] startup
+[1.519s] [ext: omni.kit.search_core-1.0.5] startup
+[1.521s] [ext: omni.kit.widget.filebrowser-2.3.35] startup
+[1.530s] [ext: omni.kit.widget.path_field-2.0.8] startup
+[1.532s] [ext: omni.kit.notification_manager-1.0.6] startup
+[1.535s] [ext: omni.kit.widget.search_delegate-1.0.4] startup
+[1.537s] [ext: omni.kit.widget.browser_bar-2.0.8] startup
+[1.539s] [ext: omni.kit.clipboard-1.0.3] startup
+[1.541s] [ext: omni.kit.stage_templates-1.1.20] startup
+[1.545s] [ext: omni.kit.window.filepicker-2.10.7] startup
+[1.573s] [ext: omni.kit.widget.searchable_combobox-1.0.5] startup
+[1.575s] [ext: omni.kit.menu.create-1.0.11] startup
+[1.578s] [ext: omni.kit.window.file_importer-1.0.21] startup
+[1.582s] [ext: omni.kit.window.file_exporter-1.0.22] startup
+[1.584s] [ext: omni.kit.widget.settings-1.0.6] startup
+[1.587s] [ext: omni.kit.context_menu-1.6.8] startup
+[1.591s] [ext: omni.kit.window.file-1.3.43] startup
+[1.597s] [ext: omni.kit.window.preferences-1.3.23] startup
+[1.607s] [ext: omni.inspect-1.0.1] startup
+[1.611s] [ext: omni.graph.tools-1.41.3] startup
+
+|---------------------------------------------------------------------------------------------|
+| Driver Version: 555.99        | Graphics API: D3D12
+|=============================================================================================|
+| GPU | Name                             | Active | LDA | GPU Memory | Vendor-ID | LUID       |
+|     |                                  |        |     |            | Device-ID | UUID       |
+|     |                                  |        |     |            | Bus-ID    |            |
+|---------------------------------------------------------------------------------------------|
+| 0   | NVIDIA GeForce RTX 4090          | Yes: 0 |     | 24142   MB | 10de      | 621b0100.. |
+|     |                                  |        |     |            | 2684      | 0          |
+|     |                                  |        |     |            | 1         |            |
+|---------------------------------------------------------------------------------------------|
+| 1   | AMD Radeon(TM) Graphics          |        |     | 485     MB | 1002      | ff2a0100.. |
+|     |                                  |        |     |            | 164e      | 0          |
+|     |                                  |        |     |            | N/A       |            |
+|=============================================================================================|
+| OS: Windows 11 Enterprise, Version: 10.0 (24H2), Build: 26120, Kernel: 10.0.26100.751
+| Processor: AMD Ryzen 9 7950X 16-Core Processor             | Cores: 16 | Logical: 32
+|---------------------------------------------------------------------------------------------|
+| Total Memory (MB): 195800 | Free Memory: 154420
+| Total Page/Swap (MB): 208088 | Free Page/Swap: 162118
+|---------------------------------------------------------------------------------------------|
+[1.652s] [ext: omni.graph.core-2.139.10] startup
+[1.657s] [ext: omni.iray.libs-0.0.0] startup
+[1.696s] [ext: omni.volume-0.3.0] startup
+[1.703s] [ext: omni.mdl.neuraylib-0.2.0] startup
+[1.706s] [ext: omni.kit.viewport.registry-104.0.5] startup
+[1.708s] [ext: omni.hydra.rtx-0.1.0] startup
+[1.753s] [ext: omni.kit.collaboration.presence_layer-1.0.8] startup
+[1.759s] [ext: omni.kit.widget.prompt-1.0.6] startup
+[1.761s] [ext: omni.kit.widget.options_menu-1.0.5] startup
+[1.765s] [ext: omni.kit.window.drop_support-1.0.1] startup
+[1.766s] [ext: omni.kit.window.content_browser_registry-0.0.1] startup
+[1.768s] [ext: omni.kit.widget.filter-1.1.2] startup
+[1.769s] [ext: omni.kit.widget.live_session_management-1.2.20] startup
+[1.779s] [ext: omni.kit.window.content_browser-2.7.15] startup
+[1.883s] [ext: omni.physx.foundation-105.1.10-5.1] startup
+[1.884s] [ext: omni.hydra.pxr-1.1.4] startup
+[1.887s] [ext: omni.kvdb-0.0.0] startup
+[1.890s] [ext: omni.mdl-0.1.2] startup
+[1.906s] [ext: omni.usdphysics-105.1.10-5.1] startup
+[1.907s] [ext: omni.localcache-0.0.0] startup
+[1.911s] [ext: omni.convexdecomposition-105.1.10-5.1] startup
+[1.915s] [ext: omni.kit.material.library-1.3.40] startup
+[1.928s] [ext: omni.kit.hydra_texture-1.1.11] startup
+[1.932s] [ext: omni.physx.cooking-105.1.10-5.1] startup
+[1.945s] [ext: usdrt.scenegraph-7.2.27] startup
+[2.006s] [ext: omni.kit.widget.viewport-105.1.5] startup
+[2.019s] [ext: omni.kit.viewport.legacy_gizmos-1.0.14] startup
+[2.022s] [ext: omni.hydra.engine.stats-1.0.1] startup
+[2.025s] [ext: omni.physx-105.1.10-5.1] startup
+2024-07-04 13:06:47 [1,927ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[2.036s] [ext: omni.kit.viewport.window-105.1.9] startup
+[2.061s] [ext: omni.kit.usd_undo-0.1.2] startup
+[2.063s] [ext: omni.kit.manipulator.viewport-104.0.9] startup
+[2.066s] [ext: omni.kit.viewport.utility-1.0.16] startup
+[2.067s] [ext: omni.graph-1.106.1] startup
+[2.130s] [ext: omni.debugdraw-0.1.2] startup
+[2.135s] [ext: omni.graph.visualization.nodes-2.1.1] startup
+[2.163s] [ext: omni.kit.hotkeys.core-1.3.0] startup
+[2.172s] [ext: omni.kit.widget.highlight_label-1.0.1] startup
+[2.175s] [ext: omni.kit.widget.searchfield-1.1.3] startup
+[2.179s] [ext: omni.kit.widget.stage-2.9.5] startup
+[2.204s] [ext: omni.kit.widget.text_editor-1.0.2] startup
+[2.207s] [ext: omni.kit.widget.graph-1.8.4] startup
+[2.220s] [ext: omni.kit.window.property-1.9.6] startup
+[2.228s] [ext: omni.kit.numpy.common-0.1.2] startup
+[2.232s] [ext: omni.ui_query-1.1.1] startup
+[2.234s] [ext: omni.kit.window.extensions-1.3.0] startup
+[2.249s] [ext: omni.kit.property.usd-3.21.14] startup
+[2.268s] [ext: omni.isaac.dynamic_control-1.2.5] startup
+[2.283s] [ext: omni.graph.ui-1.48.0] startup
+[2.325s] [ext: omni.physics.tensors-0.1.0] startup
+[2.334s] [ext: omni.warp.core-0.10.1] startup
+[2.456s] [ext: omni.physx.tensors-0.1.0] startup
+[2.461s] [ext: omni.isaac.version-1.0.3] startup
+[2.464s] [ext: omni.kit.ui_test-1.2.13] startup
+[2.468s] [ext: omni.isaac.core-2.10.2] startup
+[2.743s] [ext: omni.graph.action-1.55.0] startup
+[2.804s] [ext: omni.kit.graph.delegate.default-1.1.1] startup
+[2.806s] [ext: omni.isaac.ui-0.13.4] startup
+[2.820s] [ext: omni.kit.graph.delegate.modern-1.9.1] startup
+[2.824s] [ext: omni.kit.graph.editor.core-1.5.1] startup
+[2.829s] [ext: omni.isaac.surface_gripper-0.5.0] startup
+[2.848s] [ext: omni.isaac.lula-2.1.0] startup
+[2.857s] [ext: omni.kit.graph.widget.variables-2.1.0] startup
+[2.859s] [ext: omni.kit.graph.usd.commands-1.3.0] startup
+[2.862s] [ext: omni.isaac.manipulators-1.1.0] startup
+[2.870s] [ext: omni.isaac.motion_generation-5.1.1] startup
+[2.885s] [ext: omni.graph.window.core-1.84.0] startup
+[2.903s] [ext: omni.isaac.urdf-1.0.0] startup
+2024-07-04 13:06:48 [2,795ms] [Warning] [omni.isaac.urdf] The extension omni.isaac.urdf has been deprecated. Please use omni.importer.urdf instead.
+[2.903s] [ext: omni.isaac.dofbot-0.3.0] startup
+[2.907s] [ext: omni.graph.window.generic-1.9.3] startup
+[2.914s] [ext: omni.isaac.kit-1.4.5] startup
+[2.915s] [ext: omni.isaac.mjcf-1.0.0] startup
+2024-07-04 13:06:48 [2,807ms] [Warning] [omni.isaac.mjcf] The extension omni.isaac.mjcf has been deprecated. Please use omni.importer.mjcf instead.
+[2.916s] [ext: omni.importer.mjcf-1.1.0] startup
+[2.926s] [ext: omni.graph.window.action-1.11.2] startup
+[2.934s] [ext: omni.graph.scriptnode-1.1.6] startup
+[2.947s] [ext: omni.graph.image.core-0.1.0] startup
+[2.949s] [ext: omni.kit.widget.zoombar-1.0.5] startup
+[2.952s] [ext: omni.graph.nodes-1.106.3] startup
+[3.270s] [ext: omni.kit.widget.spinner-1.0.5] startup
+[3.275s] [ext: omni.kit.browser.core-2.3.10] startup
+[3.285s] [ext: omni.kit.window.cursor-1.1.2] startup
+[3.287s] [ext: omni.kit.widget.material_preview-1.0.8] startup
+[3.291s] [ext: omni.kit.browser.folder.core-1.9.7] startup
+[3.301s] [ext: omni.kit.viewport.menubar.core-105.0.19] startup
+[3.340s] [ext: omni.kit.window.material_graph-1.8.11] startup
+[3.394s] [ext: omni.kit.browser.sample-1.4.6] startup
+[3.398s] [ext: omni.syntheticdata-0.4.10] startup
+[3.586s] [ext: omni.rtx.window.settings-0.6.9] startup
+[3.596s] [ext: omni.warp-0.10.1] startup
+[3.908s] [ext: omni.command.usd-1.0.2] startup
+[3.912s] [ext: omni.hydra.pxr.settings-1.0.5] startup
+[3.915s] [ext: omni.replicator.core-1.10.10] startup
+[4.084s] [ext: omni.kit.viewport.pxr-104.0.1] startup
+[4.084s] [ext: omni.isaac.core_nodes-1.6.1] startup
+[4.260s] [ext: omni.isaac.utils-0.5.3] startup
+[4.273s] [ext: omni.isaac.cloner-0.7.1] startup
+[4.276s] [ext: omni.isaac.wheeled_robots-0.7.2] startup
+2024-07-04 13:06:50 [4,209ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnAckermann.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnAckermann.py", line 12, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+2024-07-04 13:06:50 [4,224ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnCheckGoal2D.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnCheckGoal2D.py", line 13, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+2024-07-04 13:06:50 [4,239ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnDifferentialController.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnDifferentialController.py", line 13, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+2024-07-04 13:06:50 [4,255ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnHolonomicController.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnHolonomicController.py", line 13, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+2024-07-04 13:06:50 [4,276ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnQuinticPathPlanner.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnQuinticPathPlanner.py", line 14, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+2024-07-04 13:06:50 [4,293ms] [Warning] [omni.graph.tools._impl.internal.extension_contents_1_18] Exception while importing file c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnStanleyControlPID.py: Traceback (most recent call last):
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/extension_contents_1_18.py", line 288, in do_import_node_definition
+    node_module = load_module_from_file(node_module_name, node_file)
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.graph.tools/omni/graph/tools/_impl/internal/file_utils.py", line 238, in load_module_from_file
+    spec.loader.exec_module(module)
+  File "<frozen importlib._bootstrap_external>", line 883, in exec_module
+  File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+  File "c:\users\mwise\appdata\local\ov\pkg\isaac-sim-2023.1.0-hotfix.1\exts\omni.isaac.wheeled_robots\omni\isaac\wheeled_robots\ogn\omni\isaac\wheeled_robots\nodes\OgnStanleyControlPID.py", line 16, in <module>
+    from omni.isaac.core_nodes import BaseResetNode
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/__init__.py", line 9, in <module>
+    from .impl import BaseResetNode, BaseWriterNode, Extension, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/__init__.py", line 15, in <module>
+    from .base_writer_node import BaseWriterNode, WriterRequest
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/exts/omni.isaac.core_nodes/omni/isaac/core_nodes/impl/base_writer_node.py", line 14, in <module>
+    import omni.replicator.core as rep
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/__init__.py", line 1, in <module>
+    from .scripts import (  # annotators_default,; writers_default,
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/extscache/omni.replicator.core-1.10.10+105.1.wx64.r.cp310/omni/replicator/core/scripts/annotators.py", line 25, in <module>
+    from omni.syntheticdata import SyntheticData, SyntheticDataStage
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/__init__.py", line 2, in <module>
+    from .scripts.extension import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/extension.py", line 9, in <module>
+    from . import helpers
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.syntheticdata/omni/syntheticdata/scripts/helpers.py", line 4, in <module>
+    import numpy.lib.recfunctions as rfn
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/lib/recfunctions.py", line 16, in <module>
+    from numpy.testing import suppress_warnings
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/__init__.py", line 10, in <module>
+    from ._private.utils import *
+  File "c:/users/mwise/appdata/local/ov/pkg/isaac-sim-2023.1.0-hotfix.1/kit/exts/omni.kit.pip_archive/pip_prebundle/numpy/testing/_private/utils.py", line 23, in <module>
+    import numpy.linalg.lapack_lite
+ImportError: DLL load failed while importing lapack_lite: The specified module could not be found.
+
+[4.406s] [ext: omni.kit.widget.layers-1.6.29] startup
+[4.428s] [ext: omni.isaac.gym-0.8.5] startup
+[4.430s] [ext: omni.kit.selection-0.1.3] startup
+[4.433s] [ext: omni.kit.property.layer-1.1.5] startup
+[4.438s] [ext: omni.kit.menu.common-1.1.4] startup
+[4.441s] [ext: omni.kit.menu.edit-1.1.14] startup
+[4.446s] [ext: omni.kit.property.audio-1.0.9] startup
+[4.453s] [ext: omni.kit.property.camera-1.0.5] startup
+[4.456s] [ext: omni.kit.property.light-1.0.8] startup
+[4.459s] [ext: omni.kit.property.geometry-1.2.11] startup
+[4.464s] [ext: omni.isaac.debug_draw-0.6.0] startup
+2024-07-04 13:06:50 [4,360ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+2024-07-04 13:06:50 [4,360ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[4.473s] [ext: omni.kit.property.render-1.1.1] startup
+[4.479s] [ext: omni.kit.property.material-1.8.30] startup
+[4.486s] [ext: omni.kit.menu.file-1.1.7] startup
+[4.489s] [ext: omni.isaac.range_sensor-2.0.0] startup
+2024-07-04 13:06:50 [4,426ms] [Warning] [omni.stageupdate.plugin] Deprecated: direct use of IStageUpdate callbacks is deprecated. Use IStageUpdate::getStageUpdate instead.
+[4.704s] [ext: omni.kit.widget.stage_icons-1.0.4] startup
+[4.706s] [ext: omni.sensors.nv.wpm-0.1.2-isaacsim.2023.1.1] startup
+[4.708s] [ext: omni.sensors.nv.materials-0.1.1-isaacsim.2023.1.1] startup
+[4.715s] [ext: omni.sensors.nv.common-0.0.2-isaacsim.2023.1.1] startup
+[4.719s] [ext: omni.hydra.scene_api-0.1.2] startup
+[4.723s] [ext: omni.kit.window.stage-2.4.3] startup
+[4.729s] [ext: omni.sensors.nv.radar-0.1.1-isaacsim.2023.1.1] startup
+[4.736s] [ext: omni.sensors.nv.lidar-0.1.4-isaacsim.2023.1.1] startup
+[4.744s] [ext: omni.kit.property.transform-1.3.10] startup
+[4.750s] [ext: omni.kit.property.skel-1.0.4] startup
+[4.755s] [ext: omni.kit.menu.stage-1.2.3] startup
+[4.758s] [ext: omni.isaac.sensor-9.9.1] startup
+[4.938s] [ext: omni.kit.property.bundle-1.2.9] startup
+[4.942s] [ext: omni.kit.profiler.window-2.1.2] startup
+2024-07-04 13:06:50 [4,895ms] [Warning] [omni.kit.profiler.window] remove _SpanInstance.__lt__ and use insort 'key' arg instead
+[5.011s] [ext: omni.kit.property.isaac-0.2.1] startup
+[5.015s] [ext: omni.kit.stage_column.payload-1.0.12] startup
+[5.019s] [ext: omni.isaac.quadruped-1.3.2] startup
+[5.228s] [ext: omni.kit.raycast.query-1.0.0] startup
+[5.233s] [ext: omni.kit.widget.toolbar-1.5.6] startup
+[5.246s] [ext: omni.kit.manipulator.transform-104.6.15] startup
+[5.250s] [ext: omni.kit.viewport.actions-105.0.10] startup
+[5.255s] [ext: omni.isaac.occupancy_map-0.3.1] startup
+[5.273s] [ext: omni.kit.manipulator.tool.snap-1.4.0] startup
+[5.286s] [ext: omni.kit.viewport.menubar.display-105.0.2] startup
+[5.289s] [ext: omni.activity.pump-1.0.0] startup
+[5.292s] [ext: omni.physx.commands-105.1.10-5.1] startup
+[5.296s] [ext: omni.kit.widget.live-2.1.6] startup
+[5.300s] [ext: omni.usdphysics.ui-105.1.10-5.1] startup
+[5.315s] [ext: omni.kit.stage_column.variant-1.0.13] startup
+[5.319s] [ext: omni.isaac.scene_blox-0.1.0] startup
+[5.322s] [ext: omni.kit.viewport.ready-1.0.5] startup
+[5.324s] [ext: omni.kit.viewport.rtx-104.0.0] startup
+[5.324s] [ext: omni.kit.widget.cache_indicator-2.0.8] startup
+[5.328s] [ext: omni.physx.ui-105.1.10-5.1] startup
+2024-07-04 13:06:51 [5,221ms] [Warning] [omni.kit.widget.cache_indicator.cache_state_menu] Unable to detect Omniverse Cache Server. Consider installing it for better IO performance.
+[5.358s] [ext: usdrt.gf-1.0.2] startup
+[5.358s] [ext: omni.kit.window.commands-0.2.4] startup
+[5.362s] [ext: omni.kit.manipulator.selector-1.0.1] startup
+[5.365s] [ext: omni.kit.window.console-0.2.9] startup
+[5.372s] [ext: omni.kit.property.physx-0.1.0] startup
+[5.447s] [ext: omni.physx.demos-105.1.10-5.1] startup
+[5.452s] [ext: omni.kit.window.script_editor-1.7.4] startup
+[5.458s] [ext: omni.kit.manipulator.prim-105.0.11] startup
+[5.467s] [ext: omni.kit.window.toolbar-1.5.4] startup
+[5.471s] [ext: omni.kit.manipulator.selection-104.0.8] startup
+[5.474s] [ext: omni.physx.camera-105.1.10-5.1] startup
+[5.483s] [ext: omni.physx.cct-105.1.10-5.1] startup
+[5.504s] [ext: omni.kit.actions.window-1.1.0] startup
+[5.512s] [ext: omni.physx.graph-105.1.10-5.1] startup
+[5.520s] [ext: omni.physx.supportui-105.1.10-5.1] startup
+[5.537s] [ext: omni.physx.vehicle-105.1.10-5.1] startup
+[5.555s] [ext: omni.graph.ui_nodes-1.5.10] startup
+[5.629s] [ext: omni.kit.hotkeys.window-1.4.0] startup
+[5.640s] [ext: omni.kit.window.status_bar-0.1.6] startup
+[5.645s] [ext: omni.kit.window.title-1.1.3] startup
+[5.647s] [ext: omni.kit.manipulator.camera-105.0.4] startup
+[5.654s] [ext: omni.physx.bundle-105.1.10-5.1] startup
+[5.654s] [ext: omni.graph.bundle.action-2.0.4] startup
+[5.654s] [ext: omni.kit.viewport.menubar.camera-105.1.8] startup
+[5.665s] [ext: omni.isaac.franka-0.4.0] startup
+[5.669s] [ext: omni.kit.viewport.menubar.render-105.1.0] startup
+[5.674s] [ext: omni.kit.viewport.menubar.settings-105.0.9] startup
+[5.683s] [ext: omni.replicator.composer-1.2.17] startup
+[5.882s] [ext: omni.replicator.isaac-1.10.1] startup
+[6.092s] [ext: omni.replicator.replicator_yaml-2.0.4] startup
+Terminate batch job (Y/N)? 
