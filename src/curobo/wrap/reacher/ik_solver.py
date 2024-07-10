@@ -1046,6 +1046,7 @@ class IKSolver(IKSolverConfig):
         if newton_iters is not None:
             self.solver.newton_optimizer.outer_iters = self.og_newton_iters
         ik_result = self._get_result(num_seeds, result, goal_buffer.goal_pose, return_seeds)
+        # print("ikresult:", ik_result)
         if ik_result.goalset_index is not None:
             ik_result.goalset_index[ik_result.goalset_index >= goal_pose.n_goalset] = 0
 

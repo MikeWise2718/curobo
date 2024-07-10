@@ -11,6 +11,7 @@
 
 
 # Third Party
+from torch.fx.experimental.symbolic_shapes import expect_true
 import numpy.linalg.lapack_lite
 import torch
 import time
@@ -170,11 +171,18 @@ def main():
     # Make a target to follow
     target = cuboid.VisualCuboid(
         "/World/target",
-        position=np.array([0.5, 0, 0.5]),
-        orientation=np.array([0, 1, 0, 0]),
+        position=np.array([-0.1492, -0.0395,  0.8978]),
+        orientation=np.array([0.4906, 0.3388, 0.4896, 0.6363]),
         color=np.array([1.0, 0, 0]),
         size=0.05,
     )
+    # target = cuboid.VisualCuboid(
+    #     "/World/target",
+    #     position=np.array([-0.5, 0, 0.5]),
+    #     orientation=np.array([1, 0, 0, 0]),
+    #     color=np.array([1.0, 0, 0]),
+    #     size=0.05,
+    # )
 
     setup_curobo_logger("warn")
     past_pose = None
@@ -273,6 +281,9 @@ def main():
     velmag = 0.0
     start = time.time()
     robot_static = True
+    cube_position, cube_orientation = target.get_world_pose()
+    articulation_controller = robot.get_articulation_controller()
+
     while simulation_app.is_running():
         my_world.step(render=True)
         if not my_world.is_playing():
@@ -286,12 +297,14 @@ def main():
         step_index = my_world.current_time_step_index
         if (step_index % 100) == 0:
             elap = time.time() - start
-            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} robot_static:{robot_static}")
+            cp = cube_position
+            co = cube_orientation
+            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} static:{robot_static} cp:{cp} co:{co}")
         if articulation_controller is None:
             # robot.initialize()
             articulation_controller = robot.get_articulation_controller()
         if step_index < 2:
-            print("resetting world")
+            print(f"resetting world step:{step_index}")
             my_world.reset()
             robot._articulation_view.initialize()
             idx_list = [robot.get_dof_index(x) for x in j_names]
@@ -336,6 +349,7 @@ def main():
         sim_js = robot.get_joints_state()
         sim_js_names = robot.dof_names
         if np.any(np.isnan(sim_js.positions)):
+            print("isaac sim has returned NAN joint position values.")
             log_error("isaac sim has returned NAN joint position values.")
         cu_js = JointState(
             position=tensor_args.to_device(sim_js.positions),
@@ -344,6 +358,11 @@ def main():
             jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
             joint_names=sim_js_names,
         )
+        if (step_index % 100) == 0:
+            print(f"   sim_js_names: {sim_js_names}")
+            print(f"   sim_js.positions: {sim_js.positions}")
+            print(f"   sim_js.velocities: {sim_js.velocities}")
+
 
         if not args.reactive:
             cu_js.velocity *= 0.0
@@ -401,6 +420,7 @@ def main():
             )
             plan_config.pose_cost_metric = pose_metric
             result = motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, plan_config)
+            print("motion_gen.plan_single success:", result.success)
             # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
 
             succ = result.success.item()  # ik_result.success.item()
