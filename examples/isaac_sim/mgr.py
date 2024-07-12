@@ -16,6 +16,27 @@ import numpy.linalg.lapack_lite
 import torch
 import time
 import os
+import keyboard
+
+# from pynput.keyboard import Key, Listener
+
+# def on_press(key):
+#     print('{0} pressed'.format(
+#         key))
+
+# def on_release(key):
+#     print('{0} release'.format(
+#         key))
+#     if key == Key.esc:
+#         # Stop listener
+#         return False
+
+# # Collect events until released
+# with Listener(
+#         on_press=on_press,
+#         on_release=on_release) as listener:
+#     listener.join()
+
 
 a = torch.zeros(4, device="cuda:0")
 
@@ -122,6 +143,26 @@ simulation_app = SimulationApp(
         "height": "1080",
     }
 )
+
+# from pynput.keyboard import Key, Listener
+
+# def on_press(key):
+#     print('{0} pressed'.format(
+#         key))
+
+# def on_release(key):
+#     print('{0} release'.format(
+#         key))
+#     if key == Key.esc:
+#         # Stop listener
+#         return False
+
+# # Collect events until released
+# with Listener(
+#         on_press=on_press,
+#         on_release=on_release) as listener:
+#     listener.join()
+
 # Standard Library
 from typing import Dict
 
@@ -178,6 +219,7 @@ def get_vek(s:str, default = [0,0,0]):
     far = [float(x) for x in sar]
     return far
 
+
 def main():
     # create a curobo motion gen instance:
     num_targets = 0
@@ -191,8 +233,6 @@ def main():
     # my_world.stage.SetDefaultPrim(my_world.stage.GetPrimAtPath("/World"))
     stage = my_world.stage
     # stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
-
-
 
     setup_curobo_logger("warn")
     past_pose = None
@@ -333,8 +373,40 @@ def main():
     robot_static = True
     cube_position, cube_orientation = target.get_world_pose()
     articulation_controller = robot.get_articulation_controller()
+    sim_js = robot.get_joints_state()
+    sim_js_names = robot.dof_names
 
     while simulation_app.is_running():
+
+        if keyboard.is_pressed("a"):
+            k = keyboard.read_key()
+            print("You pressed ‘a’.")
+
+        elif keyboard.is_pressed("b"):
+            k = keyboard.read_key()
+            print("You pressed ‘b’.")
+
+        elif keyboard.is_pressed("c"):
+            k = keyboard.read_key()
+            print("You pressed ‘c’.")
+            sp1, sq1 = motion_gen.get_start_pose()
+            sp1 += robpos
+            target.set_world_pose(position=sp1, orientation=sq1)
+
+        elif keyboard.is_pressed("d"):
+            k = keyboard.read_key()
+            print("You pressed ‘d’.")
+            cu_js = JointState(
+                position=tensor_args.to_device(sim_js.positions),
+                velocity=tensor_args.to_device(sim_js.velocities),  # * 0.0,
+                acceleration=tensor_args.to_device(sim_js.velocities) * 0.0,
+                jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
+                joint_names=sim_js_names,
+            )
+            sp1, sq1 = motion_gen.get_cur_pose(cu_js)
+            sp1 += robpos
+            target.set_world_pose(position=sp1, orientation=sq1)
+
         my_world.step(render=True)
         if not my_world.is_playing():
             if i % 100 == 0:

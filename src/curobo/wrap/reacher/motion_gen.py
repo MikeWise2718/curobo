@@ -1828,6 +1828,14 @@ class MotionGen(MotionGenConfig):
         sq = state.ee_quat_seq.cpu()[0]
         return sp, sq
 
+    def get_cur_pose(self, curpos) -> Pose:
+        """Returns the current pose of the robot."""
+
+        state = self.rollout_fn.compute_kinematics(curpos)
+        sp = state.ee_pos_seq.cpu()[0]
+        sq = state.ee_quat_seq.cpu()[0]
+        return sp, sq
+
     def warmup(
         self,
         enable_graph: bool = True,
