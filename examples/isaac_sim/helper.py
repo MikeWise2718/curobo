@@ -67,6 +67,7 @@ def add_robot_to_scene(
     subroot: str = "",
     robot_name: str = "robot",
     position: np.array = np.array([0, 0, 0]),
+    orient: np.array = np.array([1, 0, 0, 0]),
 ):
     urdf_interface = _urdf.acquire_urdf_interface()
 
@@ -113,7 +114,10 @@ def add_robot_to_scene(
     robot_prim = robot_p.prim
     stage = robot_prim.GetStage()
     linkp = stage.GetPrimAtPath(robot_path)
-    set_prim_transform(linkp, [position[0], position[1], position[2], 1, 0, 0, 0])
+    p = position
+    o = orient
+    # set_prim_transform(linkp, [p[0], p[1], p[2], o[0], o[1], o[2], o[3]])
+    set_prim_transform(linkp, [p[0], p[1], p[2], 1, 0, 0, 0])
 
     if False and ISAAC_SIM_23:  # this doesn't work in isaac sim 2023.1.1
         robot_p.set_solver_velocity_iteration_count(0)

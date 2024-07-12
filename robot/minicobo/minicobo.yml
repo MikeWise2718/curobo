@@ -1,0 +1,97 @@
+robot_cfg:
+    kinematics:
+        usd_path: "d:/ov/jaka_curobo/minicobo/minicobo.usd"
+        usd_robot_root: "/robot"
+        isaac_usd_path: ""
+        usd_flip_joints: {}
+        usd_flip_joint_limits: []
+
+        urdf_path: "d:/ov/jaka_curobo/minicobo/minicobo.urdf"
+        asset_root_path: "d:/ov/jaka_curobo/minicobo/"
+
+        base_link: "Link0"
+        ee_link: "tool0"
+        link_names: null
+        lock_joints: null
+        extra_links: null
+
+
+        collision_link_names: ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5", "Link6" ]
+        collision_spheres:
+            Link0:
+                - "center": [0.0, 0.0, 0.0]
+                "radius": 0.1
+            Link1:
+                - "center": [-0.416, -0.0, 0.143]
+                "radius": 0.078
+                - "center": [-0.015, 0.0, 0.134]
+                "radius": 0.077
+                - "center": [-0.14, 0.0, 0.138]
+                "radius": 0.062
+                - "center": [-0.285, -0.001, 0.139]
+                "radius": 0.061
+                - "center": [-0.376, 0.001, 0.138]
+                "radius": 0.077
+                - "center": [-0.222, 0.001, 0.139]
+                "radius": 0.061
+                - "center": [-0.055, 0.008, 0.14]
+                "radius": 0.07
+                - "center": [-0.001, -0.002, 0.143]
+                "radius": 0.076
+            Link2:
+                - "center": [-0.01, 0.002, 0.031]
+                "radius": 0.072
+                - "center": [-0.387, 0.0, 0.014]
+                "radius": 0.057
+                - "center": [-0.121, -0.0, 0.006]
+                "radius": 0.057
+                - "center": [-0.206, 0.001, 0.007]
+                "radius": 0.057
+                - "center": [-0.312, -0.001, 0.006]
+                "radius": 0.056
+                - "center": [-0.057, 0.003, 0.008]
+                "radius": 0.065
+                - "center": [-0.266, 0.0, 0.006]
+                "radius": 0.057
+                - "center": [-0.397, -0.001, -0.018]
+                "radius": 0.052
+                - "center": [-0.164, -0.0, 0.007]
+                "radius": 0.057
+            Link3:
+                - "center": [-0.0, 0.0, -0.009]
+                "radius": 0.047
+                - "center": [-0.0, 0.0, -0.052]
+                "radius": 0.047
+                - "center": [-0.002, 0.027, -0.001]
+                "radius": 0.045
+                - "center": [0.001, -0.01, 0.0]
+                "radius": 0.046
+            Link4:
+                - "center": [0.0, -0.01, -0.001]
+                "radius": 0.047
+                - "center": [0.0, 0.008, -0.001]
+                "radius": 0.047
+                - "center": [0.001, -0.001, -0.036]
+                "radius": 0.047
+                - "center": [0.001, -0.03, -0.0]
+                "radius": 0.047
+            Link5:
+                - "center": [0.001, 0.001, -0.029]
+                "radius": 0.043
+
+        collision_sphere_buffer: 0.005
+        extra_collision_spheres: {}
+        self_collision_ignore: {} # Dict[str, List[str]]
+        self_collision_buffer: null # Dict[str, float]
+
+        use_global_cumul: True
+        mesh_link_names: null # List[str]
+
+        cspace:
+            joint_names: ['Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6']
+            retract_config:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
+
+            null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            max_jerk: 500.0
+            max_acceleration: 15.0

@@ -1816,6 +1816,18 @@ class MotionGen(MotionGenConfig):
         """Returns the retract/home configuration of the robot."""
         return self.rollout_fn.dynamics_model.retract_config
 
+    def get_start_pose(self) -> Pose:
+        """Returns the start pose of the robot."""
+
+        start_state = JointState.from_position(
+            self.rollout_fn.dynamics_model.retract_config.view(1, -1).clone(),
+            joint_names=self.rollout_fn.joint_names,
+        )
+        state = self.rollout_fn.compute_kinematics(start_state)
+        sp = state.ee_pos_seq.cpu()[0]
+        sq = state.ee_quat_seq.cpu()[0]
+        return sp, sq
+
     def warmup(
         self,
         enable_graph: bool = True,

@@ -15,6 +15,7 @@ from torch.fx.experimental.symbolic_shapes import expect_true
 import numpy.linalg.lapack_lite
 import torch
 import time
+import os
 
 a = torch.zeros(4, device="cuda:0")
 
@@ -40,6 +41,18 @@ parser.add_argument(
     type=str,
     default=None,
     help="Path to external robot config when loading an external robot",
+)
+parser.add_argument(
+    "--robpos",
+    type=str,
+    default=None,
+    help="Robot Position - default = [0,0,0]",
+)
+parser.add_argument(
+    "--robori",
+    type=str,
+    default=None,
+    help="Robot Orientation - default = [1,0,0,0]",
 )
 
 parser.add_argument(
@@ -152,13 +165,24 @@ from curobo.wrap.reacher.motion_gen import (
 
 
 ########### OV #################;;;;;
-
+def get_vek(s:str, default = [0,0,0]):
+    if s is None:
+        return default
+    if s=="":
+        return default
+    if s[0]=="[":
+        s = s[1:]
+    if s[-1]=="]":
+        s = s[:-1]
+    sar = s.split(",")
+    far = [float(x) for x in sar]
+    return far
 
 def main():
     # create a curobo motion gen instance:
     num_targets = 0
     # assuming obstacles are in objects_path:
-    my_world = World(stage_units_in_meters=1.0)
+    my_world = World(stage_units_in_meters=0.05)
     stage = my_world.stage
 
     xform = stage.DefinePrim("/World", "Xform")
@@ -168,21 +192,7 @@ def main():
     stage = my_world.stage
     # stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
 
-    # Make a target to follow
-    target = cuboid.VisualCuboid(
-        "/World/target",
-        position=np.array([-0.1492, -0.0395,  0.8978]),
-        orientation=np.array([0.4906, 0.3388, 0.4896, 0.6363]),
-        color=np.array([1.0, 0, 0]),
-        size=0.05,
-    )
-    # target = cuboid.VisualCuboid(
-    #     "/World/target",
-    #     position=np.array([-0.5, 0, 0.5]),
-    #     orientation=np.array([1, 0, 0, 0]),
-    #     color=np.array([1.0, 0, 0]),
-    #     size=0.05,
-    # )
+
 
     setup_curobo_logger("warn")
     past_pose = None
@@ -197,7 +207,12 @@ def main():
     robot_cfg_path = get_robot_configs_path()
     if args.external_robot_configs_path is not None:
         robot_cfg_path = args.external_robot_configs_path
-    robot_cfg = load_yaml(join_path(robot_cfg_path, args.robot))["robot_cfg"]
+    print(f"robot_cfg_path: {robot_cfg_path}")
+    print(f"args.robot: {args.robot}")
+    if os.path.isfile(args.robot):
+        robot_cfg = load_yaml(args.robot)["robot_cfg"]
+    else:
+        robot_cfg = load_yaml(join_path(robot_cfg_path, args.robot))["robot_cfg"]
 
     if args.external_asset_path is not None:
         robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
@@ -206,7 +221,15 @@ def main():
     j_names = robot_cfg["kinematics"]["cspace"]["joint_names"]
     default_config = robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world)
+    robpos = np.array( get_vek(args.robpos) )
+    print(f"robpos: {robpos}")
+    robori1 = get_vek(args.robori)
+    print(f"robori1: {robori1}")
+
+    # robpos = np.array([0, 0, 0.1])
+    robori = np.array([1, 0, 0, 0])
+
+    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=robpos, orient = robori)
 
     articulation_controller = None
 
@@ -251,6 +274,33 @@ def main():
     )
     motion_gen = MotionGen(motion_gen_config)
     print("warming up...")
+
+    sp1, sq1 = motion_gen.get_start_pose()
+    sp1 += robpos
+
+    # Make a target to follow
+    target = cuboid.VisualCuboid(
+        "/World/target",
+        position=np.array(sp1),
+        orientation=np.array(sq1),
+        color=np.array([1.0, 0, 0]),
+        size=0.05,
+    )
+    # target = cuboid.VisualCuboid(
+    #     "/World/target",
+    #     position=np.array([-0.1492, -0.0395,  0.8978]),
+    #     orientation=np.array([0.4906, 0.3388, 0.4896, 0.6363]),
+    #     color=np.array([1.0, 0, 0]),
+    #     size=0.05,
+    # )
+    # target = cuboid.VisualCuboid(
+    #     "/World/target",
+    #     position=np.array([-0.5, 0, 0.5]),
+    #     orientation=np.array([1, 0, 0, 0]),
+    #     color=np.array([1.0, 0, 0]),
+    #     size=0.05,
+    # )
+
     motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
     print("Curobo is Ready")
@@ -395,10 +445,12 @@ def main():
                         spheres[si].set_world_pose(position=np.ravel(s.position))
                         spheres[si].set_radius(float(s.radius))
 
-        robot_static = False
+        robot_static = True
+        # robot_static = True
         velmag = np.max(np.abs(sim_js.velocities))
         if (velmag < 0.2) or args.reactive:
-            robot_static = True
+            # robot_static = True
+            pass
         if (
             (
                 np.linalg.norm(cube_position - target_pose) > 1e-3
@@ -410,7 +462,7 @@ def main():
         ):
             print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
-            ee_translation_goal = cube_position
+            ee_translation_goal = cube_position - robpos
             ee_orientation_teleop_goal = cube_orientation
 
             # compute curobo solution:
@@ -419,7 +471,11 @@ def main():
                 quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
             )
             plan_config.pose_cost_metric = pose_metric
-            result = motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, plan_config)
+            try:
+                result = motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, plan_config)
+            except Exception as e:
+                print(f"Exception in motion_gen.plan_single e:{e}")
+
             print("motion_gen.plan_single success:", result.success)
             # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
 
