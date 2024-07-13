@@ -64,12 +64,14 @@ parser.add_argument(
     help="Path to external robot config when loading an external robot",
 )
 parser.add_argument(
+    "-rbp",
     "--robpos",
     type=str,
     default=None,
     help="Robot Position - default = [0,0,0]",
 )
 parser.add_argument(
+    "-rbo",
     "--robori",
     type=str,
     default=None,
@@ -77,6 +79,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-vzs",
     "--visualize_spheres",
     action="store_true",
     help="When True, visualizes robot spheres",
@@ -375,6 +378,12 @@ def main():
     articulation_controller = robot.get_articulation_controller()
     sim_js = robot.get_joints_state()
     sim_js_names = robot.dof_names
+    cu_js = None
+    vizi_spheres = args.visualize_spheres
+    spheres_visable = False
+    spherenames = None
+    spheres = None
+    sph_list = None
 
     while simulation_app.is_running():
 
@@ -396,16 +405,20 @@ def main():
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
             print("You pressed ‘d’.")
-            cu_js = JointState(
-                position=tensor_args.to_device(sim_js.positions),
-                velocity=tensor_args.to_device(sim_js.velocities),  # * 0.0,
-                acceleration=tensor_args.to_device(sim_js.velocities) * 0.0,
-                jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
-                joint_names=sim_js_names,
-            )
+            # cu_js = JointState(
+            #     position=tensor_args.to_device(sim_js.positions),
+            #     velocity=tensor_args.to_device(sim_js.velocities),  # * 0.0,
+            #     acceleration=tensor_args.to_device(sim_js.velocities) * 0.0,
+            #     jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
+            #     joint_names=sim_js_names,
+            # )
             sp1, sq1 = motion_gen.get_cur_pose(cu_js)
             sp1 += robpos
             target.set_world_pose(position=sp1, orientation=sq1)
+
+        elif keyboard.is_pressed("v"):
+            k = keyboard.read_key()
+            vizi_spheres = not vizi_spheres
 
         my_world.step(render=True)
         if not my_world.is_playing():
@@ -496,26 +509,42 @@ def main():
             cu_js.acceleration[:] = past_cmd.acceleration
         cu_js = cu_js.get_ordered_joint_state(motion_gen.kinematics.joint_names)
 
-        if args.visualize_spheres and step_index % 2 == 0:
-            sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
+        # if args. avisualize_spheresnd step_index % 2 == 0:
+        if vizi_spheres and step_index % 2 == 0:
+            if sph_list is None:
+                sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
             if spheres is None:
                 spheres = []
+                spherenames = []
                 # create spheres:
-
+                ncreated = 0
                 for si, s in enumerate(sph_list[0]):
+                    sname ="/curobo/robot_sphere_" + str(si)
                     sp = sphere.VisualSphere(
-                        prim_path="/curobo/robot_sphere_" + str(si),
+                        prim_path=sname,
                         position=np.ravel(s.position),
                         radius=float(s.radius),
                         color=np.array([0, 0.8, 0.2]),
                     )
                     spheres.append(sp)
+                    spherenames.append(sname)
+                    ncreated += 1
+                print(f"Created {ncreated} Spheres")
             else:
                 for si, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
                         spheres[si].set_world_pose(position=np.ravel(s.position))
                         spheres[si].set_radius(float(s.radius))
+            spheres_visable = True
+
+        if not vizi_spheres and spheres_visable:
+            if spherenames is not None:
+                for sn in spherenames:
+                    stage.RemovePrim(sn)
+            spheres = None
+            spherenames = None
+            spheres_visable = False
 
         robot_static = True
         # robot_static = True

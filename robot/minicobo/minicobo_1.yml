@@ -15,33 +15,44 @@ robot_cfg:
         lock_joints: null
         extra_links: null
 
-
         collision_link_names: ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5" ]
         collision_spheres:
             Link0:
                 - "center": [0.0, 0.0, 0.0]
-                  "radius": 0.1
+                  "radius": 0.01
             Link1:
-                - "center": [-0.416, -0.0, 0.143]
-                  "radius": 0.078
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
             Link2:
-                - "center": [-0.01, 0.002, 0.031]
-                  "radius": 0.072
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
             Link3:
-                - "center": [-0.0, 0.0, -0.009]
-                  "radius": 0.047
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
             Link4:
-                - "center": [0.0, -0.01, -0.001]
-                  "radius": 0.047
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
             Link5:
-                - "center": [0.001, 0.001, -0.029]
-                  "radius": 0.043
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
 
         collision_sphere_buffer: 0.005
         extra_collision_spheres: {}
         self_collision_ignore: {
+          "Link0": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link1": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link2": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link3": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link4": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link5": ["Link0",Link1", "Link2", "Link3", "Link4", "Link5"],
         } # Dict[str, List[str]]
         self_collision_buffer: {
+          "Link0": 0.0,
+          "Link1": 0.0,
+          "Link2": 0.0,
+          "Link3": 0.0,
+          "Link4": 0.0,
+          "Link5": 0.0
         } # Dict[str, float]
 
         use_global_cumul: True
@@ -49,8 +60,7 @@ robot_cfg:
 
         cspace:
             joint_names: ['Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6']
-            retract_config:  [0.10, 0.10, 0.10, 0.10, 0.10, 0.10]
-
+            retract_config:  [0.20, 0.20, 0.20, 0.20, 0.20, 0.20]
             null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             max_jerk: 500.0

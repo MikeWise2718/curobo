@@ -1,7 +1,6 @@
 .vscode*
 *.hdf5
 *data/
-*.bat
 *.p
 *.mlx
 
