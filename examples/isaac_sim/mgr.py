@@ -511,8 +511,7 @@ def main():
 
         # if args. avisualize_spheresnd step_index % 2 == 0:
         if vizi_spheres and step_index % 2 == 0:
-            if sph_list is None:
-                sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
+            sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
             if spheres is None:
                 spheres = []
@@ -545,6 +544,7 @@ def main():
             spheres = None
             spherenames = None
             spheres_visable = False
+            sph_list = None
 
         robot_static = True
         # robot_static = True
