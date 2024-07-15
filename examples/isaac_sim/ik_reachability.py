@@ -343,7 +343,7 @@ def main():
                 cmd_idx = 0
 
             else:
-                carb.log_warn("Plan did not converge to a solution.  No action is being taken.")
+                carb.log_warn("In main - Plan did not converge to a solution.  No action is being taken.")
             target_pose = cube_position
         past_pose = cube_position
         if cmd_plan is not None and step_index % 20 == 0 and True:

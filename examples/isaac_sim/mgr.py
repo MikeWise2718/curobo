@@ -494,9 +494,9 @@ def main():
             joint_names=sim_js_names,
         )
         if (step_index % 100) == 0:
-            print(f"   sim_js_names: {sim_js_names}")
+            # print(f"   sim_js_names: {sim_js_names}")
             print(f"   sim_js.positions: {sim_js.positions}")
-            print(f"   sim_js.velocities: {sim_js.velocities}")
+            # print(f"   sim_js.velocities: {sim_js.velocities}")
 
 
         if not args.reactive:
@@ -513,6 +513,9 @@ def main():
         if vizi_spheres and step_index % 2 == 0:
             sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
+            config_spheres = robot_cfg["kinematics"]["collision_spheres"]
+            keynames = list(config_spheres.keys())
+
             if spheres is None:
                 spheres = []
                 spherenames = []
@@ -520,11 +523,18 @@ def main():
                 ncreated = 0
                 for si, s in enumerate(sph_list[0]):
                     sname ="/curobo/robot_sphere_" + str(si)
+                    clr = np.array([0, 0.8, 0.2])
+                    if si < len(keynames):
+                        key = keynames[si]
+                        if key in config_spheres:
+                            attdict = config_spheres[key][0]
+                            if "scolor" in attdict:
+                                clr = np.array(attdict["scolor"])
                     sp = sphere.VisualSphere(
                         prim_path=sname,
                         position=np.ravel(s.position),
                         radius=float(s.radius),
-                        color=np.array([0, 0.8, 0.2]),
+                        color=clr,
                     )
                     spheres.append(sp)
                     spherenames.append(sname)
@@ -611,8 +621,9 @@ def main():
                 cmd_idx = 0
 
             else:
-                print("Plan failed")
-                carb.log_warn("Plan did not converge to a solution.  No action is being taken.")
+                msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
+                print(msg)
+                carb.log_warn(msg)
             target_pose = cube_position
             target_orientation = cube_orientation
         past_pose = cube_position

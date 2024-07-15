@@ -759,6 +759,7 @@ class CudaRobotGenerator(CudaRobotGeneratorConfig):
             experimental_kernel=valid_data and use_experimental_kernel,
             checks_per_thread=checks_per_thread,
         )
+        pass
 
     @profiler.record_function("robot_generator/create_self_collision_thread_data")
     def _create_self_collision_thread_data(self, collision_threshold):
