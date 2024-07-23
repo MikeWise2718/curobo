@@ -1,0 +1,140 @@
+robot_cfg:
+    kinematics:
+        usd_path: "robot/ur_description/minicobo.usd"
+        usd_robot_root: "/robot"
+        isaac_usd_path: ""
+        usd_flip_joints: {}
+        usd_flip_joint_limits: []
+
+        urdf_path: "d:/ov/curobo/robot/minicobo/minicobo.urdf"
+        asset_root_path: "robot/ur_description"
+
+        base_link: "Link0"
+        ee_link: "tool0"
+        link_names: null
+        lock_joints: null
+        extra_links: null
+
+        collision_link_names: ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5" ]
+        collision_spheres:
+            Link0:
+                - "center": [0.0, 0.0, 0.05]
+                  "radius": 0.05
+                  "scolor": [1.0, 0.0, 0.0]
+            Link1:
+                - "center": [0.0, 0.0, -0.1]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+                - "center": [0.0, 0.02, -0.1]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+                - "center": [0.0, 0.02, -0.0667]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+                - "center": [0.0, 0.02, -0.0333]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+                - "center": [0.0, 0.02, 0.0]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.05
+                  "scolor": [0.0, 1.0, 0.0]
+            Link2:
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.001
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.0, 0.0, 0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.0333, 0.0, 0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.0667, 0.0, 0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.1, 0.0, 0.02]
+                  "radius": 0.05
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.1, 0.0, 0.0]
+                  "radius": 0.05
+                  "scolor": [0.0, 0.0, 1.0]
+                  
+                - "center": [0.1, 0.0, -0.02]
+                  "radius": 0.05
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.1333, 0.0, -0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.1667, 0.0, -0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.2, 0.0, -0.02]
+                  "radius": 0.055
+                  "scolor": [0.0, 0.0, 1.0]
+                - "center": [0.2, 0.0, 0.0]
+                  "radius": 0.001
+                  "scolor": [0.0, 0.0, 1.0]
+            Link3:
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+                - "center": [0.0, 0.0, 0.03]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+                - "center": [0.0, 0.025,0.03]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+                - "center": [0.0, 0.05,0.03]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+                - "center": [0.0, 0.08,0.004]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+                - "center": [0.0, 0.11,0.004]
+                  "radius": 0.04
+                  "scolor": [1.0, 0.0, 1.0]
+            Link4:
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.04
+                  "scolor": [0.0, 1.0, 1.0]
+                - "center": [0.0, 0.0, -0.1]
+                  "radius": 0.04
+                  "scolor": [0.0, 1.0, 1.0]
+            Link5:
+                - "center": [0.0, 0.0, 0.0]
+                  "radius": 0.01
+                  "scolor": [1.0, 1.0, 0.0]
+                - "center": [0.0, 0.0, 0.1]
+                  "radius": 0.02
+                  "scolor": [1.0, 1.0, 0.0]
+
+        collision_sphere_buffer: 0.005
+        extra_collision_spheres: {}
+        self_collision_ignore: {
+          "Link0": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link1": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link2": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link3": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link4": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+          "Link5": ["Link0", "Link1", "Link2", "Link3", "Link4", "Link5"],
+        } # Dict[str, List[str]]
+        self_collision_buffer: {
+          "Link0": 0.0,
+          "Link1": 0.0,
+          "Link2": 0.0,
+          "Link3": 0.0,
+          "Link4": 0.0,
+          "Link5": 0.0
+        } # Dict[str, float]
+
+        use_global_cumul: True
+        mesh_link_names: null # List[str]
+
+        cspace:
+            joint_names: ['Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6']
+            retract_config:  [0.20, 0.20, 0.20, 0.20, 0.20, 0.20]
+            null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+            max_jerk: 500.0
+            max_acceleration: 15.0

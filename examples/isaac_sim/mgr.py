@@ -223,6 +223,34 @@ def get_vek(s:str, default = [0,0,0]):
     return far
 
 
+def get_sphere_entry(config_spheres: Dict, idx: int):
+    # first get counts
+    cskeys = list(config_spheres.keys())
+    if len(cskeys) == 0:
+        print("error retriving sphere entry - no spheres found")
+        return None
+    cs_idx = 0
+    nseen = 0
+    nlstseen = 0
+    curkey = cskeys[cs_idx]
+    nseen += len(config_spheres[curkey])
+    while nseen <= idx:
+        cs_idx += 1
+        if cs_idx >= len(cskeys):
+            msg = f"error retriving sphere entry - not enough spheres found idx:{idx}"
+            print(msg)
+            return None
+        curkey = cskeys[cs_idx]
+        nlstseen = nseen
+        nseen += len(config_spheres[curkey])
+
+    newidx = idx - nlstseen
+    sph_spec = config_spheres[curkey][0]
+    sph_spec["keyname"] = curkey
+    sph_spec["keyidx"] = newidx
+    return sph_spec
+
+
 def main():
     # create a curobo motion gen instance:
     num_targets = 0
@@ -514,22 +542,25 @@ def main():
             sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
             config_spheres = robot_cfg["kinematics"]["collision_spheres"]
-            keynames = list(config_spheres.keys())
 
             if spheres is None:
                 spheres = []
                 spherenames = []
                 # create spheres:
                 ncreated = 0
-                for si, s in enumerate(sph_list[0]):
-                    sname ="/curobo/robot_sphere_" + str(si)
+                for sidx, s in enumerate(sph_list[0]):
+                    sphentry = get_sphere_entry(config_spheres, sidx)
+                    sname ="/curobo/robot_sphere_" + str(sidx)
                     clr = np.array([0, 0.8, 0.2])
-                    if si < len(keynames):
-                        key = keynames[si]
-                        if key in config_spheres:
-                            attdict = config_spheres[key][0]
-                            if "scolor" in attdict:
-                                clr = np.array(attdict["scolor"])
+                    if sphentry is not None:
+                        keyname = sphentry["keyname"]
+                        keyidx = sphentry["keyidx"]
+                        linkname = f"/curobo/{keyname}"
+                        if not stage.GetPrimAtPath(linkname):
+                            xform1 = stage.DefinePrim(linkname, "Xform")
+                        sname = f"{linkname}/sphere_{keyidx}"
+                        if "scolor" in sphentry:
+                            clr = np.array(sphentry["scolor"])
                     sp = sphere.VisualSphere(
                         prim_path=sname,
                         position=np.ravel(s.position),
@@ -541,10 +572,10 @@ def main():
                     ncreated += 1
                 print(f"Created {ncreated} Spheres")
             else:
-                for si, s in enumerate(sph_list[0]):
+                for sidx, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
-                        spheres[si].set_world_pose(position=np.ravel(s.position))
-                        spheres[si].set_radius(float(s.radius))
+                        spheres[sidx].set_world_pose(position=np.ravel(s.position))
+                        spheres[sidx].set_radius(float(s.radius))
             spheres_visable = True
 
         if not vizi_spheres and spheres_visable:

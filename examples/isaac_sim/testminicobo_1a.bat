@@ -1,1 +1,1 @@
-c:python mgr.py --robot  ../../robot/minicobo/minicobo_1.yml
+c:python mgr.py --robot  ../../robot/minicobo/minicobo_1a.yml
