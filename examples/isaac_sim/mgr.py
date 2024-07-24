@@ -209,17 +209,17 @@ from curobo.wrap.reacher.motion_gen import (
 
 
 ########### OV #################;;;;;
-def get_vek(s:str, default = [0,0,0]):
+def get_vek(s:str, default = [0.0,0.0,0.0]):
     if s is None:
-        return default
+        return np.array(default)
     if s=="":
-        return default
+        return np.array(default)
     if s[0]=="[":
         s = s[1:]
     if s[-1]=="]":
         s = s[:-1]
     sar = s.split(",")
-    far = [float(x) for x in sar]
+    far = np.array([float(x) for x in sar])
     return far
 
 
@@ -250,6 +250,41 @@ def get_sphere_entry(config_spheres: Dict, idx: int):
     sph_spec["keyidx"] = newidx
     return sph_spec
 
+from pxr import Gf
+
+class RoboDeco:
+    def __init__(self):
+        self.rob_pos = Gf.Vec3d(0,0,0)
+        self.rob_ori = Gf.Quatd(1,0,0,0)
+
+    def set_transform(self, prerot, pos, ori):
+        self.prerot = prerot
+        self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
+        self.rob_ori = Gf.Quatd(float(ori[0]), float(ori[1]), float(ori[2]), float(ori[3]))
+
+    def get_robot_base(self):
+        return self.rob_pos, self.rob_ori
+
+    def wc_to_rcc(self, pos, ori):
+        pos = self.to_gfvec(pos)
+        sp2 = pos - self.rob_pos
+        return sp2, ori
+
+    def to_gfvec(self, vek):
+        x = float(vek[0])
+        y = float(vek[1])
+        z = float(vek[2])
+        return Gf.Vec3d(x, y, z)
+
+    def rcc_to_wc(self, pos, ori):
+        pos = self.to_gfvec(pos)
+        sp2 = pos + self.rob_pos
+        return sp2, ori
+
+    def adjust_pose(self, pos, orient):
+        pos = self.to_gfvec(pos)
+        newpos = Gf.Vec3d(pos[0]-self.rob_pos[0], pos[1]-self.rob_pos[1], pos[2]-self.rob_pos[2])
+        return newpos, orient
 
 def main():
     # create a curobo motion gen instance:
@@ -300,9 +335,12 @@ def main():
     # robpos = np.array([0, 0, 0.1])
     robori = np.array([1, 0, 0, 0])
 
-    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=robpos, orient = robori)
+    deco = RoboDeco()
+    deco.set_transform(prerot=0, pos=robpos, ori=robori)
+    rp, ro = deco.get_robot_base()
 
-    articulation_controller = None
+    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=rp, orient = ro)
+    robot.deco = deco
 
     world_cfg_table = WorldConfig.from_dict(
         load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
@@ -346,31 +384,19 @@ def main():
     motion_gen = MotionGen(motion_gen_config)
     print("warming up...")
 
-    sp1, sq1 = motion_gen.get_start_pose()
-    sp1 += robpos
+    sp_rcc, sq_rcc = motion_gen.get_start_pose()
+    sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+    # sp1 += robpos
 
     # Make a target to follow
     target = cuboid.VisualCuboid(
         "/World/target",
-        position=np.array(sp1),
-        orientation=np.array(sq1),
+        position=np.array(sp_wc),
+        orientation=np.array(sq_wc),
         color=np.array([1.0, 0, 0]),
         size=0.05,
     )
-    # target = cuboid.VisualCuboid(
-    #     "/World/target",
-    #     position=np.array([-0.1492, -0.0395,  0.8978]),
-    #     orientation=np.array([0.4906, 0.3388, 0.4896, 0.6363]),
-    #     color=np.array([1.0, 0, 0]),
-    #     size=0.05,
-    # )
-    # target = cuboid.VisualCuboid(
-    #     "/World/target",
-    #     position=np.array([-0.5, 0, 0.5]),
-    #     orientation=np.array([1, 0, 0, 0]),
-    #     color=np.array([1.0, 0, 0]),
-    #     size=0.05,
-    # )
+
 
     motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
@@ -401,7 +427,7 @@ def main():
     step_index = 0
     velmag = 0.0
     start = time.time()
-    robot_static = True
+    static_robo = True
     cube_position, cube_orientation = target.get_world_pose()
     articulation_controller = robot.get_articulation_controller()
     sim_js = robot.get_joints_state()
@@ -425,24 +451,21 @@ def main():
 
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
-            print("You pressed ‘c’.")
-            sp1, sq1 = motion_gen.get_start_pose()
-            sp1 += robpos
-            target.set_world_pose(position=sp1, orientation=sq1)
+            print("You pressed ‘c’ - will reset object to start pose.")
+            sp_rcc, sq_rcc = motion_gen.get_start_pose() # this is the robots starting position in rcc
+            # sp1 += robpos
+            if robot.deco is not None:
+                sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+            target.set_world_pose(position=sp_wc, orientation=sq_wc)
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
-            print("You pressed ‘d’.")
-            # cu_js = JointState(
-            #     position=tensor_args.to_device(sim_js.positions),
-            #     velocity=tensor_args.to_device(sim_js.velocities),  # * 0.0,
-            #     acceleration=tensor_args.to_device(sim_js.velocities) * 0.0,
-            #     jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
-            #     joint_names=sim_js_names,
-            # )
-            sp1, sq1 = motion_gen.get_cur_pose(cu_js)
-            sp1 += robpos
-            target.set_world_pose(position=sp1, orientation=sq1)
+            print("You pressed ‘d’ - will move to robot's current end-effector pose.")
+            if cu_js is not None:
+                sp_rcc, sq_rcc = motion_gen.get_cur_pose(cu_js)
+                sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+                # sp1 += robpos
+                target.set_world_pose(position=sp_wc, orientation=sq_wc)
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
@@ -450,7 +473,7 @@ def main():
 
         my_world.step(render=True)
         if not my_world.is_playing():
-            if i % 100 == 0:
+            if i % 500 == 0:
                 print(f"**** Click Play to start simulation ***** si:{step_index}")
             i += 1
             # if step_index == 0:
@@ -462,10 +485,7 @@ def main():
             elap = time.time() - start
             cp = cube_position
             co = cube_orientation
-            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} static:{robot_static} cp:{cp} co:{co}")
-        if articulation_controller is None:
-            # robot.initialize()
-            articulation_controller = robot.get_articulation_controller()
+            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} static:{static_robo} cp:{cp} co:{co}")
         if step_index < 2:
             print(f"resetting world step:{step_index}")
             my_world.reset()
@@ -476,8 +496,6 @@ def main():
             robot._articulation_view.set_max_efforts(
                 values=np.array([5000 for i in range(len(idx_list))]), joint_indices=idx_list
             )
-        if step_index < 20:
-            continue
 
         if step_index == 50 or step_index % 1000 == 0.0:
             print("Updating world, reading w.r.t.", robot_prim_path)
@@ -557,13 +575,15 @@ def main():
                         keyidx = sphentry["keyidx"]
                         linkname = f"/curobo/{keyname}"
                         if not stage.GetPrimAtPath(linkname):
-                            xform1 = stage.DefinePrim(linkname, "Xform")
+                            _ = stage.DefinePrim(linkname, "Xform")
                         sname = f"{linkname}/sphere_{keyidx}"
                         if "scolor" in sphentry:
                             clr = np.array(sphentry["scolor"])
+                    s_ori = np.array([1, 0, 0, 0])
+                    sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
                     sp = sphere.VisualSphere(
                         prim_path=sname,
-                        position=np.ravel(s.position),
+                        position=np.ravel(sp_wc),
                         radius=float(s.radius),
                         color=clr,
                     )
@@ -574,7 +594,9 @@ def main():
             else:
                 for sidx, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
-                        spheres[sidx].set_world_pose(position=np.ravel(s.position))
+                        s_ori = np.array([1, 0, 0, 0])
+                        sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
+                        spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
                         spheres[sidx].set_radius(float(s.radius))
             spheres_visable = True
 
@@ -587,7 +609,7 @@ def main():
             spheres_visable = False
             sph_list = None
 
-        robot_static = True
+        static_robo = True
         # robot_static = True
         velmag = np.max(np.abs(sim_js.velocities))
         if (velmag < 0.2) or args.reactive:
@@ -600,17 +622,20 @@ def main():
             )
             and np.linalg.norm(past_pose - cube_position) == 0.0
             and np.linalg.norm(past_orientation - cube_orientation) == 0.0
-            and robot_static
+            and static_robo
         ):
             print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
-            ee_translation_goal = cube_position - robpos
-            ee_orientation_teleop_goal = cube_orientation
+            ee_pos_rcc, ee_ori_rcc = robot.deco.wc_to_rcc(cube_position, cube_orientation)
+            # ee_translation_goal = cube_position - robpos
+            # ee_orientation_teleop_goal = cube_orientation
 
             # compute curobo solution:
             ik_goal = Pose(
-                position=tensor_args.to_device(ee_translation_goal),
-                quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
+                # position=tensor_args.to_device(ee_translation_goal),
+                # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
+                position=tensor_args.to_device(ee_pos_rcc),
+                quaternion=tensor_args.to_device(ee_ori_rcc),
             )
             plan_config.pose_cost_metric = pose_metric
             try:
