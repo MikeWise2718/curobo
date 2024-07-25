@@ -18,6 +18,8 @@ import time
 import os
 import keyboard
 
+
+
 # from pynput.keyboard import Key, Listener
 
 # def on_press(key):
@@ -75,7 +77,7 @@ parser.add_argument(
     "--robori",
     type=str,
     default=None,
-    help="Robot Orientation - default = [1,0,0,0]",
+    help="Robot Orientation - Euler Angles - default = [0,0,0]",
 )
 
 parser.add_argument(
@@ -89,6 +91,13 @@ parser.add_argument(
     "--reactive",
     action="store_true",
     help="When True, runs in reactive mode",
+    default=False,
+)
+
+parser.add_argument(
+    "--alt",
+    action="store_true",
+    help="When True, uses alternative calculations",
     default=False,
 )
 
@@ -250,25 +259,51 @@ def get_sphere_entry(config_spheres: Dict, idx: int):
     sph_spec["keyidx"] = newidx
     return sph_spec
 
-from pxr import Gf
+from pxr import Gf, Sdf, Usd, UsdGeom
+import typing
 
 class RoboDeco:
-    def __init__(self):
+    def __init__(self, usealt = False):
         self.rob_pos = Gf.Vec3d(0,0,0)
-        self.rob_ori = Gf.Quatd(1,0,0,0)
+        self.rob_ori_quat = Gf.Quatd(1,0,0,0)
+        self.rob_ori_euler = Gf.Vec3d(0,0,0)
+        self.memstage : Usd.Stage = Usd.Stage.CreateInMemory()
+        self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
+        self.memstage.SetDefaultPrim(self.default_prim)
+        self.usealt = usealt
+        print("RobDeco created usealt:", usealt)
+
+    def get_world_transform_xform(self, prim: Usd.Prim) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d]:
+        xform = UsdGeom.Xformable(prim)
+        time = Usd.TimeCode.Default() # The time at which we compute the bounding box
+        world_transform: Gf.Matrix4d = xform.ComputeLocalToWorldTransform(time)
+        translation: Gf.Vec3d = world_transform.ExtractTranslation()
+        rotation: Gf.Rotation = world_transform.ExtractRotation()
+        scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
+        return translation, rotation, scale
 
     def set_transform(self, prerot, pos, ori):
         self.prerot = prerot
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
-        self.rob_ori = Gf.Quatd(float(ori[0]), float(ori[1]), float(ori[2]), float(ori[3]))
+        self.rob_ori_euler = Gf.Vec3d(float(ori[0]), float(ori[1]), float(ori[2]))
+        from rotations import euler_angles_to_quat, quat_to_euler_angles
+        self.rob_ori_quat = euler_angles_to_quat(self.rob_ori_euler)
+
+        path = self.default_prim.GetPath().AppendPath("Xform")
+        xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path )
+        xform.AddTranslateOp().Set(value=self.rob_pos)
+        xform.AddRotateXYZOp().Set(value=self.rob_ori_euler)
+        (t,r,s) = self.get_world_transform_xform(xform)
+        self.tran = t
+        self.rot = r
+        self.rotmat3d = Gf.Matrix3d(self.rot)
+        self.inv_rotmat3d = self.rotmat3d.GetTranspose()
+        print("tran:", t)
+        print("rob_pos:", self.rob_pos)
+        print("rotmat3d:", self.rotmat3d)
 
     def get_robot_base(self):
-        return self.rob_pos, self.rob_ori
-
-    def wc_to_rcc(self, pos, ori):
-        pos = self.to_gfvec(pos)
-        sp2 = pos - self.rob_pos
-        return sp2, ori
+        return self.rob_pos, self.rob_ori_quat
 
     def to_gfvec(self, vek):
         x = float(vek[0])
@@ -276,15 +311,41 @@ class RoboDeco:
         z = float(vek[2])
         return Gf.Vec3d(x, y, z)
 
-    def rcc_to_wc(self, pos, ori):
+    def rcc_to_wc_old(self, pos, ori):
         pos = self.to_gfvec(pos)
         sp2 = pos + self.rob_pos
         return sp2, ori
 
-    def adjust_pose(self, pos, orient):
+    def rcc_to_wc_alt(self, pos, ori):
         pos = self.to_gfvec(pos)
-        newpos = Gf.Vec3d(pos[0]-self.rob_pos[0], pos[1]-self.rob_pos[1], pos[2]-self.rob_pos[2])
-        return newpos, orient
+        pos_new = self.tran + pos*self.rotmat3d
+        print("pos_new_alt:", pos_new)
+        # ori_new = ori*self.rotmat3d
+        return pos_new, ori
+
+    def wc_to_rcc_alt(self, pos, ori):
+        pos = self.to_gfvec(pos)
+        pos_new = (pos - self.tran)*self.inv_rotmat3d
+        # ori_new = ori*self.inv_rotmat3d
+        print("pos_new_alt:", pos_new)
+        return pos_new, ori
+
+    def wc_to_rcc_old(self, pos, ori):
+        pos = self.to_gfvec(pos)
+        sp2 = pos - self.rob_pos
+        return sp2, ori
+
+    def wc_to_rcc(self, pos, ori):
+        if self.usealt:
+            return self.wc_to_rcc_alt(pos, ori)
+        else:
+            return self.wc_to_rcc_old(pos, ori)
+
+    def rcc_to_wc(self, pos, ori):
+        if self.usealt:
+            return self.rcc_to_wc_alt(pos, ori)
+        else:
+            return self.rcc_to_wc_old(pos, ori)
 
 def main():
     # create a curobo motion gen instance:
@@ -329,13 +390,10 @@ def main():
 
     robpos = np.array( get_vek(args.robpos) )
     print(f"robpos: {robpos}")
-    robori1 = get_vek(args.robori)
-    print(f"robori1: {robori1}")
+    robori = np.array( get_vek(args.robori) )
+    print(f"robori: {robori}")
 
-    # robpos = np.array([0, 0, 0.1])
-    robori = np.array([1, 0, 0, 0])
-
-    deco = RoboDeco()
+    deco = RoboDeco(usealt=args.alt)
     deco.set_transform(prerot=0, pos=robpos, ori=robori)
     rp, ro = deco.get_robot_base()
 
@@ -386,6 +444,9 @@ def main():
 
     sp_rcc, sq_rcc = motion_gen.get_start_pose()
     sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+    from rotations import euler_angles_to_quat, quat_to_euler_angles
+    print("sp_wc:", sp_wc)
+
     # sp1 += robpos
 
     # Make a target to follow
@@ -396,7 +457,6 @@ def main():
         color=np.array([1.0, 0, 0]),
         size=0.05,
     )
-
 
     motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
@@ -543,7 +603,6 @@ def main():
             # print(f"   sim_js_names: {sim_js_names}")
             print(f"   sim_js.positions: {sim_js.positions}")
             # print(f"   sim_js.velocities: {sim_js.velocities}")
-
 
         if not args.reactive:
             cu_js.velocity *= 0.0
@@ -705,7 +764,6 @@ def main():
                 cmd_plan = None
                 past_cmd = None
     simulation_app.close()
-
 
 if __name__ == "__main__":
     main()
