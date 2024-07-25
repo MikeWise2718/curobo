@@ -267,6 +267,7 @@ class RoboDeco:
         self.rob_pos = Gf.Vec3d(0,0,0)
         self.rob_ori_quat = Gf.Quatd(1,0,0,0)
         self.rob_ori_euler = Gf.Vec3d(0,0,0)
+        self.rob_ori_sel = "0,0,0"
         self.memstage : Usd.Stage = Usd.Stage.CreateInMemory()
         self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
         self.memstage.SetDefaultPrim(self.default_prim)
@@ -284,13 +285,16 @@ class RoboDeco:
 
     def set_transform(self, prerot, pos, ori):
         self.prerot = prerot
+        xang = float(ori[0])
+        yang = float(ori[1])
+        zang = float(ori[2])
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
-        self.rob_ori_euler = Gf.Vec3d(float(ori[0]), float(ori[1]), float(ori[2]))
+        self.rob_ori_euler = Gf.Vec3d(xang,yang,zang)
         from rotations import euler_angles_to_quat, quat_to_euler_angles
-        self.rob_ori_quat = euler_angles_to_quat(self.rob_ori_euler)
+        self.rob_ori_quat = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
 
         path = self.default_prim.GetPath().AppendPath("Xform")
-        xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path )
+        xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path)
         xform.AddTranslateOp().Set(value=self.rob_pos)
         xform.AddRotateXYZOp().Set(value=self.rob_ori_euler)
         (t,r,s) = self.get_world_transform_xform(xform)
@@ -298,9 +302,14 @@ class RoboDeco:
         self.rot = r
         self.rotmat3d = Gf.Matrix3d(self.rot)
         self.inv_rotmat3d = self.rotmat3d.GetTranspose()
+        if xang==0 and yang==0 and zang==0:
+            self.rob_ori_sel = "0,0,0"
+        elif xang==180 and yang==0 and zang==0:
+            self.rob_ori_sel = "180,0,0"
         print("tran:", t)
         print("rob_pos:", self.rob_pos)
         print("rotmat3d:", self.rotmat3d)
+        print("rob_ori_sel:", self.rob_ori_sel)
 
     def get_robot_base(self):
         return self.rob_pos, self.rob_ori_quat
@@ -311,10 +320,24 @@ class RoboDeco:
         z = float(vek[2])
         return Gf.Vec3d(x, y, z)
 
+    def quat_apply(self, q1, q2):
+        q1inv = q1.GetInverse()
+        q2q = Gf.Quatd(float(q2[0]), float(q2[1]), float(q2[2]), float(q2[3]))
+        rv = q1inv * q2q * q1
+        return rv
+
     def rcc_to_wc_old(self, pos, ori):
         pos = self.to_gfvec(pos)
-        sp2 = pos + self.rob_pos
-        return sp2, ori
+        newpos = pos + self.rob_pos
+        match self.rob_ori_sel:
+            case "0,0,0":
+                ori_new = ori
+            case "180,0,0":
+                newpos = Gf.Vec3d(newpos[0], -newpos[1], -newpos[2])
+                ori_new = self.quat_apply(Gf.Quatd(0,0,0,1), ori)
+            case _:
+                ori_new = ori
+        return newpos, ori_new
 
     def rcc_to_wc_alt(self, pos, ori):
         pos = self.to_gfvec(pos)
@@ -332,8 +355,16 @@ class RoboDeco:
 
     def wc_to_rcc_old(self, pos, ori):
         pos = self.to_gfvec(pos)
-        sp2 = pos - self.rob_pos
-        return sp2, ori
+        newpos = pos - self.rob_pos
+        match self.rob_ori_sel:
+            case "0,0,0":
+                ori_new = ori
+            case "180,0,0":
+                newpos = Gf.Vec3d(newpos[0], -newpos[1], -newpos[2])
+                ori_new = self.quat_apply(Gf.Quatd(0,0,0,1), ori)
+            case _:
+                ori_new = ori
+        return newpos, ori
 
     def wc_to_rcc(self, pos, ori):
         if self.usealt:
@@ -346,6 +377,20 @@ class RoboDeco:
             return self.rcc_to_wc_alt(pos, ori)
         else:
             return self.rcc_to_wc_old(pos, ori)
+
+def to_list3(gft):
+    lst = [gft[0], gft[1], gft[2]]
+    return lst
+
+def quatd_to_list4(q: Gf.Quatd):
+    w = q.GetReal()
+    im = q.GetImaginary()
+    x = im[0]
+    y = im[1]
+    z = im[2]
+    lst = [w, x, y, z]
+    return lst
+
 
 def main():
     # create a curobo motion gen instance:
@@ -452,8 +497,8 @@ def main():
     # Make a target to follow
     target = cuboid.VisualCuboid(
         "/World/target",
-        position=np.array(sp_wc),
-        orientation=np.array(sq_wc),
+        position=sp_wc,
+        orientation=quatd_to_list4(sq_wc),
         color=np.array([1.0, 0, 0]),
         size=0.05,
     )
