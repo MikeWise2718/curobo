@@ -218,7 +218,30 @@ from curobo.wrap.reacher.motion_gen import (
 
 
 ########### OV #################;;;;;
-def get_vek(s:str, default = [0.0,0.0,0.0]):
+from pxr import Gf, Sdf, Usd, UsdGeom
+import typing
+
+def to_list3(gft):
+    lst = [gft[0], gft[1], gft[2]]
+    return lst
+
+
+def quatd_to_list4(q: Gf.Quatd):
+    w = q.GetReal()
+    im = q.GetImaginary()
+    x = im[0]
+    y = im[1]
+    z = im[2]
+    lst = [w, x, y, z]
+    return lst
+
+
+def list4to_quatd(lst: list):
+    q = Gf.Quatd(lst[0], Gf.Vec3d(lst[1], lst[2], lst[3]))
+    return q
+
+
+def get_vek(s:str, default=[0.0, 0.0, 0.0]):
     if s is None:
         return np.array(default)
     if s=="":
@@ -259,11 +282,9 @@ def get_sphere_entry(config_spheres: Dict, idx: int):
     sph_spec["keyidx"] = newidx
     return sph_spec
 
-from pxr import Gf, Sdf, Usd, UsdGeom
-import typing
 
 class RoboDeco:
-    def __init__(self, usealt = False):
+    def __init__(self, usealt=False):
         self.rob_pos = Gf.Vec3d(0,0,0)
         self.rob_ori_quat = Gf.Quatd(1,0,0,0)
         self.rob_ori_euler = Gf.Vec3d(0,0,0)
@@ -291,7 +312,8 @@ class RoboDeco:
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
         self.rob_ori_euler = Gf.Vec3d(xang,yang,zang)
         from rotations import euler_angles_to_quat, quat_to_euler_angles
-        self.rob_ori_quat = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
+        self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
+        self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
 
         path = self.default_prim.GetPath().AppendPath("Xform")
         xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path)
@@ -306,13 +328,17 @@ class RoboDeco:
             self.rob_ori_sel = "0,0,0"
         elif xang==180 and yang==0 and zang==0:
             self.rob_ori_sel = "180,0,0"
+        elif xang==135 and yang==0 and zang==0:
+            self.rob_ori_sel = "135,0,0"
         print("tran:", t)
         print("rob_pos:", self.rob_pos)
         print("rotmat3d:", self.rotmat3d)
+        print("rob_ori_quat:", self.rob_ori_quat)
+        print("rob_ori_euler:", self.rob_ori_euler)
         print("rob_ori_sel:", self.rob_ori_sel)
 
     def get_robot_base(self):
-        return self.rob_pos, self.rob_ori_quat
+        return self.rob_pos, self.rob_ori_quat_nparray
 
     def to_gfvec(self, vek):
         x = float(vek[0])
@@ -333,8 +359,17 @@ class RoboDeco:
             case "0,0,0":
                 ori_new = ori
             case "180,0,0":
-                newpos = Gf.Vec3d(newpos[0], -newpos[1], -newpos[2])
-                ori_new = self.quat_apply(Gf.Quatd(0,0,0,1), ori)
+                x = self.rob_pos[0] + pos[0]
+                y = self.rob_pos[1] - pos[1]
+                z = self.rob_pos[2] - pos[2]
+                newpos = Gf.Vec3d(x, y, z)
+                ori_new = self.quat_apply(self.rob_ori_quat, ori)
+            case "135,0,0":
+                x = self.rob_pos[0] + pos[0]
+                y = self.rob_pos[1] - pos[1]
+                z = self.rob_pos[2] - pos[2]
+                newpos = Gf.Vec3d(x, y, z)
+                ori_new = self.quat_apply(self.rob_ori_quat, ori)
             case _:
                 ori_new = ori
         return newpos, ori_new
@@ -360,11 +395,20 @@ class RoboDeco:
             case "0,0,0":
                 ori_new = ori
             case "180,0,0":
-                newpos = Gf.Vec3d(newpos[0], -newpos[1], -newpos[2])
-                ori_new = self.quat_apply(Gf.Quatd(0,0,0,1), ori)
+                x = pos[0] - self.rob_pos[0]
+                y = -pos[1]  + self.rob_pos[1]
+                z = -pos[2]  + self.rob_pos[2]
+                newpos = Gf.Vec3d(x, y, z)
+                ori_new = self.quat_apply(self.rob_ori_quat, ori)
+            case "135,0,0":
+                x = pos[0] - self.rob_pos[0]
+                y = -pos[1]  + self.rob_pos[1]
+                z = -pos[2]  + self.rob_pos[2]
+                newpos = Gf.Vec3d(x, y, z)
+                ori_new = self.quat_apply(self.rob_ori_quat, ori)
             case _:
                 ori_new = ori
-        return newpos, ori
+        return newpos, ori_new
 
     def wc_to_rcc(self, pos, ori):
         if self.usealt:
@@ -378,18 +422,7 @@ class RoboDeco:
         else:
             return self.rcc_to_wc_old(pos, ori)
 
-def to_list3(gft):
-    lst = [gft[0], gft[1], gft[2]]
-    return lst
 
-def quatd_to_list4(q: Gf.Quatd):
-    w = q.GetReal()
-    im = q.GetImaginary()
-    x = im[0]
-    y = im[1]
-    z = im[2]
-    lst = [w, x, y, z]
-    return lst
 
 
 def main():
@@ -442,7 +475,7 @@ def main():
     deco.set_transform(prerot=0, pos=robpos, ori=robori)
     rp, ro = deco.get_robot_base()
 
-    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=rp, orient = ro)
+    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=rp, orient=ro)
     robot.deco = deco
 
     world_cfg_table = WorldConfig.from_dict(
@@ -733,6 +766,8 @@ def main():
             ee_pos_rcc, ee_ori_rcc = robot.deco.wc_to_rcc(cube_position, cube_orientation)
             # ee_translation_goal = cube_position - robpos
             # ee_orientation_teleop_goal = cube_orientation
+            if type(ee_ori_rcc) is Gf.Quatd:
+                ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
             # compute curobo solution:
             ik_goal = Pose(
