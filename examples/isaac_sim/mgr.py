@@ -79,6 +79,13 @@ parser.add_argument(
     default=None,
     help="Robot Orientation - Euler Angles - default = [0,0,0]",
 )
+parser.add_argument(
+    "-rbpr",
+    "--robprerot",
+    type=str,
+    default=None,
+    help="Robot Pre-Rotation - Euler Angles - default = [0,0,0]",
+)
 
 parser.add_argument(
     "-vzs",
@@ -187,6 +194,8 @@ from omni.isaac.core.objects import cuboid, sphere
 
 ########### OV #################
 from omni.isaac.core.utils.types import ArticulationAction
+from omni.isaac.core.utils.viewports import set_camera_view
+
 
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
@@ -295,6 +304,11 @@ class RoboDeco:
         self.usealt = usealt
         print("RobDeco created usealt:", usealt)
 
+    def AssignRobot(self, robot):
+        self.robot = robot
+        self.robot.deco = self
+        self.articulation_controller = robot.get_articulation_controller()
+
     def get_world_transform_xform(self, prim: Usd.Prim) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d]:
         xform = UsdGeom.Xformable(prim)
         time = Usd.TimeCode.Default() # The time at which we compute the bounding box
@@ -305,18 +319,25 @@ class RoboDeco:
         return translation, rotation, scale
 
     def set_transform(self, prerot, pos, ori):
+        xprerot = float(prerot[0])
+        yprerot = float(prerot[1])
+        zprerot = float(prerot[2])
+        self.rob_prerot_euler = Gf.Vec3d(xprerot, yprerot, zprerot)
         self.prerot = prerot
-        xang = float(ori[0])
-        yang = float(ori[1])
-        zang = float(ori[2])
+        xrot = float(ori[0])
+        yrot = float(ori[1])
+        zrot = float(ori[2])
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
-        self.rob_ori_euler = Gf.Vec3d(xang,yang,zang)
-        from rotations import euler_angles_to_quat, quat_to_euler_angles
+        self.rob_ori_euler = Gf.Vec3d(xrot,yrot,zrot)
+        from rotations import euler_angles_to_quat, matrix_to_euler_angles
         self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
         self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
 
         path = self.default_prim.GetPath().AppendPath("Xform")
         xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path)
+        if xprerot!=0 or yprerot!=0 or zprerot!=0:
+            xform.AddRotateXYZOp(opSuffix='prerot').Set(value=self.rob_prerot_euler)
+            print("   added prerot to xform")
         xform.AddTranslateOp().Set(value=self.rob_pos)
         xform.AddRotateXYZOp().Set(value=self.rob_ori_euler)
         (t,r,s) = self.get_world_transform_xform(xform)
@@ -324,20 +345,27 @@ class RoboDeco:
         self.rot = r
         self.rotmat3d = Gf.Matrix3d(self.rot)
         self.inv_rotmat3d = self.rotmat3d.GetTranspose()
-        if xang==0 and yang==0 and zang==0:
+        self.rotmat3d_eulers = matrix_to_euler_angles(self.rotmat3d, degrees=True)
+        self.rotmat3d_quat_nparray = euler_angles_to_quat(self.rotmat3d_eulers, degrees=True)
+        if xrot==0 and yrot==0 and zrot==0:
             self.rob_ori_sel = "0,0,0"
-        elif xang==180 and yang==0 and zang==0:
+        elif xrot==180 and yrot==0 and zrot==0:
             self.rob_ori_sel = "180,0,0"
-        elif xang==135 and yang==0 and zang==0:
+        elif xrot==135 and yrot==0 and zrot==0:
             self.rob_ori_sel = "135,0,0"
         print("tran:", t)
         print("rob_pos:", self.rob_pos)
         print("rotmat3d:", self.rotmat3d)
         print("rob_ori_quat:", self.rob_ori_quat)
         print("rob_ori_euler:", self.rob_ori_euler)
+        print("rob_prerot_euler:", self.rob_prerot_euler)
         print("rob_ori_sel:", self.rob_ori_sel)
+        print("rotmat3d_eulers:", self.rotmat3d_eulers)
+        print("rotmat3d_quat_nparray:", self.rotmat3d_quat_nparray)
+
 
     def get_robot_base(self):
+        # return self.rob_pos, self.rotmat3d_quat_nparray
         return self.rob_pos, self.rob_ori_quat_nparray
 
     def to_gfvec(self, vek):
@@ -377,7 +405,7 @@ class RoboDeco:
     def rcc_to_wc_alt(self, pos, ori):
         pos = self.to_gfvec(pos)
         pos_new = self.tran + pos*self.rotmat3d
-        print("pos_new_alt:", pos_new)
+        # print("pos_new_alt:", pos_new)
         # ori_new = ori*self.rotmat3d
         return pos_new, ori
 
@@ -385,7 +413,7 @@ class RoboDeco:
         pos = self.to_gfvec(pos)
         pos_new = (pos - self.tran)*self.inv_rotmat3d
         # ori_new = ori*self.inv_rotmat3d
-        print("pos_new_alt:", pos_new)
+        # print("pos_new_alt:", pos_new)
         return pos_new, ori
 
     def wc_to_rcc_old(self, pos, ori):
@@ -470,13 +498,15 @@ def main():
     print(f"robpos: {robpos}")
     robori = np.array( get_vek(args.robori) )
     print(f"robori: {robori}")
+    robprerot = np.array( get_vek(args.robprerot) )
+    print(f"robprerot: {robprerot}")
 
     deco = RoboDeco(usealt=args.alt)
-    deco.set_transform(prerot=0, pos=robpos, ori=robori)
+    deco.set_transform(prerot=robprerot, pos=robpos, ori=robori)
     rp, ro = deco.get_robot_base()
 
     robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=rp, orient=ro)
-    robot.deco = deco
+    deco.AssignRobot(robot)
 
     world_cfg_table = WorldConfig.from_dict(
         load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
@@ -522,23 +552,24 @@ def main():
 
     sp_rcc, sq_rcc = motion_gen.get_start_pose()
     sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
-    from rotations import euler_angles_to_quat, quat_to_euler_angles
-    print("sp_wc:", sp_wc)
+    if type(sq_wc) is Gf.Quatd:
+        sq_wc = quatd_to_list4(sq_wc)
 
     # sp1 += robpos
 
     # Make a target to follow
+
     target = cuboid.VisualCuboid(
         "/World/target",
         position=sp_wc,
-        orientation=quatd_to_list4(sq_wc),
+        orientation=sq_wc,
         color=np.array([1.0, 0, 0]),
         size=0.05,
     )
 
     motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
-    print("Curobo is Ready")
+    print("Curobo is Ready and Warmed-up")
 
     add_extensions(simulation_app, args.headless_mode)
 
@@ -576,24 +607,48 @@ def main():
     spherenames = None
     spheres = None
     sph_list = None
+    circle_target = False
+    curcen, curori = target.get_world_pose()
+    curvel = 0.1
+    curang = 0
+    currad = 0.02
+
+    set_camera_view(eye=[0.0, 2.5, 1.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
 
     while simulation_app.is_running():
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
-            print("You pressed ‘a’.")
+            circle_target = not circle_target
+            if circle_target:
+                curcen, curori = target.get_world_pose()
+                curvel = 0.02
+                curang = 0
+                currad = 0.1
+            print(f"You pressed ‘a’. circle_target:{circle_target} curcen:{curcen} curvel:{curvel}")
 
         elif keyboard.is_pressed("b"):
             k = keyboard.read_key()
             print("You pressed ‘b’.")
 
+        elif keyboard.is_pressed("*"):
+            k = keyboard.read_key()
+            curvel *= 1.5
+            print("You pressed ‘*’. curvel:{curvel}")
+
+        elif keyboard.is_pressed("/"):
+            k = keyboard.read_key()
+            curvel /= 1.5
+            print("You pressed ‘/’. curvel:{curvel}")
+
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
             sp_rcc, sq_rcc = motion_gen.get_start_pose() # this is the robots starting position in rcc
-            # sp1 += robpos
             if robot.deco is not None:
                 sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+                if type(sq_wc) is Gf.Quatd:
+                    sq_wc = quatd_to_list4(sq_wc)
             target.set_world_pose(position=sp_wc, orientation=sq_wc)
 
         elif keyboard.is_pressed("d"):
@@ -604,6 +659,11 @@ def main():
                 sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
                 # sp1 += robpos
                 target.set_world_pose(position=sp_wc, orientation=sq_wc)
+
+        elif keyboard.is_pressed("s"):
+            k = keyboard.read_key()
+            print("You pressed ‘s’.")
+
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
@@ -617,6 +677,18 @@ def main():
             # if step_index == 0:
             #    my_world.play()
             continue
+
+        if circle_target:
+            dang = curvel
+            curang += dang
+            newpos = np.zeros(3)
+            newpos[0] = curcen[0]  + currad*np.cos(curang)
+            newpos[1] = curcen[1]  + currad*np.sin(curang)
+            newpos[2] = curcen[2]
+            target.set_world_pose(
+                position=newpos,
+                orientation=curori
+            )
 
         step_index = my_world.current_time_step_index
         if (step_index % 100) == 0:
@@ -677,9 +749,9 @@ def main():
             jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
             joint_names=sim_js_names,
         )
-        if (step_index % 100) == 0:
+        # if (step_index % 100) == 0:
             # print(f"   sim_js_names: {sim_js_names}")
-            print(f"   sim_js.positions: {sim_js.positions}")
+            # print(f"   sim_js.positions: {sim_js.positions}")
             # print(f"   sim_js.velocities: {sim_js.velocities}")
 
         if not args.reactive:
@@ -752,15 +824,14 @@ def main():
         if (velmag < 0.2) or args.reactive:
             # robot_static = True
             pass
-        if (
-            (
-                np.linalg.norm(cube_position - target_pose) > 1e-3
-                or np.linalg.norm(cube_orientation - target_orientation) > 1e-3
-            )
-            and np.linalg.norm(past_pose - cube_position) == 0.0
-            and np.linalg.norm(past_orientation - cube_orientation) == 0.0
-            and static_robo
-        ):
+        pretrig = np.linalg.norm(cube_position - target_pose) > 1e-3 or np.linalg.norm(cube_orientation - target_orientation) > 1e-3
+        trigger =  pretrig and np.linalg.norm(past_pose - cube_position) == 0.0 and np.linalg.norm(past_orientation - cube_orientation) == 0.0 and static_robo
+        # print(f"trigger:{trigger} pretrig:{pretrig} velmag:{velmag:.2f} static_robo:{static_robo}")
+
+        if circle_target:
+            trigger = cmd_plan is None
+
+        if trigger:
             print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
             ee_pos_rcc, ee_ori_rcc = robot.deco.wc_to_rcc(cube_position, cube_orientation)
