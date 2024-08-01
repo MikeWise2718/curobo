@@ -138,6 +138,7 @@ args = parser.parse_args()
 ############################################################
 import sys
 import os
+
 exe_path = sys.executable
 sys_path = sys.path
 envv = ""
@@ -155,6 +156,7 @@ for name, value in os.environ.items():
 pass
 from omni.isaac.kit import SimulationApp
 
+
 simulation_app = SimulationApp(
     {
         "headless": args.headless_mode is not None,
@@ -162,6 +164,7 @@ simulation_app = SimulationApp(
         "height": "1080",
     }
 )
+
 
 # from pynput.keyboard import Key, Listener
 
@@ -365,8 +368,8 @@ class RoboDeco:
 
 
     def get_robot_base(self):
-        # return self.rob_pos, self.rotmat3d_quat_nparray
-        return self.rob_pos, self.rob_ori_quat_nparray
+        return self.rob_pos, self.rotmat3d_quat_nparray
+        # return self.rob_pos, self.rob_ori_quat_nparray
 
     def to_gfvec(self, vek):
         x = float(vek[0])
@@ -659,6 +662,10 @@ def main():
                 sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
                 # sp1 += robpos
                 target.set_world_pose(position=sp_wc, orientation=sq_wc)
+
+        elif keyboard.is_pressed("q"):
+            k = keyboard.read_key()
+            break
 
         elif keyboard.is_pressed("s"):
             k = keyboard.read_key()
