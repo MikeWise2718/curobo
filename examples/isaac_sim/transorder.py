@@ -64,8 +64,6 @@ def add_extensions(simulation_app, headless_mode: Optional[str] = None):
 add_extensions(simulation_app, args.headless_mode)
 
 
-
-
 def main():
     my_world = World(stage_units_in_meters=0.05)
     stage = my_world.stage
@@ -97,7 +95,6 @@ def main():
     #         radius=0.05,
     #         height=0.10,
     #     )
-
 
     from pxr import Usd, UsdGeom, Gf, Sdf
 

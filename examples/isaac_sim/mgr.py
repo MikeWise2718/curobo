@@ -101,12 +101,6 @@ parser.add_argument(
     default=False,
 )
 
-parser.add_argument(
-    "--alt",
-    action="store_true",
-    help="When True, uses alternative calculations",
-    default=False,
-)
 
 parser.add_argument(
     "--constrain_grasp_approach",
@@ -156,6 +150,7 @@ for name, value in os.environ.items():
 pass
 from omni.isaac.kit import SimulationApp
 
+# many things can't be imported until after SimulationApp is created
 
 simulation_app = SimulationApp(
     {
@@ -165,25 +160,6 @@ simulation_app = SimulationApp(
     }
 )
 
-
-# from pynput.keyboard import Key, Listener
-
-# def on_press(key):
-#     print('{0} pressed'.format(
-#         key))
-
-# def on_release(key):
-#     print('{0} release'.format(
-#         key))
-#     if key == Key.esc:
-#         # Stop listener
-#         return False
-
-# # Collect events until released
-# with Listener(
-#         on_press=on_press,
-#         on_release=on_release) as listener:
-#     listener.join()
 
 # Standard Library
 from typing import Dict
@@ -225,12 +201,13 @@ from curobo.wrap.reacher.motion_gen import (
     MotionGenPlanConfig,
     PoseCostMetric,
 )
+from pxr import Gf, Sdf, Usd, UsdGeom
+from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 
 ############################################################
 
 
 ########### OV #################;;;;;
-from pxr import Gf, Sdf, Usd, UsdGeom
 import typing
 
 def to_list3(gft):
@@ -296,14 +273,25 @@ def get_sphere_entry(config_spheres: Dict, idx: int):
 
 
 class RoboDeco:
-    def __init__(self, usealt=False):
+    def __init__(self, usealt=True):
         self.rob_pos = Gf.Vec3d(0,0,0)
         self.rob_ori_quat = Gf.Quatd(1,0,0,0)
         self.rob_ori_euler = Gf.Vec3d(0,0,0)
         self.rob_ori_sel = "0,0,0"
-        self.memstage : Usd.Stage = Usd.Stage.CreateInMemory()
+        self.memstage: Usd.Stage = Usd.Stage.CreateInMemory()
         self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
+        self.xformpath = self.default_prim.GetPath().AppendPath("Xform")
         self.memstage.SetDefaultPrim(self.default_prim)
+        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformFull")
+        self.xformw_part_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformPart")
+
+        self.xform_full_pre_rot_op = self.xformw_full_prim.AddRotateXYZOp(opSuffix='prerot')
+        self.xform_full_tran_op = self.xformw_full_prim.AddTranslateOp()
+        self.xform_full_rot_op = self.xformw_full_prim.AddRotateXYZOp()
+        self.xform_part_pre_rot_op = None
+        self.xform_part_tran_op = self.xformw_part_prim.AddTranslateOp()
+        self.xform_part_rot_op = self.xformw_part_prim.AddRotateXYZOp()
+
         self.usealt = usealt
         print("RobDeco created usealt:", usealt)
 
@@ -321,42 +309,57 @@ class RoboDeco:
         scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
         return translation, rotation, scale
 
+    def find_pos_rot(self, prerot_euler, pos, ori_euler):
+        xform_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, self.xformpath)
+        if prerot_euler is not None:
+            xform_prim.AddRotateXYZOp(opSuffix='prerot').Set(value=prerot_euler)
+        xform_prim.AddTranslateOp().Set(value=pos)
+        xform_prim.AddRotateXYZOp().Set(value=ori_euler)
+        t, r, s = self.get_world_transform_xform(xform_prim)
+        r = Gf.Matrix3d(r)
+        return t, r, s
+
+    def find_full_pos_rot(self, prerot_euler, pos, ori_euler):
+        self.xform_full_pre_rot_op.Set(value=prerot_euler)
+        self.xform_full_tran_op.Set(value=pos)
+        self.xform_full_rot_op.Set(value=ori_euler)
+        t, r, s = self.get_world_transform_xform(self.xformw_full_prim)
+        return t, r, s
+
+    def find_part_pos_rot(self, pos, ori_euler):
+        self.xform_part_tran_op.Set(value=pos)
+        self.xform_part_rot_op.Set(value=ori_euler)
+        t, r, s = self.get_world_transform_xform(self.xformw_full_prim)
+        return t, r, s
+
     def set_transform(self, prerot, pos, ori):
-        xprerot = float(prerot[0])
-        yprerot = float(prerot[1])
-        zprerot = float(prerot[2])
-        self.rob_prerot_euler = Gf.Vec3d(xprerot, yprerot, zprerot)
+        self.rob_prerot_euler = self.to_gfvec(prerot)
         self.prerot = prerot
-        xrot = float(ori[0])
-        yrot = float(ori[1])
-        zrot = float(ori[2])
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
-        self.rob_ori_euler = Gf.Vec3d(xrot,yrot,zrot)
-        from rotations import euler_angles_to_quat, matrix_to_euler_angles
+        self.rob_ori_euler = self.to_gfvec(ori)
         self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
         self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
 
-        path = self.default_prim.GetPath().AppendPath("Xform")
-        xform: Usd.Prim = UsdGeom.Xform.Define(self.memstage, path)
-        if xprerot!=0 or yprerot!=0 or zprerot!=0:
-            xform.AddRotateXYZOp(opSuffix='prerot').Set(value=self.rob_prerot_euler)
-            print("   added prerot to xform")
-        xform.AddTranslateOp().Set(value=self.rob_pos)
-        xform.AddRotateXYZOp().Set(value=self.rob_ori_euler)
-        (t,r,s) = self.get_world_transform_xform(xform)
-        self.tran = t
-        self.rot = r
-        self.rotmat3d = Gf.Matrix3d(self.rot)
+        # (self.tran, self.rotmat3d, _) = self.find_pos_rot(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
+        (self.tran, self.rotmat3d_gfrot, _) = self.find_full_pos_rot(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
+        (self.trann_npr, self.rotmat3d_npr_gfrot, _) = self.find_part_pos_rot(self.rob_pos, self.rob_ori_euler)
+        self.rotmat3d = Gf.Matrix3d(self.rotmat3d_gfrot)
         self.inv_rotmat3d = self.rotmat3d.GetTranspose()
         self.rotmat3d_eulers = matrix_to_euler_angles(self.rotmat3d, degrees=True)
         self.rotmat3d_quat_nparray = euler_angles_to_quat(self.rotmat3d_eulers, degrees=True)
-        if xrot==0 and yrot==0 and zrot==0:
-            self.rob_ori_sel = "0,0,0"
-        elif xrot==180 and yrot==0 and zrot==0:
-            self.rob_ori_sel = "180,0,0"
-        elif xrot==135 and yrot==0 and zrot==0:
-            self.rob_ori_sel = "135,0,0"
-        print("tran:", t)
+        # self.rotmat3d_quat_nparray = rot_matrix_to_quat(np.array(self.rotmat3d_gfrot))
+        # self.rotmat3d_quat_nparray = gf_rotation_to_np_array(np.array(self.rotmat3d_gfrot))
+
+        # xrot = float(ori[0])
+        # yrot = float(ori[1])
+        # zrot = float(ori[2])
+        # if xrot==0 and yrot==0 and zrot==0:
+        #     self.rob_ori_sel = "0,0,0"
+        # elif xrot==180 and yrot==0 and zrot==0:
+        #     self.rob_ori_sel = "180,0,0"
+        # elif xrot==135 and yrot==0 and zrot==0:
+        #     self.rob_ori_sel = "135,0,0"
+        print("tran:", self.tran)
         print("rob_pos:", self.rob_pos)
         print("rotmat3d:", self.rotmat3d)
         print("rob_ori_quat:", self.rob_ori_quat)
@@ -365,7 +368,6 @@ class RoboDeco:
         print("rob_ori_sel:", self.rob_ori_sel)
         print("rotmat3d_eulers:", self.rotmat3d_eulers)
         print("rotmat3d_quat_nparray:", self.rotmat3d_quat_nparray)
-
 
     def get_robot_base(self):
         return self.rob_pos, self.rotmat3d_quat_nparray
@@ -383,63 +385,63 @@ class RoboDeco:
         rv = q1inv * q2q * q1
         return rv
 
-    def rcc_to_wc_old(self, pos, ori):
-        pos = self.to_gfvec(pos)
-        newpos = pos + self.rob_pos
-        match self.rob_ori_sel:
-            case "0,0,0":
-                ori_new = ori
-            case "180,0,0":
-                x = self.rob_pos[0] + pos[0]
-                y = self.rob_pos[1] - pos[1]
-                z = self.rob_pos[2] - pos[2]
-                newpos = Gf.Vec3d(x, y, z)
-                ori_new = self.quat_apply(self.rob_ori_quat, ori)
-            case "135,0,0":
-                x = self.rob_pos[0] + pos[0]
-                y = self.rob_pos[1] - pos[1]
-                z = self.rob_pos[2] - pos[2]
-                newpos = Gf.Vec3d(x, y, z)
-                ori_new = self.quat_apply(self.rob_ori_quat, ori)
-            case _:
-                ori_new = ori
-        return newpos, ori_new
+    # def rcc_to_wc_old(self, pos, ori):
+    #     pos = self.to_gfvec(pos)
+    #     newpos = pos + self.rob_pos
+    #     match self.rob_ori_sel:
+    #         case "0,0,0":
+    #             ori_new = ori
+    #         case "180,0,0":
+    #             x = self.rob_pos[0] + pos[0]
+    #             y = self.rob_pos[1] - pos[1]
+    #             z = self.rob_pos[2] - pos[2]
+    #             newpos = Gf.Vec3d(x, y, z)
+    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
+    #         case "135,0,0":
+    #             x = self.rob_pos[0] + pos[0]
+    #             y = self.rob_pos[1] - pos[1]
+    #             z = self.rob_pos[2] - pos[2]
+    #             newpos = Gf.Vec3d(x, y, z)
+    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
+    #         case _:
+    #             ori_new = ori
+    #     return newpos, ori_new
 
     def rcc_to_wc_alt(self, pos, ori):
-        pos = self.to_gfvec(pos)
-        pos_new = self.tran + pos*self.rotmat3d
+        pos_0 = self.to_gfvec(pos)
+        pos_new = self.tran + pos_0*self.rotmat3d
         # print("pos_new_alt:", pos_new)
         # ori_new = ori*self.rotmat3d
         return pos_new, ori
 
     def wc_to_rcc_alt(self, pos, ori):
-        pos = self.to_gfvec(pos)
-        pos_new = (pos - self.tran)*self.inv_rotmat3d
+        pos_0 = self.to_gfvec(pos)
+        pos_new = (pos_0 - self.tran)*self.inv_rotmat3d
         # ori_new = ori*self.inv_rotmat3d
         # print("pos_new_alt:", pos_new)
         return pos_new, ori
 
-    def wc_to_rcc_old(self, pos, ori):
-        pos = self.to_gfvec(pos)
-        newpos = pos - self.rob_pos
-        match self.rob_ori_sel:
-            case "0,0,0":
-                ori_new = ori
-            case "180,0,0":
-                x = pos[0] - self.rob_pos[0]
-                y = -pos[1]  + self.rob_pos[1]
-                z = -pos[2]  + self.rob_pos[2]
-                newpos = Gf.Vec3d(x, y, z)
-                ori_new = self.quat_apply(self.rob_ori_quat, ori)
-            case "135,0,0":
-                x = pos[0] - self.rob_pos[0]
-                y = -pos[1]  + self.rob_pos[1]
-                z = -pos[2]  + self.rob_pos[2]
-                newpos = Gf.Vec3d(x, y, z)
-                ori_new = self.quat_apply(self.rob_ori_quat, ori)
-            case _:
-                ori_new = ori
-        return newpos, ori_new
+    # def wc_to_rcc_old(self, pos, ori):
+    #     pos = self.to_gfvec(pos)
+    #     newpos = pos - self.rob_pos
+    #     match self.rob_ori_sel:
+    #         case "0,0,0":
+    #             ori_new = ori
+    #         case "180,0,0":
+    #             x = pos[0] - self.rob_pos[0]
+    #             y = -pos[1]  + self.rob_pos[1]
+    #             z = -pos[2]  + self.rob_pos[2]
+    #             newpos = Gf.Vec3d(x, y, z)
+    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
+    #         case "135,0,0":
+    #             x = pos[0] - self.rob_pos[0]
+    #             y = -pos[1]  + self.rob_pos[1]
+    #             z = -pos[2]  + self.rob_pos[2]
+    #             newpos = Gf.Vec3d(x, y, z)
+    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
+    #         case _:
+    #             ori_new = ori
+    #     return newpos, ori_new
 
     def wc_to_rcc(self, pos, ori):
         if self.usealt:
@@ -504,7 +506,7 @@ def main():
     robprerot = np.array( get_vek(args.robprerot) )
     print(f"robprerot: {robprerot}")
 
-    deco = RoboDeco(usealt=args.alt)
+    deco = RoboDeco()
     deco.set_transform(prerot=robprerot, pos=robpos, ori=robori)
     rp, ro = deco.get_robot_base()
 
@@ -670,7 +672,6 @@ def main():
         elif keyboard.is_pressed("s"):
             k = keyboard.read_key()
             print("You pressed ‘s’.")
-
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
