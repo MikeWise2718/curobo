@@ -307,24 +307,17 @@ class RoboDeco:
         self.robot.deco = self
         self.articulation_controller = robot.get_articulation_controller()
 
-    def get_world_transform_xform(self, prim: Usd.Prim) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d]:
+    def get_world_transform_xform(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d]:
         xform = UsdGeom.Xformable(prim)
         time = Usd.TimeCode.Default() # The time at which we compute the bounding box
         world_transform: Gf.Matrix4d = xform.ComputeLocalToWorldTransform(time)
+        if dump:
+            print("world_transform:", world_transform)
         translation: Gf.Vec3d = world_transform.ExtractTranslation()
         rotation: Gf.Rotation = world_transform.ExtractRotation()
         scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
         return translation, rotation, scale
 
-    # def find_pos_rot(self, prerot_euler, pos, ori_euler):
-    #     xform_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, self.xformpath)
-    #     if prerot_euler is not None:
-    #         xform_prim.AddRotateXYZOp(opSuffix='prerot').Set(value=prerot_euler)
-    #     xform_prim.AddTranslateOp().Set(value=pos)
-    #     xform_prim.AddRotateXYZOp().Set(value=ori_euler)
-    #     t, r, s = self.get_world_transform_xform(xform_prim)
-    #     r = Gf.Matrix3d(r)
-    #     return t, r, s
 
     def find_full_pos_rot(self, prerot_euler, pos, ori_euler):
         self.xform_full_pre_rot_op.Set(value=prerot_euler)
@@ -337,7 +330,7 @@ class RoboDeco:
         self.xform_neg_pre_rot_op.Set(value=-1*prerot_euler)
         self.xform_neg_tran_op.Set(value=pos)
         self.xform_neg_rot_op.Set(value=ori_euler)
-        t, r, s = self.get_world_transform_xform(self.xformw_neg_prim)
+        t, r, s = self.get_world_transform_xform(self.xformw_neg_prim, dump=True)
         return t, r, s
 
 
@@ -368,15 +361,6 @@ class RoboDeco:
         # self.rotmat3d_quat_nparray = rot_matrix_to_quat(np.array(self.rotmat3d_gfrot))
         # self.rotmat3d_quat_nparray = gf_rotation_to_np_array(np.array(self.rotmat3d_gfrot))
 
-        # xrot = float(ori[0])
-        # yrot = float(ori[1])
-        # zrot = float(ori[2])
-        # if xrot==0 and yrot==0 and zrot==0:
-        #     self.rob_ori_sel = "0,0,0"
-        # elif xrot==180 and yrot==0 and zrot==0:
-        #     self.rob_ori_sel = "180,0,0"
-        # elif xrot==135 and yrot==0 and zrot==0:
-        #     self.rob_ori_sel = "135,0,0"
         print("tran:", self.tran)
         print("rob_pos:", self.rob_pos)
         print("rotmat3d:", self.rotmat3d)
@@ -404,90 +388,26 @@ class RoboDeco:
         rv = q1inv * q2q * q1
         return rv
 
-    # def rcc_to_wc_old(self, pos, ori):
-    #     pos = self.to_gfvec(pos)
-    #     newpos = pos + self.rob_pos
-    #     match self.rob_ori_sel:
-    #         case "0,0,0":
-    #             ori_new = ori
-    #         case "180,0,0":
-    #             x = self.rob_pos[0] + pos[0]
-    #             y = self.rob_pos[1] - pos[1]
-    #             z = self.rob_pos[2] - pos[2]
-    #             newpos = Gf.Vec3d(x, y, z)
-    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
-    #         case "135,0,0":
-    #             x = self.rob_pos[0] + pos[0]
-    #             y = self.rob_pos[1] - pos[1]
-    #             z = self.rob_pos[2] - pos[2]
-    #             newpos = Gf.Vec3d(x, y, z)
-    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
-    #         case _:
-    #             ori_new = ori
-    #     return newpos, ori_new
-
-    def rcc_to_wc_alt(self, pos, ori):
+    def rcc_to_wc_pos(self, pos, ori):
         pos_0 = self.to_gfvec(pos)
         pos_new = self.tran + pos_0*self.rotmat3d
-        # print("pos_new_alt:", pos_new)
-        # ori_new = ori*self.rotmat3d
         return pos_new, ori
 
-    def wc_to_rcc_alt(self, pos, ori):
+    def wc_to_rcc_pos(self, pos, ori):
         pos_0 = self.to_gfvec(pos)
         pos_new = (pos_0 - self.tran)*self.inv_rotmat3d
-        # ori_new = ori*self.inv_rotmat3d
-        # print("pos_new_alt:", pos_new)
         return pos_new, ori
 
     def rcc_to_wc_neg(self, pos, ori):
         pos_0 = self.to_gfvec(pos)
         pos_new = self.tran_neg + pos_0*self.rotmat3d_neg
-        # print("pos_new_alt:", pos_new)
-        # ori_new = ori*self.rotmat3d
         return pos_new, ori
 
     def wc_to_rcc_neg(self, pos, ori):
         pos_0 = self.to_gfvec(pos)
         pos_new = (pos_0 - self.tran_neg)*self.inv_rotmat3d_neg
-        # ori_new = ori*self.inv_rotmat3d
-        # print("pos_new_alt:", pos_new)
         return pos_new, ori
 
-
-    # def wc_to_rcc_old(self, pos, ori):
-    #     pos = self.to_gfvec(pos)
-    #     newpos = pos - self.rob_pos
-    #     match self.rob_ori_sel:
-    #         case "0,0,0":
-    #             ori_new = ori
-    #         case "180,0,0":
-    #             x = pos[0] - self.rob_pos[0]
-    #             y = -pos[1]  + self.rob_pos[1]
-    #             z = -pos[2]  + self.rob_pos[2]
-    #             newpos = Gf.Vec3d(x, y, z)
-    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
-    #         case "135,0,0":
-    #             x = pos[0] - self.rob_pos[0]
-    #             y = -pos[1]  + self.rob_pos[1]
-    #             z = -pos[2]  + self.rob_pos[2]
-    #             newpos = Gf.Vec3d(x, y, z)
-    #             ori_new = self.quat_apply(self.rob_ori_quat, ori)
-    #         case _:
-    #             ori_new = ori
-    #     return newpos, ori_new
-
-    def wc_to_rcc(self, pos, ori):
-        if self.usealt:
-            return self.wc_to_rcc_alt(pos, ori)
-        else:
-            return self.wc_to_rcc_old(pos, ori)
-
-    def rcc_to_wc(self, pos, ori):
-        if self.usealt:
-            return self.rcc_to_wc_alt(pos, ori)
-        else:
-            return self.rcc_to_wc_old(pos, ori)
 
 
 def main():
@@ -833,7 +753,7 @@ def main():
                         if "scolor" in sphentry:
                             clr = np.array(sphentry["scolor"])
                     s_ori = np.array([1, 0, 0, 0])
-                    sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
+                    sp_wc, _ = robot.deco.rcc_to_wc_pos(s.position, s_ori)
                     sp = sphere.VisualSphere(
                         prim_path=sname,
                         position=np.ravel(sp_wc),
@@ -848,7 +768,7 @@ def main():
                 for sidx, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
                         s_ori = np.array([1, 0, 0, 0])
-                        sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
+                        sp_wc, _ = robot.deco.rcc_to_wc_pos(s.position, s_ori)
                         spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
                         spheres[sidx].set_radius(float(s.radius))
             spheres_visable = True
