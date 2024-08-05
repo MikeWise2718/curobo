@@ -19,150 +19,21 @@ import os
 import keyboard
 
 
-
-# from pynput.keyboard import Key, Listener
-
-# def on_press(key):
-#     print('{0} pressed'.format(
-#         key))
-
-# def on_release(key):
-#     print('{0} release'.format(
-#         key))
-#     if key == Key.esc:
-#         # Stop listener
-#         return False
-
-# # Collect events until released
-# with Listener(
-#         on_press=on_press,
-#         on_release=on_release) as listener:
-#     listener.join()
-
-
 a = torch.zeros(4, device="cuda:0")
 
-# Standard Library
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--headless_mode",
-    type=str,
-    default=None,
-    help="To run headless, use one of [native, websocket], webrtc might not work.",
-)
-parser.add_argument("--robot", type=str, default="franka.yml", help="robot configuration to load")
-parser.add_argument(
-    "--external_asset_path",
-    type=str,
-    default=None,
-    help="Path to external assets when loading an externally located robot",
-)
-parser.add_argument(
-    "--external_robot_configs_path",
-    type=str,
-    default=None,
-    help="Path to external robot config when loading an external robot",
-)
-parser.add_argument(
-    "-rbp",
-    "--robpos",
-    type=str,
-    default=None,
-    help="Robot Position - default = [0,0,0]",
-)
-parser.add_argument(
-    "-rbo",
-    "--robori",
-    type=str,
-    default=None,
-    help="Robot Orientation - Euler Angles - default = [0,0,0]",
-)
-parser.add_argument(
-    "-rbpr",
-    "--robprerot",
-    type=str,
-    default=None,
-    help="Robot Pre-Rotation - Euler Angles - default = [0,0,0]",
-)
-
-parser.add_argument(
-    "-vzs",
-    "--visualize_spheres",
-    action="store_true",
-    help="When True, visualizes robot spheres",
-    default=False,
-)
-parser.add_argument(
-    "--reactive",
-    action="store_true",
-    help="When True, runs in reactive mode",
-    default=False,
-)
-
-
-parser.add_argument(
-    "--constrain_grasp_approach",
-    action="store_true",
-    help="When True, approaches grasp with fixed orientation and motion only along z axis.",
-    default=False,
-)
-
-parser.add_argument(
-    "--reach_partial_pose",
-    nargs=6,
-    metavar=("qx", "qy", "qz", "x", "y", "z"),
-    help="Reach partial pose",
-    type=float,
-    default=None,
-)
-parser.add_argument(
-    "--hold_partial_pose",
-    nargs=6,
-    metavar=("qx", "qy", "qz", "x", "y", "z"),
-    help="Hold partial pose while moving to goal",
-    type=float,
-    default=None,
-)
-
-
-args = parser.parse_args()
-
-############################################################
-import sys
-import os
-
-exe_path = sys.executable
-sys_path = sys.path
-envv = ""
-print("==== exepath ====")
-print(sys.executable)
-print("==== syspath ====")
-for ppth in sys.path:
-    print(ppth)
-print("==== envh ====")
-for name, value in os.environ.items():
-    print("{0}: {1}".format(name, value))
-    envv += f"{name}: {value}\n"
-
 # Third Party
-pass
 from omni.isaac.kit import SimulationApp
 
-# many things can't be imported until after SimulationApp is created
+# many omnivrse things can't be imported until after SimulationApp is created
 
 simulation_app = SimulationApp(
     {
-        "headless": args.headless_mode is not None,
+        "headless": False,
         "width": "1920",
         "height": "1080",
     }
 )
 
-
-# Standard Library
-from typing import Dict
 
 # Third Party
 import carb
@@ -211,97 +82,12 @@ from omni.isaac.core.utils.stage import get_current_stage
 ########### OV #################;;;;;
 import typing
 
-def to_list3(gft):
-    lst = [gft[0], gft[1], gft[2]]
-    return lst
+from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
+
+args = get_args()
 
 
-def quatd_to_list4(q: Gf.Quatd):
-    w = q.GetReal()
-    im = q.GetImaginary()
-    x = im[0]
-    y = im[1]
-    z = im[2]
-    lst = [w, x, y, z]
-    return lst
-
-
-def list4to_quatd(lst: list):
-    q = Gf.Quatd(lst[0], Gf.Vec3d(lst[1], lst[2], lst[3]))
-    return q
-
-
-def get_vek(s:str, default=[0.0, 0.0, 0.0]):
-    if s is None:
-        return np.array(default)
-    if s=="":
-        return np.array(default)
-    if s[0]=="[":
-        s = s[1:]
-    if s[-1]=="]":
-        s = s[:-1]
-    sar = s.split(",")
-    far = np.array([float(x) for x in sar])
-    return far
-
-def print_gfvec3d(name, v: Gf.Vec3d):
-    s = f"x:{v[0]:.3f} y:{v[1]:.3f} z:{v[2]:.3f}"
-    if name is not None:
-        s = name + " " + s
-    print(s)
-
-def fmtrow(ncol,r):
-    s = ""
-    if ncol > len(r):
-        ncol = len(r)
-    try:
-        for i in range(ncol):
-            s += f"{r[i]:6.3f} "
-    except Exception as e:
-        s = f"error {e} formating row:{r}"
-    return s
-
-def print_mat(name, rowdim, coldim, mat):
-    lls = []
-    for i in range(rowdim):
-        r = mat.GetRow(i)
-        lls.append(fmtrow(coldim, r))
-    if name is not None:
-        print(name)
-    for ls in lls:
-        print(ls)
-
-
-
-def get_sphere_entry(config_spheres: Dict, idx: int):
-    # first get counts
-    cskeys = list(config_spheres.keys())
-    if len(cskeys) == 0:
-        print("error retriving sphere entry - no spheres found")
-        return None
-    cs_idx = 0
-    nseen = 0
-    nlstseen = 0
-    curkey = cskeys[cs_idx]
-    nseen += len(config_spheres[curkey])
-    while nseen <= idx:
-        cs_idx += 1
-        if cs_idx >= len(cskeys):
-            msg = f"error retriving sphere entry - not enough spheres found idx:{idx}"
-            print(msg)
-            return None
-        curkey = cskeys[cs_idx]
-        nlstseen = nseen
-        nseen += len(config_spheres[curkey])
-
-    newidx = idx - nlstseen
-    sph_spec = config_spheres[curkey][0]
-    sph_spec["keyname"] = curkey
-    sph_spec["keyidx"] = newidx
-    return sph_spec
-
-
-class RoboDeco:
+class TranMan:
     def __init__(self, usealt=True):
         self.rob_pos = Gf.Vec3d(0,0,0)
         self.rob_ori_quat = Gf.Quatd(1,0,0,0)
@@ -314,21 +100,11 @@ class RoboDeco:
         self.memstage.SetDefaultPrim(self.default_prim)
 
         self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformFull")
-        # self.xformw_part_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformPart")
-        # self.xformw_neg_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformNeg")
         self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformRobProxy")
 
         self.xform_full_pre_rot_op = self.xformw_full_prim.AddRotateXYZOp(opSuffix='prerot')
         self.xform_full_tran_op = self.xformw_full_prim.AddTranslateOp()
         self.xform_full_rot_op = self.xformw_full_prim.AddRotateXYZOp()
-
-        # self.xform_part_pre_rot_op = None
-        # self.xform_part_tran_op = self.xformw_part_prim.AddTranslateOp()
-        # self.xform_part_rot_op = self.xformw_part_prim.AddRotateXYZOp()
-
-        # self.xform_neg_pre_rot_op = self.xformw_neg_prim.AddRotateXYZOp(opSuffix='prerot')
-        # self.xform_neg_tran_op = self.xformw_neg_prim.AddTranslateOp()
-        # self.xform_neg_rot_op = self.xformw_neg_prim.AddRotateXYZOp()
 
         self.xform_robopt_proxy_tran_op = self.xformw_robot_proxy_prim.AddTranslateOp()
         self.xform_robopt_proxy_orient_op = self.xformw_robot_proxy_prim.AddOrientOp(UsdGeom.XformOp.PrecisionDouble)
@@ -337,21 +113,6 @@ class RoboDeco:
         self.usealt = usealt
         print("RobDeco created usealt:", usealt)
 
-    def AssignRobot(self, robot):
-        self.robot = robot
-        self.robot.deco = self
-        self.articulation_controller = robot.get_articulation_controller()
-
-    def get_world_transform_xform(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d]:
-        xform = UsdGeom.Xformable(prim)
-        time = Usd.TimeCode.Default() # The time at which we compute the bounding box
-        world_transform: Gf.Matrix4d = xform.ComputeLocalToWorldTransform(time)
-        if dump:
-            print("world_transform:", world_transform)
-        translation: Gf.Vec3d = world_transform.ExtractTranslation()
-        rotation: Gf.Rotation = world_transform.ExtractRotation()
-        scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
-        return translation, rotation, scale
 
     def get_world_transform_xform_full(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d, Gf.Matrix3d]:
         xform = UsdGeom.Xformable(prim)
@@ -364,13 +125,12 @@ class RoboDeco:
         scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
         return translation, rotation, scale, world_transform
 
-    def find_full_pos_rot(self, prerot_euler, pos, ori_euler):
+    def find_rcc_to_wc_tansform(self, prerot_euler, pos, ori_euler):
         self.xform_full_pre_rot_op.Set(value=prerot_euler)
         self.xform_full_tran_op.Set(value=pos)
         self.xform_full_rot_op.Set(value=ori_euler)
         t, r, s, m = self.get_world_transform_xform_full(self.xformw_full_prim)
         return t, r, s, m
-
 
     def set_robot_proxy_tran(self, tranvek, oriquat):
         self.xform_robopt_proxy_tran_op.Set(tranvek)
@@ -381,8 +141,8 @@ class RoboDeco:
         t, r, s, m = self.get_world_transform_xform_full(self.xformw_robot_proxy_prim, dump=False)
         return t, r, s, m
 
-
     def set_transform(self, prerot, pos, ori):
+
         self.rob_prerot_euler = self.to_gfvec(prerot)
         self.prerot = prerot
         self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
@@ -390,17 +150,16 @@ class RoboDeco:
         self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
         self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
 
-        (self.tran, self.rotmat3d_gfrot, _, self.pos_world_tran) = self.find_full_pos_rot(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
+        (self.tran, self.rotmat3d_gfrot, _, self.rcc_to_wc_transform) = self.find_rcc_to_wc_tansform(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
         self.rotmat3d = Gf.Matrix3d(self.rotmat3d_gfrot)
         self.inv_rotmat3d = self.rotmat3d.GetTranspose()
 
         self.rotmat3d_eulers = matrix_to_euler_angles(self.rotmat3d, degrees=True)
         self.rotmat3d_quat_nparray = euler_angles_to_quat(self.rotmat3d_eulers, degrees=True)
         npmat3x3 = self.to_npmat3x3(self.inv_rotmat3d)
-        self.rotmat3d_quat_nparray_1 = rot_matrix_to_quat(npmat3x3)
-        print("rotmat3d_quat_nparray_1:", self.rotmat3d_quat_nparray_1)
-        (self.robproxy_tran, self.robproxy_rot, _, self.robproxy_world_tran) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray_1)
-
+        self.rotmat3d_quat_nparray_inv = rot_matrix_to_quat(npmat3x3)
+        self.rotmat3d_eulers_inv = matrix_to_euler_angles(npmat3x3, degrees=True)
+        (self.robproxy_tran, self.robproxy_rot, _, self.robproxy_world_tran) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
 
         print("----- input values -----")
         print("rob_pos:", self.rob_pos)
@@ -408,18 +167,20 @@ class RoboDeco:
         print("rob_prerot_euler:", self.rob_prerot_euler)
         print("rob_ori_quat:", self.rob_ori_quat)
         print("----- cacluated values -----")
-        print_mat("pos_world_tran:", 4, 4, self.pos_world_tran)
+        print_mat("rcc_to_wc_transform:", 4, 4, self.rcc_to_wc_transform)
         print_mat("rotmat3d", 3, 3, self.rotmat3d)
+        print_mat("inv_rotmat3d", 3, 3, self.inv_rotmat3d)
         print("rob_ori_sel:", self.rob_ori_sel)
-        print("rotmat3d_eulers:", self.rotmat3d_eulers)
+        print("rotmat3d_eulers    :", self.rotmat3d_eulers)
+        print("rotmat3d_eulers_inv:", self.rotmat3d_eulers_inv)
         print("tran:", self.tran)
         print("rob_pos:", self.rob_pos)
-        print("rotmat3d_quat_nparray:", self.rotmat3d_quat_nparray)
-        print_mat("robproxy_world_tran:", 4,4, self.robproxy_world_tran)
+        print("rotmat3d_quat_nparray    :", self.rotmat3d_quat_nparray)
+        print("rotmat3d_quat_nparray_inv:", self.rotmat3d_quat_nparray_inv)
+        print_mat("robproxy_world_tran:", 4, 4, self.robproxy_world_tran)
 
     def get_robot_base(self):
         return self.rob_pos, self.rotmat3d_quat_nparray
-        # return self.rob_pos, self.rob_ori_quat_nparray
 
     def to_gfvec(self, vek):
         x = float(vek[0])
@@ -434,7 +195,6 @@ class RoboDeco:
                 npmat3x3[i,j] = gfmat[i,j]
         return npmat3x3
 
-
     def quat_apply(self, q1, q2):
         q1inv = q1.GetInverse()
         q2q = Gf.Quatd(float(q2[0]), float(q2[1]), float(q2[2]), float(q2[3]))
@@ -442,30 +202,39 @@ class RoboDeco:
         return rv
 
     def rcc_to_wc(self, pos, ori):
-        pos_0 = self.to_gfvec(pos)
-        pos_new = self.tran + pos_0*self.inv_rotmat3d
+        pos_gfv = self.to_gfvec(pos)
+        pos_new = self.tran + pos_gfv*self.inv_rotmat3d
         return pos_new, ori
 
     def wc_to_rcc(self, pos, ori):
-        pos_0 = self.to_gfvec(pos)
-        pos_new = (pos_0 - self.tran)*self.rotmat3d
+        pos_gfv = self.to_gfvec(pos)
+        pos_new = (pos_gfv - self.tran)*self.rotmat3d
         return pos_new, ori
-
 
     def dump_robot_transforms(self, robpathname):
         robpath = Sdf.Path(robpathname)
         robprim = self.memstage.GetPrimAtPath(robpath)
         (t,r,s,m) = self.get_world_transform_xform_full( robprim )
-        # robprim.GetAttribute("translate").Set(self.rob_pos)
-        # robprim.GetAttribute("rotateXYZ").Set(self.rob_ori_euler)
-        # robprim.GetAttribute("rotateXYZprerot").Set(self.rob_prerot_euler)
         print("world_tranlate:", t)
         print("world_rotate:", r)
         print_mat("world_transform:", 4, 4, m)
         print_mat("rotmat3d:", 3, 3, self.rotmat3d)
         print_mat("inv_rotmat3d:", 3, 3, self.inv_rotmat3d)
-        # print_mat("rotmat3d_neg:", 3, 3, self.rotmat3d_neg)
-        # print_mat("inv_rotmat3d_neg:", 3, 3, self.inv_rotmat3d_neg)
+
+
+class RoboDeco:
+
+    def __init__(self):
+        self.tranman = TranMan()
+
+    def AssignRobot(self, robot, robot_usd_prim_path):
+        self.robot = robot
+        self.robot_prim_path = robot_usd_prim_path
+        self.robot.deco = self
+        self.articulation_controller = robot.get_articulation_controller()
+
+    def load_robot_cfg(self, robot_pathname):
+        self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
 
 
 def main():
@@ -491,37 +260,38 @@ def main():
     usd_help = UsdHelper()
     target_pose = None
 
+    deco : RoboDeco = RoboDeco()
+
     tensor_args = TensorDeviceType()
+
+    # convoluted way to get the robot config path
     robot_cfg_path = get_robot_configs_path()
     if args.external_robot_configs_path is not None:
         robot_cfg_path = args.external_robot_configs_path
-    print(f"robot_cfg_path: {robot_cfg_path}")
-    print(f"args.robot: {args.robot}")
     if os.path.isfile(args.robot):
-        robot_cfg = load_yaml(args.robot)["robot_cfg"]
+        # robot_cfg = load_yaml(args.robot)["robot_cfg"]
+        robot_cfg_path = args.robot
     else:
-        robot_cfg = load_yaml(join_path(robot_cfg_path, args.robot))["robot_cfg"]
+        robot_cfg_path = join_path(robot_cfg_path, args.robot)
+        # robot_cfg = load_yaml(join_path(robot_cfg_path, args.robot))["robot_cfg"]
+
+    # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
+    deco.load_robot_cfg(robot_cfg_path)
 
     if args.external_asset_path is not None:
-        robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
+        deco.robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
     if args.external_robot_configs_path is not None:
-        robot_cfg["kinematics"]["external_robot_configs_path"] = args.external_robot_configs_path
-    j_names = robot_cfg["kinematics"]["cspace"]["joint_names"]
-    default_config = robot_cfg["kinematics"]["cspace"]["retract_config"]
+        deco.robot_cfg["kinematics"]["external_robot_configs_path"] = args.external_robot_configs_path
+    j_names = deco.robot_cfg["kinematics"]["cspace"]["joint_names"]
+    default_config = deco.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-    robpos = np.array( get_vek(args.robpos) )
-    print(f"robpos: {robpos}")
-    robori = np.array( get_vek(args.robori) )
-    print(f"robori: {robori}")
-    robprerot = np.array( get_vek(args.robprerot) )
-    print(f"robprerot: {robprerot}")
 
-    deco = RoboDeco()
-    deco.set_transform(prerot=robprerot, pos=robpos, ori=robori)
-    rp, ro = deco.get_robot_base()
+    # deco = RoboDeco()
+    deco.tranman.set_transform(prerot=get_vek(args.robprerot), pos=get_vek(args.robpos), ori=get_vek(args.robori))
+    rp, ro = deco.tranman.get_robot_base()
 
-    robot, robot_prim_path = add_robot_to_scene(robot_cfg, my_world, position=rp, orient=ro)
-    deco.AssignRobot(robot)
+    robot, robot_prim_path = add_robot_to_scene(deco.robot_cfg, my_world, position=rp, orient=ro)
+    deco.AssignRobot(robot, robot_prim_path)
 
     world_cfg_table = WorldConfig.from_dict(
         load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
@@ -548,8 +318,8 @@ def main():
         max_attempts = 1
         trim_steps = [1, None]
         interpolation_dt = trajopt_dt
-    motion_gen_config = MotionGenConfig.load_from_robot_config(
-        robot_cfg,
+    robot.deco.motion_gen_config = MotionGenConfig.load_from_robot_config(
+        robot.deco.robot_cfg,
         world_cfg,
         tensor_args,
         collision_checker_type=CollisionCheckerType.MESH,
@@ -562,15 +332,13 @@ def main():
         trajopt_tsteps=trajopt_tsteps,
         trim_steps=trim_steps,
     )
-    motion_gen = MotionGen(motion_gen_config)
+    robot.deco.motion_gen = MotionGen(robot.deco.motion_gen_config)
     print("warming up...")
 
-    sp_rcc, sq_rcc = motion_gen.get_start_pose()
-    sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+    sp_rcc, sq_rcc = robot.deco.motion_gen.get_start_pose()
+    sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
     if type(sq_wc) is Gf.Quatd:
         sq_wc = quatd_to_list4(sq_wc)
-
-    # sp1 += robpos
 
     # Make a target to follow
 
@@ -582,13 +350,13 @@ def main():
         size=0.05,
     )
 
-    motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
+    robot.deco.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
     print("Curobo is Ready and Warmed-up")
 
     add_extensions(simulation_app, args.headless_mode)
 
-    plan_config = MotionGenPlanConfig(
+    robot.deco.plan_config = MotionGenPlanConfig(
         enable_graph=False,
         enable_graph_attempt=2,
         max_attempts=max_attempts,
@@ -633,7 +401,6 @@ def main():
     # Overhead view
     # set_camera_view(eye=[0.0, 0, 4.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
 
-
     while simulation_app.is_running():
 
         if keyboard.is_pressed("a"):
@@ -663,9 +430,9 @@ def main():
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = motion_gen.get_start_pose() # this is the robots starting position in rcc
+            sp_rcc, sq_rcc = robot.deco.motion_gen.get_start_pose() # this is the robots starting position in rcc
             if robot.deco is not None:
-                sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
+                sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
                 if type(sq_wc) is Gf.Quatd:
                     sq_wc = quatd_to_list4(sq_wc)
             target.set_world_pose(position=sp_wc, orientation=sq_wc)
@@ -674,15 +441,13 @@ def main():
             k = keyboard.read_key()
             print("You pressed ‘d’ - will move to robot's current end-effector pose.")
             if cu_js is not None:
-                sp_rcc, sq_rcc = motion_gen.get_cur_pose(cu_js)
-                sp_wc, sq_wc = robot.deco.rcc_to_wc(sp_rcc, sq_rcc)
-                # sp1 += robpos
+                sp_rcc, sq_rcc = robot.deco.motion_gen.get_cur_pose(cu_js)
+                sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
                 target.set_world_pose(position=sp_wc, orientation=sq_wc)
 
         elif keyboard.is_pressed("e"):
             k = keyboard.read_key()
-            robot.deco.dump_robot_transforms(robot_prim_path)
-
+            robot.deco.dump_robot_transforms(robot.deco.robot_prim_path)
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
@@ -696,14 +461,11 @@ def main():
             k = keyboard.read_key()
             vizi_spheres = not vizi_spheres
 
-
         my_world.step(render=True)
         if not my_world.is_playing():
             if i % 500 == 0:
                 print(f"**** Click Play to start simulation ***** si:{step_index}")
             i += 1
-            # if step_index == 0:
-            #    my_world.play()
             continue
 
         if circle_target:
@@ -736,12 +498,12 @@ def main():
             )
 
         if step_index == 50 or step_index % 1000 == 0.0:
-            print("Updating world, reading w.r.t.", robot_prim_path)
+            print("Updating world, reading w.r.t.", robot.deco.robot_prim_path)
             obstacles = usd_help.get_obstacles_from_stage(
                 # only_paths=[obstacles_path],
-                reference_prim_path=robot_prim_path,
+                reference_prim_path=robot.deco.robot_prim_path,
                 ignore_substring=[
-                    robot_prim_path,
+                    robot.deco.robot_prim_path,
                     "/World/target",
                     "/World/defaultGroundPlane",
                     "/curobo",
@@ -749,7 +511,7 @@ def main():
             ).get_collision_check_world()
             print(len(obstacles.objects))
 
-            motion_gen.update_world(obstacles)
+            robot.deco.motion_gen.update_world(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
@@ -790,13 +552,13 @@ def main():
             cu_js.position[:] = past_cmd.position
             cu_js.velocity[:] = past_cmd.velocity
             cu_js.acceleration[:] = past_cmd.acceleration
-        cu_js = cu_js.get_ordered_joint_state(motion_gen.kinematics.joint_names)
+        cu_js = cu_js.get_ordered_joint_state(robot.deco.motion_gen.kinematics.joint_names)
 
         # if args. avisualize_spheresnd step_index % 2 == 0:
         if vizi_spheres and step_index % 2 == 0:
-            sph_list = motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
+            sph_list = robot.deco.motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
-            config_spheres = robot_cfg["kinematics"]["collision_spheres"]
+            config_spheres = robot.deco.robot_cfg["kinematics"]["collision_spheres"]
 
             if spheres is None:
                 spheres = []
@@ -817,7 +579,7 @@ def main():
                         if "scolor" in sphentry:
                             clr = np.array(sphentry["scolor"])
                     s_ori = np.array([1, 0, 0, 0])
-                    sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
+                    sp_wc, _ = robot.deco.tranman.rcc_to_wc(s.position, s_ori)
                     sp = sphere.VisualSphere(
                         prim_path=sname,
                         position=np.ravel(sp_wc),
@@ -832,7 +594,7 @@ def main():
                 for sidx, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
                         s_ori = np.array([1, 0, 0, 0])
-                        sp_wc, _ = robot.deco.rcc_to_wc(s.position, s_ori)
+                        sp_wc, _ = robot.deco.tranman.rcc_to_wc(s.position, s_ori)
                         spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
                         spheres[sidx].set_radius(float(s.radius))
             spheres_visable = True
@@ -862,9 +624,7 @@ def main():
         if trigger:
             print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
-            ee_pos_rcc, ee_ori_rcc = robot.deco.wc_to_rcc(cube_position, cube_orientation)
-            # ee_translation_goal = cube_position - robpos
-            # ee_orientation_teleop_goal = cube_orientation
+            ee_pos_rcc, ee_ori_rcc = robot.deco.tranman.wc_to_rcc(cube_position, cube_orientation)
             if type(ee_ori_rcc) is Gf.Quatd:
                 ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
@@ -875,9 +635,9 @@ def main():
                 position=tensor_args.to_device(ee_pos_rcc),
                 quaternion=tensor_args.to_device(ee_ori_rcc),
             )
-            plan_config.pose_cost_metric = pose_metric
+            robot.deco.plan_config.pose_cost_metric = pose_metric
             try:
-                result = motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, plan_config)
+                result = robot.deco.motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, robot.deco.plan_config)
             except Exception as e:
                 print(f"Exception in motion_gen.plan_single e:{e}")
 
@@ -889,17 +649,17 @@ def main():
                 if args.constrain_grasp_approach:
                     pose_metric = PoseCostMetric.create_grasp_approach_metric()
                 if args.reach_partial_pose is not None:
-                    reach_vec = motion_gen.tensor_args.to_device(args.reach_partial_pose)
+                    reach_vec = robot.deco.motion_gen.tensor_args.to_device(args.reach_partial_pose)
                     pose_metric = PoseCostMetric(
                         reach_partial_pose=True, reach_vec_weight=reach_vec
                     )
                 if args.hold_partial_pose is not None:
-                    hold_vec = motion_gen.tensor_args.to_device(args.hold_partial_pose)
+                    hold_vec = robot.deco.motion_gen.tensor_args.to_device(args.hold_partial_pose)
                     pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
             if succ:
                 num_targets += 1
                 cmd_plan = result.get_interpolated_plan()
-                cmd_plan = motion_gen.get_full_js(cmd_plan)
+                cmd_plan = robot.deco.motion_gen.get_full_js(cmd_plan)
                 print(f"Plan Success with {len(cmd_plan.position)} steps")
                 # get only joint names that are in both:
                 idx_list = []
