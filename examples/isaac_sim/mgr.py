@@ -222,22 +222,88 @@ class TranMan:
         print_mat("inv_rotmat3d:", 3, 3, self.inv_rotmat3d)
 
 
-class RoboDeco:
+class RobotCuroboWrapper:
 
     def __init__(self):
         self.tranman = TranMan()
 
+    def Initialize(self, robot_config_path, external_asset_path, external_robot_configs_path, my_world):
+        self.robot_cfg = None
+        self.robot_prim_path = None
+        self.robot = None
+        self.articulation_controller = None
+        self.motion_gen_config = None
+        self.motion_gen = None
+        self.plan_config = None
+        self.max_attempts = 0
+        self.tensor_args = TensorDeviceType()
+        self.world_cfg = None
+        self.robot_cfg_path = robot_config_path
+        self.external_asset_path = external_asset_path
+        self.external_robot_configs_path = external_robot_configs_path
+
+        # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
+        self.LoadRobotCfg(self.robot_cfg_path)
+
+        if args.external_asset_path is not None:
+            self.robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
+        if args.external_robot_configs_path is not None:
+            self.robot_cfg["kinematics"]["external_robot_configs_path"] = args.external_robot_configs_path
+        self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
+        self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
+
+        self.tranman.set_transform(prerot=get_vek(args.robprerot), pos=get_vek(args.robpos), ori=get_vek(args.robori))
+        rp, ro = self.tranman.get_robot_base()
+
+        robot, robot_prim_path = add_robot_to_scene(self.robot_cfg, my_world, position=rp, orient=ro)
+        self.AssignRobot(robot, robot_prim_path)
+
+
     def AssignRobot(self, robot, robot_usd_prim_path):
         self.robot = robot
         self.robot_prim_path = robot_usd_prim_path
-        self.robot.deco = self
         self.articulation_controller = robot.get_articulation_controller()
 
-    def load_robot_cfg(self, robot_pathname):
+    def LoadRobotCfg(self, robot_pathname):
         self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
+
+    def InitMotionGen(self, n_obstacle_cuboids, n_obstacle_mesh, world_cfg):
+        trajopt_dt = None
+        optimize_dt = True
+        trajopt_tsteps = 16
+        trim_steps = None
+        self.max_attempts = 4
+        self.world_cfg = world_cfg
+        interpolation_dt = 0.05
+        if args.reactive:
+            trajopt_tsteps = 40
+            trajopt_dt = 0.04
+            optimize_dt = False
+            max_attempts = 1
+            trim_steps = [1, None]
+            interpolation_dt = trajopt_dt
+        self.motion_gen_config = MotionGenConfig.load_from_robot_config(
+            self.robot_cfg,
+            self.world_cfg,
+            self.tensor_args,
+            collision_checker_type=CollisionCheckerType.MESH,
+            num_trajopt_seeds=12,
+            num_graph_seeds=12,
+            interpolation_dt=interpolation_dt,
+            collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
+            optimize_dt=optimize_dt,
+            trajopt_dt=trajopt_dt,
+            trajopt_tsteps=trajopt_tsteps,
+            trim_steps=trim_steps,
+        )
+        self.motion_gen = MotionGen(self.motion_gen_config)
 
 
 def main():
+
+#---------------------------------
+#    Misc Initialization
+#---------------------------------
     # create a curobo motion gen instance:
     num_targets = 0
     # assuming obstacles are in objects_path:
@@ -259,10 +325,7 @@ def main():
     # warmup curobo instance
     usd_help = UsdHelper()
     target_pose = None
-
-    deco : RoboDeco = RoboDeco()
-
-    tensor_args = TensorDeviceType()
+    # tensor_args = TensorDeviceType()
 
     # convoluted way to get the robot config path
     robot_cfg_path = get_robot_configs_path()
@@ -275,24 +338,19 @@ def main():
         robot_cfg_path = join_path(robot_cfg_path, args.robot)
         # robot_cfg = load_yaml(join_path(robot_cfg_path, args.robot))["robot_cfg"]
 
-    # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
-    deco.load_robot_cfg(robot_cfg_path)
 
-    if args.external_asset_path is not None:
-        deco.robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
-    if args.external_robot_configs_path is not None:
-        deco.robot_cfg["kinematics"]["external_robot_configs_path"] = args.external_robot_configs_path
-    j_names = deco.robot_cfg["kinematics"]["cspace"]["joint_names"]
-    default_config = deco.robot_cfg["kinematics"]["cspace"]["retract_config"]
+#---------------------------------
+#    Robot Initialization
+#---------------------------------
+    robwrap : RobotCuroboWrapper = RobotCuroboWrapper()
+
+    robwrap.Initialize(robot_cfg_path, args.external_asset_path, args.external_robot_configs_path, my_world )
 
 
-    # deco = RoboDeco()
-    deco.tranman.set_transform(prerot=get_vek(args.robprerot), pos=get_vek(args.robpos), ori=get_vek(args.robori))
-    rp, ro = deco.tranman.get_robot_base()
 
-    robot, robot_prim_path = add_robot_to_scene(deco.robot_cfg, my_world, position=rp, orient=ro)
-    deco.AssignRobot(robot, robot_prim_path)
-
+#---------------------------------
+#    World Initialization
+#---------------------------------
     world_cfg_table = WorldConfig.from_dict(
         load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
     )
@@ -305,42 +363,22 @@ def main():
 
     world_cfg = WorldConfig(cuboid=world_cfg_table.cuboid, mesh=world_cfg1.mesh)
 
-    trajopt_dt = None
-    optimize_dt = True
-    trajopt_tsteps = 16
-    trim_steps = None
-    max_attempts = 4
-    interpolation_dt = 0.05
-    if args.reactive:
-        trajopt_tsteps = 40
-        trajopt_dt = 0.04
-        optimize_dt = False
-        max_attempts = 1
-        trim_steps = [1, None]
-        interpolation_dt = trajopt_dt
-    robot.deco.motion_gen_config = MotionGenConfig.load_from_robot_config(
-        robot.deco.robot_cfg,
-        world_cfg,
-        tensor_args,
-        collision_checker_type=CollisionCheckerType.MESH,
-        num_trajopt_seeds=12,
-        num_graph_seeds=12,
-        interpolation_dt=interpolation_dt,
-        collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
-        optimize_dt=optimize_dt,
-        trajopt_dt=trajopt_dt,
-        trajopt_tsteps=trajopt_tsteps,
-        trim_steps=trim_steps,
-    )
-    robot.deco.motion_gen = MotionGen(robot.deco.motion_gen_config)
-    print("warming up...")
 
-    sp_rcc, sq_rcc = robot.deco.motion_gen.get_start_pose()
-    sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+#---------------------------------
+#    Motion Gen Initialization
+#---------------------------------
+
+    robwrap.InitMotionGen( n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
+
+
+#-------------------------------------------------------
+#    Post Motion Gen Initialization World initiailzation
+#-------------------------------------------------------
+    # Make a target to follow
+    sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose()
+    sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
     if type(sq_wc) is Gf.Quatd:
         sq_wc = quatd_to_list4(sq_wc)
-
-    # Make a target to follow
 
     target = cuboid.VisualCuboid(
         "/World/target",
@@ -350,16 +388,29 @@ def main():
         size=0.05,
     )
 
-    robot.deco.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
+#---------------------------------
+#    Warming up motion gen
+#---------------------------------
+    print("warming up...")
+    start_warmup = time.time()
 
-    print("Curobo is Ready and Warmed-up")
+    robwrap.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
+
+    elap = time.time() - start_warmup
+
+    print(f"Curobo is Ready and Warmed-up - elap:{elap:.2f}")
+
+
+#---------------------------------
+#    loop initialization
+#---------------------------------
 
     add_extensions(simulation_app, args.headless_mode)
 
-    robot.deco.plan_config = MotionGenPlanConfig(
+    robwrap.plan_config = MotionGenPlanConfig(
         enable_graph=False,
         enable_graph_attempt=2,
-        max_attempts=max_attempts,
+        max_attempts=robwrap.max_attempts,
         enable_finetune_trajopt=True,
         parallel_finetune=True,
     )
@@ -381,9 +432,9 @@ def main():
     start = time.time()
     static_robo = True
     cube_position, cube_orientation = target.get_world_pose()
-    articulation_controller = robot.get_articulation_controller()
-    sim_js = robot.get_joints_state()
-    sim_js_names = robot.dof_names
+    articulation_controller = robwrap.robot.get_articulation_controller()
+    sim_js = robwrap.robot.get_joints_state()
+    sim_js_names = robwrap.robot.dof_names
     cu_js = None
     vizi_spheres = args.visualize_spheres
     spheres_visable = False
@@ -400,8 +451,14 @@ def main():
     set_camera_view(eye=[0.0, 2.5, 1.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
     # Overhead view
     # set_camera_view(eye=[0.0, 0, 4.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
-
+#---------------------------------
+#    LOOP
+#---------------------------------
     while simulation_app.is_running():
+
+#---------------------------------
+#    Inpot Processing
+#---------------------------------
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
@@ -430,9 +487,9 @@ def main():
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = robot.deco.motion_gen.get_start_pose() # this is the robots starting position in rcc
-            if robot.deco is not None:
-                sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+            sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose() # this is the robots starting position in rcc
+            if robwrap is not None:
+                sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
                 if type(sq_wc) is Gf.Quatd:
                     sq_wc = quatd_to_list4(sq_wc)
             target.set_world_pose(position=sp_wc, orientation=sq_wc)
@@ -441,13 +498,13 @@ def main():
             k = keyboard.read_key()
             print("You pressed ‘d’ - will move to robot's current end-effector pose.")
             if cu_js is not None:
-                sp_rcc, sq_rcc = robot.deco.motion_gen.get_cur_pose(cu_js)
-                sp_wc, sq_wc = robot.deco.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+                sp_rcc, sq_rcc = robwrap.motion_gen.get_cur_pose(cu_js)
+                sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
                 target.set_world_pose(position=sp_wc, orientation=sq_wc)
 
         elif keyboard.is_pressed("e"):
             k = keyboard.read_key()
-            robot.deco.dump_robot_transforms(robot.deco.robot_prim_path)
+            robwrap.dump_robot_transforms(robwrap.robot_prim_path)
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
@@ -460,6 +517,10 @@ def main():
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
             vizi_spheres = not vizi_spheres
+
+#---------------------------------
+#    World Processing
+#---------------------------------
 
         my_world.step(render=True)
         if not my_world.is_playing():
@@ -489,21 +550,25 @@ def main():
         if step_index < 2:
             print(f"resetting world step:{step_index}")
             my_world.reset()
-            robot._articulation_view.initialize()
-            idx_list = [robot.get_dof_index(x) for x in j_names]
-            robot.set_joint_positions(default_config, idx_list)
+            robwrap.robot._articulation_view.initialize()
+            idx_list = [robwrap.robot.get_dof_index(x) for x in robwrap.j_names]
+            robwrap.robot.set_joint_positions(robwrap.default_config, idx_list)
 
-            robot._articulation_view.set_max_efforts(
+            robwrap.robot._articulation_view.set_max_efforts(
                 values=np.array([5000 for i in range(len(idx_list))]), joint_indices=idx_list
             )
 
+#---------------------------------
+#    Obstacles Processing
+#---------------------------------
+
         if step_index == 50 or step_index % 1000 == 0.0:
-            print("Updating world, reading w.r.t.", robot.deco.robot_prim_path)
+            print("Updating world, reading w.r.t.", robwrap.robot_prim_path)
             obstacles = usd_help.get_obstacles_from_stage(
                 # only_paths=[obstacles_path],
-                reference_prim_path=robot.deco.robot_prim_path,
+                reference_prim_path=robwrap.robot_prim_path,
                 ignore_substring=[
-                    robot.deco.robot_prim_path,
+                    robwrap.robot_prim_path,
                     "/World/target",
                     "/World/defaultGroundPlane",
                     "/curobo",
@@ -511,9 +576,13 @@ def main():
             ).get_collision_check_world()
             print(len(obstacles.objects))
 
-            robot.deco.motion_gen.update_world(obstacles)
+            robwrap.motion_gen.update_world(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
+
+#---------------------------------
+#    Target Processing
+#---------------------------------
 
         # position and orientation of target virtual cube:
         cube_position, cube_orientation = target.get_world_pose()
@@ -527,16 +596,20 @@ def main():
         if past_orientation is None:
             past_orientation = cube_orientation
 
-        sim_js = robot.get_joints_state()
-        sim_js_names = robot.dof_names
+#---------------------------------
+#    Robot JOint Processing
+#---------------------------------
+
+        sim_js = robwrap.robot.get_joints_state()
+        sim_js_names = robwrap.robot.dof_names
         if np.any(np.isnan(sim_js.positions)):
             print("isaac sim has returned NAN joint position values.")
             log_error("isaac sim has returned NAN joint position values.")
         cu_js = JointState(
-            position=tensor_args.to_device(sim_js.positions),
-            velocity=tensor_args.to_device(sim_js.velocities),  # * 0.0,
-            acceleration=tensor_args.to_device(sim_js.velocities) * 0.0,
-            jerk=tensor_args.to_device(sim_js.velocities) * 0.0,
+            position=robwrap.tensor_args.to_device(sim_js.positions),
+            velocity=robwrap.tensor_args.to_device(sim_js.velocities),  # * 0.0,
+            acceleration=robwrap.tensor_args.to_device(sim_js.velocities) * 0.0,
+            jerk=robwrap.tensor_args.to_device(sim_js.velocities) * 0.0,
             joint_names=sim_js_names,
         )
         # if (step_index % 100) == 0:
@@ -552,13 +625,18 @@ def main():
             cu_js.position[:] = past_cmd.position
             cu_js.velocity[:] = past_cmd.velocity
             cu_js.acceleration[:] = past_cmd.acceleration
-        cu_js = cu_js.get_ordered_joint_state(robot.deco.motion_gen.kinematics.joint_names)
+        cu_js = cu_js.get_ordered_joint_state(robwrap.motion_gen.kinematics.joint_names)
+
+#--------------------------------------
+#    Robot Collision Spheres Processing
+#--------------------------------------
+
 
         # if args. avisualize_spheresnd step_index % 2 == 0:
         if vizi_spheres and step_index % 2 == 0:
-            sph_list = robot.deco.motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
+            sph_list = robwrap.motion_gen.kinematics.get_robot_as_spheres(cu_js.position)
 
-            config_spheres = robot.deco.robot_cfg["kinematics"]["collision_spheres"]
+            config_spheres = robwrap.robot_cfg["kinematics"]["collision_spheres"]
 
             if spheres is None:
                 spheres = []
@@ -579,7 +657,7 @@ def main():
                         if "scolor" in sphentry:
                             clr = np.array(sphentry["scolor"])
                     s_ori = np.array([1, 0, 0, 0])
-                    sp_wc, _ = robot.deco.tranman.rcc_to_wc(s.position, s_ori)
+                    sp_wc, _ = robwrap.tranman.rcc_to_wc(s.position, s_ori)
                     sp = sphere.VisualSphere(
                         prim_path=sname,
                         position=np.ravel(sp_wc),
@@ -594,7 +672,7 @@ def main():
                 for sidx, s in enumerate(sph_list[0]):
                     if not np.isnan(s.position[0]):
                         s_ori = np.array([1, 0, 0, 0])
-                        sp_wc, _ = robot.deco.tranman.rcc_to_wc(s.position, s_ori)
+                        sp_wc, _ = robwrap.tranman.rcc_to_wc(s.position, s_ori)
                         spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
                         spheres[sidx].set_radius(float(s.radius))
             spheres_visable = True
@@ -607,6 +685,11 @@ def main():
             spherenames = None
             spheres_visable = False
             sph_list = None
+
+#--------------------------------------
+#    Robot Motion Trigger Processing
+#--------------------------------------
+
 
         static_robo = True
         # robot_static = True
@@ -621,10 +704,13 @@ def main():
         if circle_target:
             trigger = cmd_plan is None
 
+#--------------------------------------
+#    Robot Motion Planning
+#---------------------------------------
         if trigger:
             print("cube moved")
             # Set EE teleop goals, use cube for simple non-vr init:
-            ee_pos_rcc, ee_ori_rcc = robot.deco.tranman.wc_to_rcc(cube_position, cube_orientation)
+            ee_pos_rcc, ee_ori_rcc = robwrap.tranman.wc_to_rcc(cube_position, cube_orientation)
             if type(ee_ori_rcc) is Gf.Quatd:
                 ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
@@ -632,12 +718,12 @@ def main():
             ik_goal = Pose(
                 # position=tensor_args.to_device(ee_translation_goal),
                 # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
-                position=tensor_args.to_device(ee_pos_rcc),
-                quaternion=tensor_args.to_device(ee_ori_rcc),
+                position=robwrap.tensor_args.to_device(ee_pos_rcc),
+                quaternion=robwrap.tensor_args.to_device(ee_ori_rcc),
             )
-            robot.deco.plan_config.pose_cost_metric = pose_metric
+            robwrap.plan_config.pose_cost_metric = pose_metric
             try:
-                result = robot.deco.motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, robot.deco.plan_config)
+                result = robwrap.motion_gen.plan_single(cu_js.unsqueeze(0), ik_goal, robwrap.plan_config)
             except Exception as e:
                 print(f"Exception in motion_gen.plan_single e:{e}")
 
@@ -649,24 +735,24 @@ def main():
                 if args.constrain_grasp_approach:
                     pose_metric = PoseCostMetric.create_grasp_approach_metric()
                 if args.reach_partial_pose is not None:
-                    reach_vec = robot.deco.motion_gen.tensor_args.to_device(args.reach_partial_pose)
+                    reach_vec = robwrap.motion_gen.tensor_args.to_device(args.reach_partial_pose)
                     pose_metric = PoseCostMetric(
                         reach_partial_pose=True, reach_vec_weight=reach_vec
                     )
                 if args.hold_partial_pose is not None:
-                    hold_vec = robot.deco.motion_gen.tensor_args.to_device(args.hold_partial_pose)
+                    hold_vec = robwrap.motion_gen.tensor_args.to_device(args.hold_partial_pose)
                     pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
             if succ:
                 num_targets += 1
                 cmd_plan = result.get_interpolated_plan()
-                cmd_plan = robot.deco.motion_gen.get_full_js(cmd_plan)
+                cmd_plan = robwrap.motion_gen.get_full_js(cmd_plan)
                 print(f"Plan Success with {len(cmd_plan.position)} steps")
                 # get only joint names that are in both:
                 idx_list = []
                 common_js_names = []
                 for x in sim_js_names:
                     if x in cmd_plan.joint_names:
-                        idx_list.append(robot.get_dof_index(x))
+                        idx_list.append(robwrap.robot.get_dof_index(x))
                         common_js_names.append(x)
                 # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
@@ -682,6 +768,11 @@ def main():
             target_orientation = cube_orientation
         past_pose = cube_position
         past_orientation = cube_orientation
+
+#--------------------------------------
+#    Robot Command Step Execution
+#---------------------------------------
+
         if cmd_plan is not None:
             print(f"Executing plan step {cmd_idx}/{len(cmd_plan.position)}")
             cmd_state = cmd_plan[cmd_idx]
