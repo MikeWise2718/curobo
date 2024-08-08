@@ -66,14 +66,7 @@ from curobo.util_file import (
     join_path,
     load_yaml,
 )
-from curobo.wrap.reacher.motion_gen import (
-    MotionGen,
-    MotionGenConfig,
-    MotionGenPlanConfig,
-    PoseCostMetric,
-)
 from pxr import Gf, Sdf, Usd, UsdGeom
-from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
 
 import typing
@@ -90,8 +83,6 @@ def main():
 
     add_extensions(simulation_app, args.headless_mode)
 
-    # create a curobo motion gen instance:
-    num_targets = 0
     # assuming obstacles are in objects_path:
     my_world = World(stage_units_in_meters=0.05)
     stage = my_world.stage
@@ -99,17 +90,13 @@ def main():
     xform = stage.DefinePrim("/World", "Xform")
     stage.SetDefaultPrim(xform)
     stage.DefinePrim("/curobo", "Xform")
-    # my_world.stage.SetDefaultPrim(my_world.stage.GetPrimAtPath("/World"))
     stage = my_world.stage
-    # stage.SetDefaultPrim(stage.GetPrimAtPath("/World"))
 
     setup_curobo_logger("warn")
     n_obstacle_cuboids = 30
     n_obstacle_mesh = 100
 
     usd_help = UsdHelper()
-    target_pose = None
-    # tensor_args = TensorDeviceType()
 
     # convoluted way to get the robot config path
     robot_cfg_path = get_robot_configs_path()
@@ -154,31 +141,10 @@ def main():
     world_cfg = WorldConfig(cuboid=world_cfg_table.cuboid, mesh=world_cfg1.mesh)
 
 #---------------------------------
-#    Motion Gen Initialization
+#    Motion Gen Initialization and Warmup
 #---------------------------------
 
     robwrap.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
-
-#-------------------------------------------------------
-#    Post Motion Gen Initialization World initiailzation
-#-------------------------------------------------------
-    # Make a target to follow
-    sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose()
-    sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
-    if type(sq_wc) is Gf.Quatd:
-        sq_wc = quatd_to_list4(sq_wc)
-
-    target = cuboid.VisualCuboid(
-        "/World/target",
-        position=sp_wc,
-        orientation=sq_wc,
-        color=np.array([1.0, 0, 0]),
-        size=0.05,
-    )
-
-#---------------------------------
-#    Warming up motion gen
-#---------------------------------
     robwrap.Warmup()
     robwrap.SetupMoGenPlanConfig()
 
@@ -189,23 +155,14 @@ def main():
     usd_help.load_stage(my_world.stage)
     usd_help.add_world_to_stage(world_cfg, base_frame="/World")
 
-    cmd_plan = None
-    cmd_idx = 0
     my_world.scene.add_default_ground_plane()
-    i_step = 0
-    past_cmd = None
-    pose_metric = None
     step_index = 0
-    velmag = 0.0
-    start = time.time()
-    static_robo = True
+
+    target = robwrap.CreateTarget()
+
     cube_position, cube_orientation = target.get_world_pose()
-    # articulation_controller = robwrap.robot.get_articulation_controller()
-    circle_target = False
-    curcen, curori = target.get_world_pose()
-    curvel = 0.1
-    curang = 0
-    currad = 0.02
+    last_play_time = 0
+    loop_start = time.time()
 
     # Front view
     set_camera_view(eye=[0.0, 2.5, 1.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
@@ -223,13 +180,8 @@ def main():
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
-            circle_target = not circle_target
-            if circle_target:
-                curcen, curori = target.get_world_pose()
-                curvel = 0.02
-                curang = 0
-                currad = 0.1
-            print(f"You pressed ‘a’. circle_target:{circle_target} curcen:{curcen} curvel:{curvel}")
+            robwrap.circle_target = not robwrap.circle_target
+            print(f"You pressed ‘a’. circle_target is now:{robwrap.circle_target}")
 
         elif keyboard.is_pressed("b"):
             k = keyboard.read_key()
@@ -237,18 +189,18 @@ def main():
 
         elif keyboard.is_pressed("*"):
             k = keyboard.read_key()
-            curvel *= 1.5
-            print("You pressed ‘*’. curvel:{curvel}")
+            robwrap.curvel *= 1.5
+            print(f"You pressed ‘*’. curvel:{robwrap.curvel}")
 
         elif keyboard.is_pressed("/"):
             k = keyboard.read_key()
-            curvel /= 1.5
-            print("You pressed ‘/’. curvel:{curvel}")
+            robwrap.curvel /= 1.5
+            print(f"You pressed ‘/’. curvel:{robwrap.curvel}")
 
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose() # this is the robots starting position in rcc
+            sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose()  # this is the robots starting position in rcc
             if robwrap is not None:
                 sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
                 if type(sq_wc) is Gf.Quatd:
@@ -285,30 +237,21 @@ def main():
 #---------------------------------
 
         my_world.step(render=True)
+        step_index = my_world.current_time_step_index
         if not my_world.is_playing():
-            if i_step % 500 == 0:
-                print(f"**** Click Play to start simulation ***** si:{step_index}")
-            i_step += 1
+            elap = time.time() - last_play_time
+            if elap>5:
+                print(f"**** Click Play to start simulation ***** si:{step_index} elap:{elap:.2f}")
+                last_play_time = time.time()
             continue
 
-        if circle_target:
-            dang = curvel
-            curang += dang
-            newpos = np.zeros(3)
-            newpos[0] = curcen[0]  + currad*np.cos(curang)
-            newpos[1] = curcen[1]  + currad*np.sin(curang)
-            newpos[2] = curcen[2]
-            target.set_world_pose(
-                position=newpos,
-                orientation=curori
-            )
+        robwrap.CircleTarget()
 
-        step_index = my_world.current_time_step_index
         if (step_index % 100) == 0:
-            elap = time.time() - start
+            elap = time.time() - loop_start
             cp = cube_position
             co = cube_orientation
-            print(f"si:{step_index} time:{elap:.2f} velmag:{velmag:.2f} static:{static_robo} cp:{cp} co:{co}")
+            print(f"si:{step_index} time:{elap:.2f} cp:{cp} co:{co}")
         if step_index < 2:
             print(f"resetting world step:{step_index}")
             my_world.reset()
@@ -342,93 +285,26 @@ def main():
 #---------------------------------
 #    Robot Processing
 #---------------------------------
-        robwrap.UpdateJointState(past_cmd)
+        robwrap.UpdateJointState()
 
         robwrap.HandleCollisionSpheres()
 
-        trigger = robwrap.CalcTrigger(cube_position, cube_orientation, circle_target, cmd_plan)
+        trigger = robwrap.CalcMoGenTrigger(cube_position, cube_orientation)
 
 #--------------------------------------
 #    Robot Motion Planning
 #---------------------------------------
         if trigger:
 
-            # # Set EE teleop goals, use cube for simple non-vr init:
-            # ee_pos_rcc, ee_ori_rcc = robwrap.tranman.wc_to_rcc(cube_position, cube_orientation)
-            # if type(ee_ori_rcc) is Gf.Quatd:
-            #     ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
+            robwrap.DoMoGen()
 
-            # # compute curobo solution:
-            # ik_goal = Pose(
-            #     # position=tensor_args.to_device(ee_translation_goal),
-            #     # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
-            #     position=robwrap.tensor_args.to_device(ee_pos_rcc),
-            #     quaternion=robwrap.tensor_args.to_device(ee_ori_rcc),
-            # )
-            # robwrap.plan_config.pose_cost_metric = pose_metric
-            # print("1: num_targets:", num_targets,
-            #       "  cga:", args.constrain_grasp_approach,
-            #       "  rpp:", args.reach_partial_pose,
-            #       "  hpp:", args.hold_partial_pose
-            #       )
-            # print("1: pose_metric:", pose_metric)
-            # try:
-            #     result = robwrap.motion_gen.plan_single(robwrap.cu_js.unsqueeze(0), ik_goal, robwrap.plan_config)
-            # except Exception as e:
-            #     print(f"Exception in motion_gen.plan_single e:{e}")
-
-            # print("motion_gen.plan_single success:", result.success)
-            # # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
-
-            # succ = result.success.item()  # ik_result.success.item()
-            # if num_targets == 1:
-            #     if args.constrain_grasp_approach:
-            #         print("1: Creating grasp approach metric - cga --------- ")
-            #         pose_metric = PoseCostMetric.create_grasp_approach_metric()
-            #     if args.reach_partial_pose is not None:
-            #         print("1: Creating grasp approach metric - rpp --------- ")
-            #         reach_vec = robwrap.motion_gen.tensor_args.to_device(args.reach_partial_pose)
-            #         pose_metric = PoseCostMetric(
-            #             reach_partial_pose=True, reach_vec_weight=reach_vec
-            #         )
-            #     if args.hold_partial_pose is not None:
-            #         print("1: Creating grasp approach metric - hpp --------- ")
-            #         hold_vec = robwrap.motion_gen.tensor_args.to_device(args.hold_partial_pose)
-            #         pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
-            # if succ:
-            #     num_targets += 1
-            #     cmd_plan = result.get_interpolated_plan()
-            #     cmd_plan = robwrap.motion_gen.get_full_js(cmd_plan)
-            #     print(f"Plan Success with {len(cmd_plan.position)} steps")
-            #     # get only joint names that are in both:
-            #     idx_list = []
-            #     common_js_names = []
-            #     for x in robwrap.sim_js_names:
-            #         if x in cmd_plan.joint_names:
-            #             idx_list.append(robwrap.robot.get_dof_index(x))
-            #             common_js_names.append(x)
-            #     # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
-
-            #     cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
-            #     robwrap.AssignCmdPlan(cmd_plan)
-
-            #     cmd_idx = 0
-
-            # else:
-            #     msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
-            #     print(msg)
-            #     carb.log_warn(msg)
-            robwrap.DoTrigger()
-
-            robwrap.target_pose = cube_position
-            robwrap.target_orientation = cube_orientation
         robwrap.past_pose = cube_position
         robwrap.past_orientation = cube_orientation
 
 #--------------------------------------
 #    Robot Command Step Execution
 #---------------------------------------
-        robwrap.ExecuteCmdPlan()
+        robwrap.ExecuteMoGenCmdPlan()
 
     simulation_app.close()
 

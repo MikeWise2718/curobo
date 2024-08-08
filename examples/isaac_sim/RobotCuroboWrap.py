@@ -97,7 +97,6 @@ class TranMan:
         self.usealt = usealt
         print("RobDeco created usealt:", usealt)
 
-
     def get_world_transform_xform_full(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d, Gf.Matrix3d]:
         xform = UsdGeom.Xformable(prim)
         time = Usd.TimeCode.Default() # The time at which we compute the bounding box
@@ -234,10 +233,10 @@ class RobotCuroboWrapper:
         self.spherenames = None
         self.spheres_visable = False
 
-        self.past_pose  = None
-        self.past_orientation  = None
-        self.target_pose  = None
-        self.target_orientation  = None
+        self.past_pose = None
+        self.past_orientation = None
+        self.target_pose = None
+        self.target_orientation = None
         self.trigger = False
 
         self.vizi_spheres = False
@@ -336,6 +335,50 @@ class RobotCuroboWrapper:
 
         print(f"Curobo is Ready and Warmed-up - took:{elap:.2f} secs")
 
+    def CreateTarget(self, target_pos=None, target_ori=None):
+
+        if target_pos is None or target_ori is None:
+            sp_rcc, sq_rcc = self.motion_gen.get_start_pose()
+            sp_wc, sq_wc = self.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+            if type(sq_wc) is Gf.Quatd:
+                sq_wc = quatd_to_list4(sq_wc)
+
+        if target_pos is None:
+            target_pos = sp_wc
+
+        if target_ori is None:
+            target_ori = sq_wc
+
+        self.target = cuboid.VisualCuboid(
+            "/World/target",
+            position=target_pos,
+            orientation=target_ori,
+            color=np.array([1.0, 0, 0]),
+            size=0.05,
+        )
+
+        self.curcen, self.curori = self.target.get_world_pose()
+        self.curvel = 0.02
+        self.curang = 0
+        self.currad = 0.1
+        self.circle_target = False
+
+        return self.target
+
+    def CircleTarget(self):
+        if self.circle_target:
+            self.curang += self.curvel
+            newpos = np.zeros(3)
+            newpos[0] = self.curcen[0]  + self.currad*np.cos(self.curang)
+            newpos[1] = self.curcen[1]  + self.currad*np.sin(self.curang)
+            newpos[2] = self.curcen[2]
+            self.target.set_world_pose(
+                position=newpos,
+                orientation=self.curori
+            )
+        pass
+
+
     def SetupMoGenPlanConfig(self):
         self.plan_config = MotionGenPlanConfig(
             enable_graph=False,
@@ -345,7 +388,7 @@ class RobotCuroboWrapper:
             parallel_finetune=True,
         )
 
-    def UpdateJointState(self, past_cmd):
+    def UpdateJointState(self):
         self.sim_js = self.robot.get_joints_state()
         self.sim_js_names = self.robot.dof_names
         if np.any(np.isnan(self.sim_js.positions)):
@@ -367,10 +410,10 @@ class RobotCuroboWrapper:
             self.cu_js.velocity *= 0.0
             self.cu_js.acceleration *= 0.0
 
-        if self.reactive and past_cmd is not None:
-            self.cu_js.position[:] = past_cmd.position
-            self.cu_js.velocity[:] = past_cmd.velocity
-            self.cu_js.acceleration[:] = past_cmd.acceleration
+        if self.reactive and self.past_cmd is not None:
+            self.cu_js.position[:] = self.past_cmd.position
+            self.cu_js.velocity[:] = self.past_cmd.velocity
+            self.cu_js.acceleration[:] = self.past_cmd.acceleration
         self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
 
     def HandleCollisionSpheres(self):
@@ -425,7 +468,7 @@ class RobotCuroboWrapper:
             self.spherenames = None
             self.spheres_visable = False
 
-    def CalcTrigger(self, cube_pos, cube_ori, circle_target, cmd_plan, reactive=False):
+    def CalcMoGenTrigger(self, cube_pos, cube_ori):
         self.cube_position = cube_pos
         self.cube_orientation = cube_ori
         if self.past_pose is None:
@@ -449,7 +492,7 @@ class RobotCuroboWrapper:
 
 
         # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo,"  circle_target:", circle_target)
-        if circle_target:
+        if self.circle_target:
             self.trigger = self.cmd_plan is None
 
         return self.trigger
@@ -457,7 +500,7 @@ class RobotCuroboWrapper:
     def ApplyAction(self, art_action):
         self.articulation_controller.apply_action(art_action)
 
-    def DoTrigger(self):
+    def DoMoGen(self):
         # Set EE teleop goals, use cube for simple non-vr init:
         ee_pos_rcc, ee_ori_rcc = self.tranman.wc_to_rcc(self.cube_position, self.cube_orientation)
         if type(ee_ori_rcc) is Gf.Quatd:
@@ -471,12 +514,12 @@ class RobotCuroboWrapper:
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
         )
         self.plan_config.pose_cost_metric = self.pose_metric
-        print("2: num_targets:", self.num_targets,
-              "  cga:", self.constrain_grasp_approach,
-              "  rpp:", self.reach_partial_pose,
-              "  hpp:", self.hold_partial_pose
-              )
-        print("2: pose_metric:", self.pose_metric)
+        # print("2: num_targets:", self.num_targets,
+        #       "  cga:", self.constrain_grasp_approach,
+        #       "  rpp:", self.reach_partial_pose,
+        #       "  hpp:", self.hold_partial_pose
+        #       )
+        # print("2: pose_metric:", self.pose_metric)
         try:
             result = self.motion_gen.plan_single(self.cu_js.unsqueeze(0), ik_goal, self.plan_config)
         except Exception as e:
@@ -490,16 +533,16 @@ class RobotCuroboWrapper:
         succ = result.success.item()  # ik_result.success.item()
         if self.num_targets == 1:
             if self.constrain_grasp_approach:
-                print("2: Creating grasp approach metric - cga --------- ")
+                # print("2: Creating grasp approach metric - cga --------- ")
                 self.pose_metric = PoseCostMetric.create_grasp_approach_metric()
             if self.reach_partial_pose is not None:
-                print("2: Creating grasp approach metric - rpp --------- ")
+                # print("2: Creating grasp approach metric - rpp --------- ")
                 reach_vec = self.motion_gen.tensor_args.to_device(self.reach_partial_pose)
                 self.pose_metric = PoseCostMetric(
                     reach_partial_pose=True, reach_vec_weight=reach_vec
                 )
             if self.hold_partial_pose is not None:
-                print("2: Creating grasp approach metric - hpp --------- ")
+                # print("2: Creating grasp approach metric - hpp --------- ")
                 hold_vec = self.motion_gen.tensor_args.to_device(self.hold_partial_pose)
                 self.pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
         if succ:
@@ -526,12 +569,15 @@ class RobotCuroboWrapper:
             print(msg)
             carb.log_warn(msg)
 
+        self.target_pose = self.cube_position
+        self.target_orientation = self.cube_orientation
+
     def AssignCmdPlan(self, cmd_plan):
         print("assigned cmdplan len:", len(cmd_plan.position))
         self.cmd_plan = cmd_plan
         self.cmd_idx = 0
 
-    def ExecuteCmdPlan(self):
+    def ExecuteMoGenCmdPlan(self):
         if self.cmd_plan is not None:
             print(f"Executing plan step {self.cmd_idx}/{len(self.cmd_plan.position)}")
             cmd_state = self.cmd_plan[self.cmd_idx]
