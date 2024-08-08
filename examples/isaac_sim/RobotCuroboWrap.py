@@ -20,6 +20,7 @@ import time
 
 
 # Third Party
+import carb
 import numpy as np
 from helper import add_extensions, add_robot_to_scene
 from omni.isaac.core import World
@@ -240,18 +241,22 @@ class RobotCuroboWrapper:
         self.trigger = False
 
         self.vizi_spheres = False
-        self.reactive = False
-        self.reach_partial_pose = False
-        self.hold_partial_pose = False
-        self.constrain_grasp_approach = False
+        self.reactive = None
+        self.reach_partial_pose = None
+        self.hold_partial_pose = None
+        self.constrain_grasp_approach = None
+
+        self.cmd_plan = None
+        self.pose_metric = None
+        self.num_targets = 0
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_cfg_path)
 
-        if args.external_asset_path is not None:
-            self.robot_cfg["kinematics"]["external_asset_path"] = args.external_asset_path
-        if args.external_robot_configs_path is not None:
-            self.robot_cfg["kinematics"]["external_robot_configs_path"] = args.external_robot_configs_path
+        if external_asset_path is not None:
+            self.robot_cfg["kinematics"]["external_asset_path"] = external_asset_path
+        if external_robot_configs_path is not None:
+            self.robot_cfg["kinematics"]["external_robot_configs_path"] = external_robot_configs_path
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
@@ -266,10 +271,6 @@ class RobotCuroboWrapper:
         self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro)
         self.articulation_controller = self.robot.get_articulation_controller()
 
-    # def AssignRobot(self, robot, robot_usd_prim_path):
-    #     self.robot = robot
-    #     self.robot_prim_path = robot_usd_prim_path
-
     def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None, constrain_grasp_approach=None, vizi_spheres=None):
         if reactive is not None:
             self.reactive = reactive
@@ -282,7 +283,6 @@ class RobotCuroboWrapper:
         if vizi_spheres is not None:
             self.vizi_spheres = vizi_spheres
 
-
     def LoadRobotCfg(self, robot_pathname):
         self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
 
@@ -294,7 +294,7 @@ class RobotCuroboWrapper:
         self.max_attempts = 4
         self.world_cfg = world_cfg
         interpolation_dt = 0.05
-        if args.reactive:
+        if self.reactive:
             trajopt_tsteps = 40
             trajopt_dt = 0.04
             optimize_dt = False
@@ -319,11 +319,11 @@ class RobotCuroboWrapper:
 
     def Reset(self):
         self.robot._articulation_view.initialize()
-        idx_list = [self.robot.get_dof_index(x) for x in self.j_names]
-        self.robot.set_joint_positions(self.default_config, idx_list)
+        self.idx_list = [self.robot.get_dof_index(x) for x in self.j_names]
+        self.robot.set_joint_positions(self.default_config, self.idx_list)
 
         self.robot._articulation_view.set_max_efforts(
-            values=np.array([5000 for i in range(len(idx_list))]), joint_indices=idx_list
+            values=np.array([5000 for i in range(len(self.idx_list))]), joint_indices=self.idx_list
         )
 
     def Warmup(self):
@@ -425,7 +425,9 @@ class RobotCuroboWrapper:
             self.spherenames = None
             self.spheres_visable = False
 
-    def calc_trigger(self, cube_pos, cube_ori, circle_target, cmd_plan, reactive=False):
+    def CalcTrigger(self, cube_pos, cube_ori, circle_target, cmd_plan, reactive=False):
+        self.cube_position = cube_pos
+        self.cube_orientation = cube_ori
         if self.past_pose is None:
             self.past_pose = cube_pos
         if self.target_pose is None:
@@ -442,13 +444,112 @@ class RobotCuroboWrapper:
         #     static_robo = True
         #     pass
         pretrig = np.linalg.norm(cube_pos - self.target_pose) > 1e-3 or np.linalg.norm(cube_ori - self.target_orientation) > 1e-3
-        self.trigger =  pretrig and np.linalg.norm(self.past_pose - cube_pos) == 0.0 and np.linalg.norm(self.past_orientation - cube_ori) == 0.0 and static_robo
+        self.trigger =  pretrig and np.linalg.norm(self.past_pose - cube_pos) == 0.0 and np.linalg.norm(self.past_orientation - cube_ori) == 0.0 and self.static_robo
         # print(f"trigger:{trigger} pretrig:{pretrig} velmag:{velmag:.2f} static_robo:{static_robo}")
 
+
+        # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo,"  circle_target:", circle_target)
         if circle_target:
-            self.trigger = cmd_plan is None
+            self.trigger = self.cmd_plan is None
 
         return self.trigger
 
     def ApplyAction(self, art_action):
         self.articulation_controller.apply_action(art_action)
+
+    def DoTrigger(self):
+        # Set EE teleop goals, use cube for simple non-vr init:
+        ee_pos_rcc, ee_ori_rcc = self.tranman.wc_to_rcc(self.cube_position, self.cube_orientation)
+        if type(ee_ori_rcc) is Gf.Quatd:
+            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
+
+        # compute curobo solution:
+        ik_goal = Pose(
+            # position=tensor_args.to_device(ee_translation_goal),
+            # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
+            position=self.tensor_args.to_device(ee_pos_rcc),
+            quaternion=self.tensor_args.to_device(ee_ori_rcc),
+        )
+        self.plan_config.pose_cost_metric = self.pose_metric
+        print("2: num_targets:", self.num_targets,
+              "  cga:", self.constrain_grasp_approach,
+              "  rpp:", self.reach_partial_pose,
+              "  hpp:", self.hold_partial_pose
+              )
+        print("2: pose_metric:", self.pose_metric)
+        try:
+            result = self.motion_gen.plan_single(self.cu_js.unsqueeze(0), ik_goal, self.plan_config)
+        except Exception as e:
+            print(f"Exception in motion_gen.plan_single e:{e}")
+            result = self.motion_gen.plan_single(self.cu_js.unsqueeze(0), ik_goal, self.plan_config)
+            return
+
+        print("motion_gen.plan_single success:", result.success)
+        # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
+
+        succ = result.success.item()  # ik_result.success.item()
+        if self.num_targets == 1:
+            if self.constrain_grasp_approach:
+                print("2: Creating grasp approach metric - cga --------- ")
+                self.pose_metric = PoseCostMetric.create_grasp_approach_metric()
+            if self.reach_partial_pose is not None:
+                print("2: Creating grasp approach metric - rpp --------- ")
+                reach_vec = self.motion_gen.tensor_args.to_device(self.reach_partial_pose)
+                self.pose_metric = PoseCostMetric(
+                    reach_partial_pose=True, reach_vec_weight=reach_vec
+                )
+            if self.hold_partial_pose is not None:
+                print("2: Creating grasp approach metric - hpp --------- ")
+                hold_vec = self.motion_gen.tensor_args.to_device(self.hold_partial_pose)
+                self.pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
+        if succ:
+            self.num_targets += 1
+            cmd_plan = result.get_interpolated_plan()
+            cmd_plan = self.motion_gen.get_full_js(cmd_plan)
+            print(f"Plan Success with {len(cmd_plan.position)} steps")
+            # get only joint names that are in both:
+            idx_list = []
+            common_js_names = []
+            for x in self.sim_js_names:
+                if x in cmd_plan.joint_names:
+                    idx_list.append(self.robot.get_dof_index(x))
+                    common_js_names.append(x)
+            # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
+
+            cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
+            self.AssignCmdPlan(cmd_plan)
+
+            self.cmd_idx = 0
+
+        else:
+            msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
+            print(msg)
+            carb.log_warn(msg)
+
+    def AssignCmdPlan(self, cmd_plan):
+        print("assigned cmdplan len:", len(cmd_plan.position))
+        self.cmd_plan = cmd_plan
+        self.cmd_idx = 0
+
+    def ExecuteCmdPlan(self):
+        if self.cmd_plan is not None:
+            print(f"Executing plan step {self.cmd_idx}/{len(self.cmd_plan.position)}")
+            cmd_state = self.cmd_plan[self.cmd_idx]
+            self.past_cmd = cmd_state.clone()
+            # get full dof state
+            art_action = ArticulationAction(
+                cmd_state.position.cpu().numpy(),
+                cmd_state.velocity.cpu().numpy(),
+                joint_indices=self.idx_list,
+            )
+            # set desired joint angles obtained from IK:
+            # print(f"Applying action: {art_action}")
+            #  articulation_controller.apply_action(art_action)
+            self.ApplyAction(art_action)
+            self.cmd_idx += 1
+            for _ in range(2):
+                self.my_world.step(render=False)
+            if self.cmd_idx >= len(self.cmd_plan.position):
+                self.cmd_idx = 0
+                self.cmd_plan = None
+                self.past_cmd = None

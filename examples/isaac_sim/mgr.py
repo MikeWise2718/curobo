@@ -76,15 +76,10 @@ from pxr import Gf, Sdf, Usd, UsdGeom
 from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
 
-############################################################
-
-
-########### OV #################;;;;;
 import typing
 
 from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
 from RobotCuroboWrap import RobotCuroboWrapper
-
 
 
 def main():
@@ -125,7 +120,6 @@ def main():
     else:
         robot_cfg_path = join_path(robot_cfg_path, args.robot)
 
-
 #---------------------------------
 #    Robot Initialization
 #---------------------------------
@@ -144,7 +138,6 @@ def main():
                             vizi_spheres=args.visualize_spheres)
     robwrap.PositionRobot(prerot1, pos1, ori1)
 
-
 #---------------------------------
 #    World Initialization
 #---------------------------------
@@ -160,13 +153,11 @@ def main():
 
     world_cfg = WorldConfig(cuboid=world_cfg_table.cuboid, mesh=world_cfg1.mesh)
 
-
 #---------------------------------
 #    Motion Gen Initialization
 #---------------------------------
 
-    robwrap.InitMotionGen( n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
-
+    robwrap.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
 
 #-------------------------------------------------------
 #    Post Motion Gen Initialization World initiailzation
@@ -195,7 +186,6 @@ def main():
 #    loop initialization
 #---------------------------------
 
-
     usd_help.load_stage(my_world.stage)
     usd_help.add_world_to_stage(world_cfg, base_frame="/World")
 
@@ -221,6 +211,7 @@ def main():
     set_camera_view(eye=[0.0, 2.5, 1.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
     # Overhead view
     # set_camera_view(eye=[0.0, 0, 4.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
+
 #---------------------------------
 #    LOOP
 #---------------------------------
@@ -289,7 +280,6 @@ def main():
             robwrap.vizi_spheres = not robwrap.vizi_spheres
             print(f"You pressed 'v' - vizi_spheres is now {robwrap.vizi_spheres}.")
 
-
 #---------------------------------
 #    World Processing
 #---------------------------------
@@ -356,68 +346,80 @@ def main():
 
         robwrap.HandleCollisionSpheres()
 
-        trigger = robwrap.calc_trigger(cube_position, cube_orientation, circle_target, cmd_plan)
+        trigger = robwrap.CalcTrigger(cube_position, cube_orientation, circle_target, cmd_plan)
 
 #--------------------------------------
 #    Robot Motion Planning
 #---------------------------------------
         if trigger:
-            print("cube moved")
-            # Set EE teleop goals, use cube for simple non-vr init:
-            ee_pos_rcc, ee_ori_rcc = robwrap.tranman.wc_to_rcc(cube_position, cube_orientation)
-            if type(ee_ori_rcc) is Gf.Quatd:
-                ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
-            # compute curobo solution:
-            ik_goal = Pose(
-                # position=tensor_args.to_device(ee_translation_goal),
-                # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
-                position=robwrap.tensor_args.to_device(ee_pos_rcc),
-                quaternion=robwrap.tensor_args.to_device(ee_ori_rcc),
-            )
-            robwrap.plan_config.pose_cost_metric = pose_metric
-            try:
-                result = robwrap.motion_gen.plan_single(robwrap.cu_js.unsqueeze(0), ik_goal, robwrap.plan_config)
-            except Exception as e:
-                print(f"Exception in motion_gen.plan_single e:{e}")
+            # # Set EE teleop goals, use cube for simple non-vr init:
+            # ee_pos_rcc, ee_ori_rcc = robwrap.tranman.wc_to_rcc(cube_position, cube_orientation)
+            # if type(ee_ori_rcc) is Gf.Quatd:
+            #     ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
-            print("motion_gen.plan_single success:", result.success)
-            # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
+            # # compute curobo solution:
+            # ik_goal = Pose(
+            #     # position=tensor_args.to_device(ee_translation_goal),
+            #     # quaternion=tensor_args.to_device(ee_orientation_teleop_goal),
+            #     position=robwrap.tensor_args.to_device(ee_pos_rcc),
+            #     quaternion=robwrap.tensor_args.to_device(ee_ori_rcc),
+            # )
+            # robwrap.plan_config.pose_cost_metric = pose_metric
+            # print("1: num_targets:", num_targets,
+            #       "  cga:", args.constrain_grasp_approach,
+            #       "  rpp:", args.reach_partial_pose,
+            #       "  hpp:", args.hold_partial_pose
+            #       )
+            # print("1: pose_metric:", pose_metric)
+            # try:
+            #     result = robwrap.motion_gen.plan_single(robwrap.cu_js.unsqueeze(0), ik_goal, robwrap.plan_config)
+            # except Exception as e:
+            #     print(f"Exception in motion_gen.plan_single e:{e}")
 
-            succ = result.success.item()  # ik_result.success.item()
-            if num_targets == 1:
-                if args.constrain_grasp_approach:
-                    pose_metric = PoseCostMetric.create_grasp_approach_metric()
-                if args.reach_partial_pose is not None:
-                    reach_vec = robwrap.motion_gen.tensor_args.to_device(args.reach_partial_pose)
-                    pose_metric = PoseCostMetric(
-                        reach_partial_pose=True, reach_vec_weight=reach_vec
-                    )
-                if args.hold_partial_pose is not None:
-                    hold_vec = robwrap.motion_gen.tensor_args.to_device(args.hold_partial_pose)
-                    pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
-            if succ:
-                num_targets += 1
-                cmd_plan = result.get_interpolated_plan()
-                cmd_plan = robwrap.motion_gen.get_full_js(cmd_plan)
-                print(f"Plan Success with {len(cmd_plan.position)} steps")
-                # get only joint names that are in both:
-                idx_list = []
-                common_js_names = []
-                for x in robwrap.sim_js_names:
-                    if x in cmd_plan.joint_names:
-                        idx_list.append(robwrap.robot.get_dof_index(x))
-                        common_js_names.append(x)
-                # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
+            # print("motion_gen.plan_single success:", result.success)
+            # # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
 
-                cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
+            # succ = result.success.item()  # ik_result.success.item()
+            # if num_targets == 1:
+            #     if args.constrain_grasp_approach:
+            #         print("1: Creating grasp approach metric - cga --------- ")
+            #         pose_metric = PoseCostMetric.create_grasp_approach_metric()
+            #     if args.reach_partial_pose is not None:
+            #         print("1: Creating grasp approach metric - rpp --------- ")
+            #         reach_vec = robwrap.motion_gen.tensor_args.to_device(args.reach_partial_pose)
+            #         pose_metric = PoseCostMetric(
+            #             reach_partial_pose=True, reach_vec_weight=reach_vec
+            #         )
+            #     if args.hold_partial_pose is not None:
+            #         print("1: Creating grasp approach metric - hpp --------- ")
+            #         hold_vec = robwrap.motion_gen.tensor_args.to_device(args.hold_partial_pose)
+            #         pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
+            # if succ:
+            #     num_targets += 1
+            #     cmd_plan = result.get_interpolated_plan()
+            #     cmd_plan = robwrap.motion_gen.get_full_js(cmd_plan)
+            #     print(f"Plan Success with {len(cmd_plan.position)} steps")
+            #     # get only joint names that are in both:
+            #     idx_list = []
+            #     common_js_names = []
+            #     for x in robwrap.sim_js_names:
+            #         if x in cmd_plan.joint_names:
+            #             idx_list.append(robwrap.robot.get_dof_index(x))
+            #             common_js_names.append(x)
+            #     # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
-                cmd_idx = 0
+            #     cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
+            #     robwrap.AssignCmdPlan(cmd_plan)
 
-            else:
-                msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
-                print(msg)
-                carb.log_warn(msg)
+            #     cmd_idx = 0
+
+            # else:
+            #     msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
+            #     print(msg)
+            #     carb.log_warn(msg)
+            robwrap.DoTrigger()
+
             robwrap.target_pose = cube_position
             robwrap.target_orientation = cube_orientation
         robwrap.past_pose = cube_position
@@ -426,28 +428,8 @@ def main():
 #--------------------------------------
 #    Robot Command Step Execution
 #---------------------------------------
+        robwrap.ExecuteCmdPlan()
 
-        if cmd_plan is not None:
-            print(f"Executing plan step {cmd_idx}/{len(cmd_plan.position)}")
-            cmd_state = cmd_plan[cmd_idx]
-            past_cmd = cmd_state.clone()
-            # get full dof state
-            art_action = ArticulationAction(
-                cmd_state.position.cpu().numpy(),
-                cmd_state.velocity.cpu().numpy(),
-                joint_indices=idx_list,
-            )
-            # set desired joint angles obtained from IK:
-            # print(f"Applying action: {art_action}")
-            #  articulation_controller.apply_action(art_action)
-            robwrap.ApplyAction(art_action)
-            cmd_idx += 1
-            for _ in range(2):
-                my_world.step(render=False)
-            if cmd_idx >= len(cmd_plan.position):
-                cmd_idx = 0
-                cmd_plan = None
-                past_cmd = None
     simulation_app.close()
 
 if __name__ == "__main__":
