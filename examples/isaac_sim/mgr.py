@@ -34,7 +34,6 @@ simulation_app = SimulationApp(
     }
 )
 
-
 # Third Party
 import carb
 import numpy as np
@@ -43,7 +42,6 @@ from omni.isaac.core import World
 from omni.isaac.core.objects import cuboid, sphere
 
 ########### OV #################
-from omni.isaac.core.utils.types import ArticulationAction
 from omni.isaac.core.utils.viewports import set_camera_view
 
 
@@ -51,10 +49,6 @@ from omni.isaac.core.utils.viewports import set_camera_view
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 from curobo.geom.sdf.world import CollisionCheckerType
 from curobo.geom.types import WorldConfig
-from curobo.types.base import TensorDeviceType
-from curobo.types.math import Pose
-from curobo.types.robot import JointState
-from curobo.types.state import JointState
 from curobo.util.logger import log_error, setup_curobo_logger
 from curobo.util.usd_helper import UsdHelper
 from curobo.util_file import (
@@ -76,9 +70,9 @@ from RobotCuroboWrap import RobotCuroboWrapper
 
 
 def main():
-#---------------------------------
-#    Misc Initialization
-#---------------------------------
+    # ---------------------------------
+    #    Misc Initialization
+    # ---------------------------------
     args = get_args()
 
     add_extensions(simulation_app, args.headless_mode)
@@ -98,6 +92,24 @@ def main():
 
     usd_help = UsdHelper()
 
+    # ---------------------------------
+    #    World Initialization
+    # ---------------------------------
+    world_cfg_table = WorldConfig.from_dict(
+        load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
+    )
+    world_cfg_table.cuboid[0].pose[2] -= 0.02
+    world_cfg1 = WorldConfig.from_dict(
+        load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
+    ).get_mesh_world()
+    world_cfg1.mesh[0].name += "_mesh"
+    world_cfg1.mesh[0].pose[2] = -10.5
+
+    world_cfg = WorldConfig(cuboid=world_cfg_table.cuboid, mesh=world_cfg1.mesh)
+
+    # ---------------------------------
+    #    Robot Initialization
+    # ---------------------------------
     # convoluted way to get the robot config path
     robot_cfg_path = get_robot_configs_path()
     if args.external_robot_configs_path is not None:
@@ -107,9 +119,6 @@ def main():
     else:
         robot_cfg_path = join_path(robot_cfg_path, args.robot)
 
-#---------------------------------
-#    Robot Initialization
-#---------------------------------
     robwrap: RobotCuroboWrapper = RobotCuroboWrapper()
 
     prerot1 = get_vek(args.robprerot)
@@ -125,32 +134,17 @@ def main():
                             vizi_spheres=args.visualize_spheres)
     robwrap.PositionRobot(prerot1, pos1, ori1)
 
-#---------------------------------
-#    World Initialization
-#---------------------------------
-    world_cfg_table = WorldConfig.from_dict(
-        load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
-    )
-    world_cfg_table.cuboid[0].pose[2] -= 0.02
-    world_cfg1 = WorldConfig.from_dict(
-        load_yaml(join_path(get_world_configs_path(), "collision_table.yml"))
-    ).get_mesh_world()
-    world_cfg1.mesh[0].name += "_mesh"
-    world_cfg1.mesh[0].pose[2] = -10.5
-
-    world_cfg = WorldConfig(cuboid=world_cfg_table.cuboid, mesh=world_cfg1.mesh)
-
-#---------------------------------
-#    Motion Gen Initialization and Warmup
-#---------------------------------
+    # ---------------------------------
+    #    Motion Gen Initialization and Warmup
+    # ---------------------------------
 
     robwrap.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
     robwrap.Warmup()
     robwrap.SetupMoGenPlanConfig()
 
-#---------------------------------
-#    loop initialization
-#---------------------------------
+    # ---------------------------------
+    #    loop initialization
+    # ---------------------------------
 
     usd_help.load_stage(my_world.stage)
     usd_help.add_world_to_stage(world_cfg, base_frame="/World")
@@ -165,18 +159,18 @@ def main():
     loop_start = time.time()
 
     # Front view
-    set_camera_view(eye=[0.0, 2.5, 1.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
+    set_camera_view(eye=[0.0, 2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
     # Overhead view
-    # set_camera_view(eye=[0.0, 0, 4.0], target=[0,0,0], camera_prim_path="/OmniverseKit_Persp")
+    # set_camera_view(eye=[0.0, 0, 4.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
-#---------------------------------
-#    LOOP
-#---------------------------------
+    # ---------------------------------
+    #    LOOP
+    # ---------------------------------
     while simulation_app.is_running():
 
-#---------------------------------
-#    Inpot Processing
-#---------------------------------
+        # ---------------------------------
+        #    Keyboard Input Processing
+        # ---------------------------------
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
@@ -232,15 +226,15 @@ def main():
             robwrap.vizi_spheres = not robwrap.vizi_spheres
             print(f"You pressed 'v' - vizi_spheres is now {robwrap.vizi_spheres}.")
 
-#---------------------------------
-#    World Processing
-#---------------------------------
+        # ---------------------------------
+        #    World Processing
+        # ---------------------------------
 
         my_world.step(render=True)
         step_index = my_world.current_time_step_index
         if not my_world.is_playing():
             elap = time.time() - last_play_time
-            if elap>5:
+            if elap > 5:
                 print(f"**** Click Play to start simulation ***** si:{step_index} elap:{elap:.2f}")
                 last_play_time = time.time()
             continue
@@ -257,9 +251,9 @@ def main():
             my_world.reset()
             robwrap.Reset()
 
-#---------------------------------
-#    Obstacles Processing
-#---------------------------------
+        # ---------------------------------
+        #    Obstacles Processing
+        # ---------------------------------
 
         if step_index == 50 or step_index % 1000 == 0:
             print("Updating world, reading w.r.t.", robwrap.robot_prim_path)
@@ -282,18 +276,18 @@ def main():
         # position and orientation of target virtual cube:
         cube_position, cube_orientation = target.get_world_pose()
 
-#---------------------------------
-#    Robot Processing
-#---------------------------------
+        # ---------------------------------
+        #    Robot Processing
+        # ---------------------------------
         robwrap.UpdateJointState()
 
         robwrap.HandleCollisionSpheres()
 
         trigger = robwrap.CalcMoGenTrigger(cube_position, cube_orientation)
 
-#--------------------------------------
-#    Robot Motion Planning
-#---------------------------------------
+        # --------------------------------------
+        #    Robot Motion Planning
+        # ---------------------------------------
         if trigger:
 
             robwrap.DoMoGen()
@@ -301,9 +295,9 @@ def main():
         robwrap.past_pose = cube_position
         robwrap.past_orientation = cube_orientation
 
-#--------------------------------------
-#    Robot Command Step Execution
-#---------------------------------------
+        # --------------------------------------
+        #    Robot Command Step Execution
+        # ---------------------------------------
         robwrap.ExecuteMoGenCmdPlan()
 
     simulation_app.close()

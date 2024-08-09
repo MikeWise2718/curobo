@@ -10,23 +10,15 @@
 #
 
 
-# Third Party
 from torch.fx.experimental.symbolic_shapes import expect_true
 import time
-
-
-
-
-
-
-# Third Party
 import carb
 import numpy as np
 from helper import add_extensions, add_robot_to_scene
-from omni.isaac.core import World
-from omni.isaac.core.objects import cuboid, sphere
 
 ########### OV #################
+from omni.isaac.core import World
+from omni.isaac.core.objects import cuboid, sphere
 from omni.isaac.core.utils.types import ArticulationAction
 from omni.isaac.core.utils.viewports import set_camera_view
 
@@ -34,22 +26,12 @@ from omni.isaac.core.utils.viewports import set_camera_view
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 from curobo.geom.sdf.world import CollisionCheckerType
-from curobo.geom.types import WorldConfig
 from curobo.types.base import TensorDeviceType
 from curobo.types.math import Pose
-from curobo.types.robot import JointState
+# from curobo.types.robot import JointState
 from curobo.types.state import JointState
-from curobo.util.logger import log_error, setup_curobo_logger
-from curobo.util.usd_helper import UsdHelper
-from curobo.util_file import (
-    get_assets_path,
-    get_filename,
-    get_path_of_dir,
-    get_robot_configs_path,
-    get_world_configs_path,
-    join_path,
-    load_yaml,
-)
+from curobo.util.logger import log_error
+from curobo.util_file import load_yaml
 from curobo.wrap.reacher.motion_gen import (
     MotionGen,
     MotionGenConfig,
@@ -63,7 +45,7 @@ from omni.isaac.core.utils.stage import get_current_stage
 ############################################################
 
 
-########### OV #################;;;;;
+# ########## OV #################;;;;;
 import typing
 
 from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
@@ -73,9 +55,9 @@ args = get_args()
 
 class TranMan:
     def __init__(self, usealt=True):
-        self.rob_pos = Gf.Vec3d(0,0,0)
-        self.rob_ori_quat = Gf.Quatd(1,0,0,0)
-        self.rob_ori_euler = Gf.Vec3d(0,0,0)
+        self.rob_pos = Gf.Vec3d(0, 0, 0)
+        self.rob_ori_quat = Gf.Quatd(1, 0, 0, 0)
+        self.rob_ori_euler = Gf.Vec3d(0, 0, 0)
         self.rob_ori_sel = "0,0,0"
         # self.memstage: Usd.Stage = Usd.Stage.CreateInMemory()
         self.memstage: Usd.Stage = get_current_stage()
@@ -97,9 +79,9 @@ class TranMan:
         self.usealt = usealt
         print("RobDeco created usealt:", usealt)
 
-    def get_world_transform_xform_full(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d, Gf.Matrix3d]:
+    def get_world_xform(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d, Gf.Matrix3d]:
         xform = UsdGeom.Xformable(prim)
-        time = Usd.TimeCode.Default() # The time at which we compute the bounding box
+        time = Usd.TimeCode.Default()  # The time at which we compute the bounding box
         world_transform: Gf.Matrix4d = xform.ComputeLocalToWorldTransform(time)
         if dump:
             print("world_transform:", world_transform)
@@ -112,7 +94,7 @@ class TranMan:
         self.xform_full_pre_rot_op.Set(value=prerot_euler)
         self.xform_full_tran_op.Set(value=pos)
         self.xform_full_rot_op.Set(value=ori_euler)
-        t, r, s, m = self.get_world_transform_xform_full(self.xformw_full_prim)
+        t, r, s, m = self.get_world_xform(self.xformw_full_prim)
         return t, r, s, m
 
     def set_robot_proxy_tran(self, tranvek, oriquat):
@@ -120,8 +102,8 @@ class TranMan:
         qlist = oriquat.tolist()
         q = Gf.Quatd(qlist[0], qlist[1:])
         self.xform_robopt_proxy_orient_op.Set(value=q)
-        self.xform_robopt_proxy_scale_op.Set(Gf.Vec3d(1,1,1))
-        t, r, s, m = self.get_world_transform_xform_full(self.xformw_robot_proxy_prim, dump=False)
+        self.xform_robopt_proxy_scale_op.Set(Gf.Vec3d(1, 1, 1))
+        t, r, s, m = self.get_world_xform(self.xformw_robot_proxy_prim, dump=False)
         return t, r, s, m
 
     def set_transform(self, prerot, pos, ori):
@@ -133,7 +115,8 @@ class TranMan:
         self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
         self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
 
-        (self.tran, self.rotmat3d_gfrot, _, self.rcc_to_wc_transform) = self.find_rcc_to_wc_tansform(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
+        (t, r, _, w) = self.find_rcc_to_wc_tansform(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
+        (self.tran, self.rotmat3d_gfrot, self.rcc_to_wc_transform) = (t, r, w)
         self.rotmat3d = Gf.Matrix3d(self.rotmat3d_gfrot)
         self.inv_rotmat3d = self.rotmat3d.GetTranspose()
 
@@ -142,7 +125,8 @@ class TranMan:
         npmat3x3 = self.to_npmat3x3(self.inv_rotmat3d)
         self.rotmat3d_quat_nparray_inv = rot_matrix_to_quat(npmat3x3)
         self.rotmat3d_eulers_inv = matrix_to_euler_angles(npmat3x3, degrees=True)
-        (self.robproxy_tran, self.robproxy_rot, _, self.robproxy_world_tran) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
+        (t, r, _, w) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
+        (self.robproxy_tran, self.robproxy_rot, self.robproxy_world_tran) = (t, r, w)
 
         print("----- input values -----")
         print("rob_pos:", self.rob_pos)
@@ -172,10 +156,10 @@ class TranMan:
         return Gf.Vec3d(x, y, z)
 
     def to_npmat3x3(self, gfmat):
-        npmat3x3 = np.zeros((3,3), dtype=np.float32)
+        npmat3x3 = np.zeros((3, 3), dtype=np.float32)
         for i in range(3):
             for j in range(3):
-                npmat3x3[i,j] = gfmat[i,j]
+                npmat3x3[i, j] = gfmat[i, j]
         return npmat3x3
 
     def quat_apply(self, q1, q2):
@@ -186,24 +170,28 @@ class TranMan:
 
     def rcc_to_wc(self, pos, ori):
         pos_gfv = self.to_gfvec(pos)
-        pos_new = self.tran + pos_gfv*self.inv_rotmat3d
+        pos_new = self.tran + pos_gfv * self.inv_rotmat3d
         return pos_new, ori
 
     def wc_to_rcc(self, pos, ori):
         pos_gfv = self.to_gfvec(pos)
-        pos_new = (pos_gfv - self.tran)*self.rotmat3d
+        pos_new = (pos_gfv - self.tran) * self.rotmat3d
         return pos_new, ori
 
     def dump_robot_transforms(self, robpathname):
         robpath = Sdf.Path(robpathname)
         robprim = self.memstage.GetPrimAtPath(robpath)
-        (t, r, s, m) = self.get_world_transform_xform_full(robprim)
+        (t, r, s, m) = self.get_world_xform(robprim)
         print("world_tranlate:", t)
         print("world_rotate:", r)
         print_mat("world_transform:", 4, 4, m)
         print_mat("rotmat3d:", 3, 3, self.rotmat3d)
         print_mat("inv_rotmat3d:", 3, 3, self.inv_rotmat3d)
 
+
+def dst(p1, p2):
+    rv = np.linalg.norm(p1 - p2)
+    return rv
 
 class RobotCuroboWrapper:
 
@@ -270,7 +258,8 @@ class RobotCuroboWrapper:
         self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro)
         self.articulation_controller = self.robot.get_articulation_controller()
 
-    def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None, constrain_grasp_approach=None, vizi_spheres=None):
+    def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
+                        constrain_grasp_approach=None, vizi_spheres=None):
         if reactive is not None:
             self.reactive = reactive
         if reach_partial_pose is not None:
@@ -369,15 +358,14 @@ class RobotCuroboWrapper:
         if self.circle_target:
             self.curang += self.curvel
             newpos = np.zeros(3)
-            newpos[0] = self.curcen[0]  + self.currad*np.cos(self.curang)
-            newpos[1] = self.curcen[1]  + self.currad*np.sin(self.curang)
+            newpos[0] = self.curcen[0] + self.currad * np.cos(self.curang)
+            newpos[1] = self.curcen[1] + self.currad * np.sin(self.curang)
             newpos[2] = self.curcen[2]
             self.target.set_world_pose(
                 position=newpos,
                 orientation=self.curori
             )
         pass
-
 
     def SetupMoGenPlanConfig(self):
         self.plan_config = MotionGenPlanConfig(
@@ -401,10 +389,6 @@ class RobotCuroboWrapper:
             jerk=self.tensor_args.to_device(self.sim_js.velocities) * 0.0,
             joint_names=self.sim_js_names,
         )
-        # if (step_index % 100) == 0:
-            # print(f"   sim_js_names: {sim_js_names}")
-            # print(f"   sim_js.positions: {sim_js.positions}")
-            # print(f"   sim_js.velocities: {sim_js.velocities}")
 
         if not self.reactive:
             self.cu_js.velocity *= 0.0
@@ -428,7 +412,7 @@ class RobotCuroboWrapper:
                 ncreated = 0
                 for sidx, sph in enumerate(sph_list[0]):
                     sphentry = get_sphere_entry(config_spheres, sidx)
-                    sname ="/curobo/robot_sphere_" + str(sidx)
+                    sname = "/curobo/robot_sphere_" + str(sidx)
                     clr = np.array([0, 0.8, 0.2])
                     if sphentry is not None:
                         keyname = sphentry["keyname"]
@@ -482,16 +466,19 @@ class RobotCuroboWrapper:
 
         self.static_robo = True
         # robot_static = True
-        velmag = np.max(np.abs(self.sim_js.velocities))
+        # velmag = np.max(np.abs(self.sim_js.velocities))
         # if (velmag < 0.2) or reactive:
         #     static_robo = True
         #     pass
-        pretrig = np.linalg.norm(cube_pos - self.target_pose) > 1e-3 or np.linalg.norm(cube_ori - self.target_orientation) > 1e-3
-        self.trigger =  pretrig and np.linalg.norm(self.past_pose - cube_pos) == 0.0 and np.linalg.norm(self.past_orientation - cube_ori) == 0.0 and self.static_robo
+        pretrig = (dst(cube_pos, self.target_pose) > 1e-3 or
+                   dst(cube_ori, self.target_orientation) > 1e-3)
+        self.trigger = (pretrig and
+                        dst(self.past_pose, cube_pos) == 0.0 and
+                        dst(self.past_orientation, cube_ori) == 0.0 and
+                        self.static_robo)
         # print(f"trigger:{trigger} pretrig:{pretrig} velmag:{velmag:.2f} static_robo:{static_robo}")
+        # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo)
 
-
-        # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo,"  circle_target:", circle_target)
         if self.circle_target:
             self.trigger = self.cmd_plan is None
 
@@ -565,7 +552,7 @@ class RobotCuroboWrapper:
             self.cmd_idx = 0
 
         else:
-            msg =  f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
+            msg = f"Plan did not converge to a solution. Status:{result.status}. No action is being taken."
             print(msg)
             carb.log_warn(msg)
 
