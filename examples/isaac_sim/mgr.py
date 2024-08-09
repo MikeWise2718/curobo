@@ -152,9 +152,8 @@ def main():
     my_world.scene.add_default_ground_plane()
     step_index = 0
 
-    target = robwrap.CreateTarget()
+    rob_targ = robwrap.CreateTarget()
 
-    cube_position, cube_orientation = target.get_world_pose()
     last_play_time = 0
     loop_start = time.time()
 
@@ -195,11 +194,8 @@ def main():
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
             sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose()  # this is the robots starting position in rcc
-            if robwrap is not None:
-                sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
-                if type(sq_wc) is Gf.Quatd:
-                    sq_wc = quatd_to_list4(sq_wc)
-            target.set_world_pose(position=sp_wc, orientation=sq_wc)
+            sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+            robwrap.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
@@ -207,7 +203,7 @@ def main():
             if robwrap.cu_js is not None:
                 sp_rcc, sq_rcc = robwrap.motion_gen.get_cur_pose(robwrap.cu_js)
                 sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
-                target.set_world_pose(position=sp_wc, orientation=sq_wc)
+                robwrap.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("e"):
             k = keyboard.read_key()
@@ -243,8 +239,7 @@ def main():
 
         if (step_index % 100) == 0:
             elap = time.time() - loop_start
-            cp = cube_position
-            co = cube_orientation
+            cp,co = robwrap.GetTargetPose()
             print(f"si:{step_index} time:{elap:.2f} cp:{cp} co:{co}")
         if step_index < 2:
             print(f"resetting world step:{step_index}")
@@ -274,30 +269,13 @@ def main():
             carb.log_info("Synced CuRobo world from stage.")
 
         # position and orientation of target virtual cube:
-        cube_position, cube_orientation = target.get_world_pose()
 
-        # ---------------------------------
-        #    Robot Processing
-        # ---------------------------------
         robwrap.UpdateJointState()
 
         robwrap.HandleCollisionSpheres()
 
-        trigger = robwrap.CalcMoGenTrigger(cube_position, cube_orientation)
+        robwrap.HandleTargetProcessing()
 
-        # --------------------------------------
-        #    Robot Motion Planning
-        # ---------------------------------------
-        if trigger:
-
-            robwrap.DoMoGen()
-
-        robwrap.past_pose = cube_position
-        robwrap.past_orientation = cube_orientation
-
-        # --------------------------------------
-        #    Robot Command Step Execution
-        # ---------------------------------------
         robwrap.ExecuteMoGenCmdPlan()
 
     simulation_app.close()

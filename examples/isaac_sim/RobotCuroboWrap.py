@@ -233,9 +233,11 @@ class RobotCuroboWrapper:
         self.hold_partial_pose = None
         self.constrain_grasp_approach = None
 
-        self.cmd_plan = None
+        self.cur_cmd_plan = None
         self.pose_metric = None
         self.num_targets = 0
+
+        self.cmd_plan_queue = []
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_cfg_path)
@@ -345,6 +347,8 @@ class RobotCuroboWrapper:
             color=np.array([1.0, 0, 0]),
             size=0.05,
         )
+        self.cube_position = target_pos
+        self.cube_orientation = target_ori
 
         self.curcen, self.curori = self.target.get_world_pose()
         self.curvel = 0.02
@@ -452,7 +456,30 @@ class RobotCuroboWrapper:
             self.spherenames = None
             self.spheres_visable = False
 
-    def CalcMoGenTrigger(self, cube_pos, cube_ori):
+    def HandleTargetProcessing(self):
+
+        self.cube_position, self.cube_orientation = self.target.get_world_pose()
+        triggerMoGen = self.CalcMoGenTargetTrigger(self.cube_position, self.cube_orientation)
+        if triggerMoGen:
+            print("Triggering MoGen")
+
+            self.DoMoGenToTarget()
+
+        self.past_pose = self.cube_position
+        self.past_orientation = self.cube_orientation
+
+    def GetTargetPose(self):
+        return self.cube_position, self.cube_orientation
+
+    def SetTargetPose(self, pos, ori):
+        if type(ori) is Gf.Quatd:
+            ori = quatd_to_list4(ori)
+        self.target.set_world_pose(position=pos, orientation=ori)
+        self.cube_position = pos
+        self.cube_orientation = ori
+        return
+
+    def CalcMoGenTargetTrigger(self, cube_pos, cube_ori):
         self.cube_position = cube_pos
         self.cube_orientation = cube_ori
         if self.past_pose is None:
@@ -480,16 +507,20 @@ class RobotCuroboWrapper:
         # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo)
 
         if self.circle_target:
-            self.trigger = self.cmd_plan is None
+            self.trigger = self.cur_cmd_plan is None
 
         return self.trigger
 
     def ApplyAction(self, art_action):
         self.articulation_controller.apply_action(art_action)
 
-    def DoMoGen(self):
+    def DoMoGenToTarget(self):
+        rv = self.DoMoGenToPosOri(self.cube_position, self.cube_orientation)
+        return rv
+
+    def DoMoGenToPosOri(self, pos, ori):
         # Set EE teleop goals, use cube for simple non-vr init:
-        ee_pos_rcc, ee_ori_rcc = self.tranman.wc_to_rcc(self.cube_position, self.cube_orientation)
+        ee_pos_rcc, ee_ori_rcc = self.tranman.wc_to_rcc(pos, ori)
         if type(ee_ori_rcc) is Gf.Quatd:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
@@ -547,7 +578,7 @@ class RobotCuroboWrapper:
             # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
             cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
-            self.AssignCmdPlan(cmd_plan)
+            self.QueCmdPlan(cmd_plan)
 
             self.cmd_idx = 0
 
@@ -559,15 +590,23 @@ class RobotCuroboWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
-    def AssignCmdPlan(self, cmd_plan):
-        print("assigned cmdplan len:", len(cmd_plan.position))
-        self.cmd_plan = cmd_plan
-        self.cmd_idx = 0
+    def QueCmdPlan(self, cmd_plan):
+        # should do a plausiblity check on cmd_plan
+        self.cmd_plan_queue.append(cmd_plan)
+
+    def AssignCurCmdPlan(self):
+        if self.cur_cmd_plan is None:
+            if len(self.cmd_plan_queue) > 0:
+                len_bef = len(self.cmd_plan_queue)
+                self.cur_cmd_plan = self.cmd_plan_queue.pop(0)
+                len_aft = len(self.cmd_plan_queue)
+                print(f"AssignCurCmdPlan len_bef:{len_bef} len_aft:{len_aft}")
 
     def ExecuteMoGenCmdPlan(self):
-        if self.cmd_plan is not None:
-            print(f"Executing plan step {self.cmd_idx}/{len(self.cmd_plan.position)}")
-            cmd_state = self.cmd_plan[self.cmd_idx]
+        self.AssignCurCmdPlan()
+        if self.cur_cmd_plan is not None:
+            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
+            cmd_state = self.cur_cmd_plan[self.cmd_idx]
             self.past_cmd = cmd_state.clone()
             # get full dof state
             art_action = ArticulationAction(
@@ -582,7 +621,7 @@ class RobotCuroboWrapper:
             self.cmd_idx += 1
             for _ in range(2):
                 self.my_world.step(render=False)
-            if self.cmd_idx >= len(self.cmd_plan.position):
+            if self.cmd_idx >= len(self.cur_cmd_plan.position):
                 self.cmd_idx = 0
-                self.cmd_plan = None
+                self.cur_cmd_plan = None
                 self.past_cmd = None
