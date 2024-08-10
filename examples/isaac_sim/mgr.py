@@ -193,21 +193,17 @@ def main():
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = robwrap.motion_gen.get_start_pose()  # this is the robots starting position in rcc
-            sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+            sp_rcc, sq_rcc = robwrap.get_start_pose()  # this is the robots starting position in rcc
+            sp_wc, sq_wc = robwrap.rcc_to_wc(sp_rcc, sq_rcc)
             robwrap.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
             print("You pressed ‘d’ - will move to robot's current end-effector pose.")
             if robwrap.cu_js is not None:
-                sp_rcc, sq_rcc = robwrap.motion_gen.get_cur_pose(robwrap.cu_js)
-                sp_wc, sq_wc = robwrap.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+                sp_rcc, sq_rcc = robwrap.get_cur_pose(robwrap.cu_js)
+                sp_wc, sq_wc = robwrap.rcc_to_wc(sp_rcc, sq_rcc)
                 robwrap.SetTargetPose(sp_wc, sq_wc)
-
-        elif keyboard.is_pressed("e"):
-            k = keyboard.read_key()
-            robwrap.tranman.dump_robot_transforms(robwrap.robot_prim_path)
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
@@ -264,7 +260,7 @@ def main():
             ).get_collision_check_world()
             print(f"obstacle objects:{len(obstacles.objects)}")
 
-            robwrap.motion_gen.update_world(obstacles)
+            robwrap.update_world(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
@@ -272,7 +268,7 @@ def main():
 
         robwrap.UpdateJointState()
 
-        robwrap.HandleCollisionSpheres()
+        robwrap.ProcessCollisionSpheres()
 
         robwrap.HandleTargetProcessing()
 

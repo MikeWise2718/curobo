@@ -219,7 +219,7 @@ class RobotCuroboWrapper:
 
         self.spheres = None
         self.spherenames = None
-        self.spheres_visable = False
+        self.spheres_visible = False
 
         self.past_pose = None
         self.past_orientation = None
@@ -253,6 +253,21 @@ class RobotCuroboWrapper:
         # rp, ro = self.tranman.get_robot_base()
 
         # robot, robot_prim_path = add_robot_to_scene(self.robot_cfg, my_world, position=rp, orient=ro)
+
+    def wc_to_rcc(self, pos, ori):
+        return self.tranman.wc_to_rcc(pos, ori)
+
+    def rcc_to_wc(self, pos, ori):
+        return self.tranman.rcc_to_wc(pos, ori)
+
+    def get_start_pos(self):
+        return self.motion_gen.get_start_pose()
+
+    def get_cur_pos(self):
+        return self.motion_gen.get_cur_pos()
+
+    def update_world(self, obstacles):
+        return self.motion_gen.update_world(obstacles)
 
     def PositionRobot(self, prerot, pos, ori):
         self.tranman.set_transform(prerot=prerot, pos=pos, ori=ori)
@@ -323,7 +338,6 @@ class RobotCuroboWrapper:
         self.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
 
         elap = time.time() - start_warmup
-
         print(f"Curobo is Ready and Warmed-up - took:{elap:.2f} secs")
 
     def CreateTarget(self, target_pos=None, target_ori=None):
@@ -404,57 +418,68 @@ class RobotCuroboWrapper:
             self.cu_js.acceleration[:] = self.past_cmd.acceleration
         self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
 
-    def HandleCollisionSpheres(self):
-        if self.vizi_spheres:
-            # get a fresh list of spheres:
-            sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
-            if self.spheres is None:
-                config_spheres = self.robot_cfg["kinematics"]["collision_spheres"]
-                self.spheres = []
-                self.spherenames = []
-                # create spheres:
-                ncreated = 0
-                for sidx, sph in enumerate(sph_list[0]):
-                    sphentry = get_sphere_entry(config_spheres, sidx)
-                    sname = "/curobo/robot_sphere_" + str(sidx)
-                    clr = np.array([0, 0.8, 0.2])
-                    if sphentry is not None:
-                        keyname = sphentry["keyname"]
-                        keyidx = sphentry["keyidx"]
-                        linkname = f"/curobo/{keyname}"
-                        if not self.stage.GetPrimAtPath(linkname):
-                            _ = self.stage.DefinePrim(linkname, "Xform")
-                        sname = f"{linkname}/sphere_{keyidx}"
-                        if "scolor" in sphentry:
-                            clr = np.array(sphentry["scolor"])
-                    s_ori = np.array([1, 0, 0, 0])
-                    sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
-                    sp = sphere.VisualSphere(
-                        prim_path=sname,
-                        position=np.ravel(sp_wc),
-                        radius=float(sph.radius),
-                        color=clr,
-                    )
-                    self.spheres.append(sp)
-                    self.spherenames.append(sname)
-                    ncreated += 1
-                print(f"Created {ncreated} Spheres")
-            else:
+    def CreateCollisionSpheres(self):
+        # get a fresh list of spheres:
+        self.sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
+        if self.spheres is None:
+            config_spheres = self.robot_cfg["kinematics"]["collision_spheres"]
+            self.spheres = []
+            self.spherenames = []
+            # create spheres:
+            ncreated = 0
+            for sidx, sph in enumerate(self.sph_list[0]):
+                sphentry = get_sphere_entry(config_spheres, sidx)
+                sname = "/curobo/robot_sphere_" + str(sidx)
+                clr = np.array([0, 0.8, 0.2])
+                if sphentry is not None:
+                    keyname = sphentry["keyname"]
+                    keyidx = sphentry["keyidx"]
+                    linkname = f"/curobo/{keyname}"
+                    if not self.stage.GetPrimAtPath(linkname):
+                        _ = self.stage.DefinePrim(linkname, "Xform")
+                    sname = f"{linkname}/sphere_{keyidx}"
+                    if "scolor" in sphentry:
+                        clr = np.array(sphentry["scolor"])
                 s_ori = np.array([1, 0, 0, 0])
-                for sidx, sph in enumerate(sph_list[0]):
-                    if not np.isnan(sph.position[0]):
-                        sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
-                        self.spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
-                        self.spheres[sidx].set_radius(float(sph.radius))
-            self.spheres_visable = True
+                sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
+                sp = sphere.VisualSphere(
+                    prim_path=sname,
+                    position=np.ravel(sp_wc),
+                    radius=float(sph.radius),
+                    color=clr,
+                )
+                self.spheres.append(sp)
+                self.spherenames.append(sname)
+                ncreated += 1
+            print(f"Created {ncreated} Spheres")
 
-        if not self.vizi_spheres and self.spheres_visable:
-            if self.spherenames is not None:
-                for sn in self.spherenames:
-                    self.stage.RemovePrim(sn)
-            self.spheres = None
-            self.spherenames = None
-            self.spheres_visable = False
+    def UpdateCollistionSpherePositions(self):
+        self.sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
+        s_ori = np.array([1, 0, 0, 0])
+        for sidx, sph in enumerate(self.sph_list[0]):
+            if not np.isnan(sph.position[0]):
+                sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
+                self.spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
+                self.spheres[sidx].set_radius(float(sph.radius))
+
+    def DeleteCollisionSpheres(self):
+        if self.spherenames is not None:
+            for sn in self.spherenames:
+                self.stage.RemovePrim(sn)
+        self.spheres = None
+        self.spherenames = None
+        self.spheres_visible = False
+
+    def ProcessCollisionSpheres(self):
+        if self.vizi_spheres:
+            if self.spheres is None:
+                self.CreateCollisionSpheres()
+            else:
+                self.UpdateCollistionSpherePositions()
+            self.spheres_visible = True
+
+        if not self.vizi_spheres and self.spheres_visible:
+            self.DeleteCollisionSpheres()
 
     def HandleTargetProcessing(self):
 
@@ -532,12 +557,6 @@ class RobotCuroboWrapper:
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
         )
         self.plan_config.pose_cost_metric = self.pose_metric
-        # print("2: num_targets:", self.num_targets,
-        #       "  cga:", self.constrain_grasp_approach,
-        #       "  rpp:", self.reach_partial_pose,
-        #       "  hpp:", self.hold_partial_pose
-        #       )
-        # print("2: pose_metric:", self.pose_metric)
         try:
             result = self.motion_gen.plan_single(self.cu_js.unsqueeze(0), ik_goal, self.plan_config)
         except Exception as e:
@@ -548,7 +567,7 @@ class RobotCuroboWrapper:
         print("motion_gen.plan_single success:", result.success)
         # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
 
-        succ = result.success.item()  # ik_result.success.item()
+        successfull = result.success.item()  # ik_result.success.item()
         if self.num_targets == 1:
             if self.constrain_grasp_approach:
                 # print("2: Creating grasp approach metric - cga --------- ")
@@ -563,7 +582,7 @@ class RobotCuroboWrapper:
                 # print("2: Creating grasp approach metric - hpp --------- ")
                 hold_vec = self.motion_gen.tensor_args.to_device(self.hold_partial_pose)
                 self.pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
-        if succ:
+        if successfull:
             self.num_targets += 1
             cmd_plan = result.get_interpolated_plan()
             cmd_plan = self.motion_gen.get_full_js(cmd_plan)
