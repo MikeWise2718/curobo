@@ -96,6 +96,7 @@ def add_robot_to_scene(
     filename = get_filename(full_path)
     imported_robot = urdf_interface.parse_urdf(robot_path, filename, import_config)
     dest_path = subroot
+    imported_robot.name = f"{imported_robot.name}_{subroot}"
     robot_path = urdf_interface.import_robot(
         robot_path,
         filename,

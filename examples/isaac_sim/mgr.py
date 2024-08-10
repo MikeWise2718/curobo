@@ -9,15 +9,12 @@
 # its affiliates is strictly prohibited.
 #
 
-
 # Third Party
 from torch.fx.experimental.symbolic_shapes import expect_true
-import numpy.linalg.lapack_lite
 import torch
 import time
 import os
 import keyboard
-
 
 a = torch.zeros(4, device="cuda:0")
 
@@ -37,36 +34,27 @@ simulation_app = SimulationApp(
 # Third Party
 import carb
 import numpy as np
-from helper import add_extensions, add_robot_to_scene
+from helper import add_extensions
 from omni.isaac.core import World
-from omni.isaac.core.objects import cuboid, sphere
 
 ########### OV #################
 from omni.isaac.core.utils.viewports import set_camera_view
 
-
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
-from curobo.geom.sdf.world import CollisionCheckerType
 from curobo.geom.types import WorldConfig
 from curobo.util.logger import log_error, setup_curobo_logger
 from curobo.util.usd_helper import UsdHelper
 from curobo.util_file import (
-    get_assets_path,
-    get_filename,
-    get_path_of_dir,
     get_robot_configs_path,
     get_world_configs_path,
     join_path,
     load_yaml,
 )
-from pxr import Gf, Sdf, Usd, UsdGeom
-from omni.isaac.core.utils.stage import get_current_stage
 
-import typing
 
-from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
-from RobotCuroboWrap import RobotCuroboWrapper
+from mgrut import get_args, get_vek
+from rocuwrap import RocuWrapper
 
 
 def main():
@@ -118,41 +106,59 @@ def main():
         robot_cfg_path = args.robot
     else:
         robot_cfg_path = join_path(robot_cfg_path, args.robot)
-
-    robwrap: RobotCuroboWrapper = RobotCuroboWrapper()
+    assetpath = args.external_asset_path
+    configpath = args.external_robot_configs_path
 
     prerot1 = get_vek(args.robprerot)
     pos1 = get_vek(args.robpos)
     ori1 = get_vek(args.robori)
-    assetpath = args.external_asset_path
-    configpath = args.external_robot_configs_path
-    robwrap.Initialize(robot_cfg_path, assetpath, configpath, my_world)
-    robwrap.SetMoGenOptions(reactive=args.reactive,
-                            reach_partial_pose=args.reach_partial_pose,
-                            hold_partial_pose=args.hold_partial_pose,
-                            constrain_grasp_approach=args.constrain_grasp_approach,
-                            vizi_spheres=args.visualize_spheres)
-    robwrap.PositionRobot(prerot1, pos1, ori1)
+    numrobs = 1
 
-    # ---------------------------------
-    #    Motion Gen Initialization and Warmup
-    # ---------------------------------
+    match args.jakas:
+        case "R":
+            prerot1, pos1, ori1 = [0, 0, 60], [-0.05, 0, 1], [0, 150, 180]
+            numrobs = 1
+        case "L":
+            prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
+            numrobs = 1
+        case "LR":
+            prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
+            prerot2, pos2, ori2 = [0, 0, +60], [-0.05, 0, 1], [0, +150, 180]
+            numrobs = 2
+        case "RL":
+            prerot1, pos1, ori1 = [0, 0, +60], [-0.05, 0, 1], [0, +150, 180]
+            prerot2, pos2, ori2 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
+            numrobs = 2
+        case _:
+            print("Bad Jaka specification")
 
-    robwrap.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
-    robwrap.Warmup()
-    robwrap.SetupMoGenPlanConfig()
+    def defineRobot(prerot, pos, ori, robid="") -> RocuWrapper:
+        rw: RocuWrapper = RocuWrapper(robid)
+        rw.Initialize(robot_cfg_path, assetpath, configpath, my_world)
+        rw.SetMoGenOptions(reactive=args.reactive,
+                           reach_partial_pose=args.reach_partial_pose,
+                           hold_partial_pose=args.hold_partial_pose,
+                           constrain_grasp_approach=args.constrain_grasp_approach,
+                           vizi_spheres=args.visualize_spheres)
+        rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
+        rw.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
+        rw.Warmup()
+        rw.SetupMoGenPlanConfig()
+        rw.CreateTarget()
+        return rw
 
-    # ---------------------------------
-    #    loop initialization
-    # ---------------------------------
+    rocuWrap1: RocuWrapper = defineRobot(prerot1, pos1, ori1, "1")
+
+    if numrobs == 2:
+        rocuWrap2: RocuWrapper = defineRobot(prerot2, pos2, ori2, "2")
+    else:
+        rocuWrap2 = None
 
     usd_help.load_stage(my_world.stage)
     usd_help.add_world_to_stage(world_cfg, base_frame="/World")
 
     my_world.scene.add_default_ground_plane()
     step_index = 0
-
-    rob_targ = robwrap.CreateTarget()
 
     last_play_time = 0
     loop_start = time.time()
@@ -173,8 +179,8 @@ def main():
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
-            robwrap.circle_target = not robwrap.circle_target
-            print(f"You pressed ‘a’. circle_target is now:{robwrap.circle_target}")
+            rocuWrap1.circle_target = not rocuWrap1.circle_target
+            print(f"You pressed ‘a’. circle_target is now:{rocuWrap1.circle_target}")
 
         elif keyboard.is_pressed("b"):
             k = keyboard.read_key()
@@ -182,28 +188,28 @@ def main():
 
         elif keyboard.is_pressed("*"):
             k = keyboard.read_key()
-            robwrap.curvel *= 1.5
-            print(f"You pressed ‘*’. curvel:{robwrap.curvel}")
+            rocuWrap1.curvel *= 1.5
+            print(f"You pressed ‘*’. curvel:{rocuWrap1.curvel}")
 
         elif keyboard.is_pressed("/"):
             k = keyboard.read_key()
-            robwrap.curvel /= 1.5
-            print(f"You pressed ‘/’. curvel:{robwrap.curvel}")
+            rocuWrap1.curvel /= 1.5
+            print(f"You pressed ‘/’. curvel:{rocuWrap1.curvel}")
 
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = robwrap.get_start_pose()  # this is the robots starting position in rcc
-            sp_wc, sq_wc = robwrap.rcc_to_wc(sp_rcc, sq_rcc)
-            robwrap.SetTargetPose(sp_wc, sq_wc)
+            sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting position in rcc
+            sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
+            rocuWrap1.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
             print("You pressed ‘d’ - will move to robot's current end-effector pose.")
-            if robwrap.cu_js is not None:
-                sp_rcc, sq_rcc = robwrap.get_cur_pose(robwrap.cu_js)
-                sp_wc, sq_wc = robwrap.rcc_to_wc(sp_rcc, sq_rcc)
-                robwrap.SetTargetPose(sp_wc, sq_wc)
+            if rocuWrap1.cu_js is not None:
+                sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
+                sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
+                rocuWrap1.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
@@ -215,8 +221,8 @@ def main():
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
-            robwrap.vizi_spheres = not robwrap.vizi_spheres
-            print(f"You pressed 'v' - vizi_spheres is now {robwrap.vizi_spheres}.")
+            rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
+            print(f"You pressed 'v' - vizi_spheres is now {rocuWrap1.vizi_spheres}.")
 
         # ---------------------------------
         #    World Processing
@@ -231,28 +237,30 @@ def main():
                 last_play_time = time.time()
             continue
 
-        robwrap.CircleTarget()
+        rocuWrap1.CircleTarget()
 
         if (step_index % 100) == 0:
             elap = time.time() - loop_start
-            cp,co = robwrap.GetTargetPose()
+            cp,co = rocuWrap1.GetTargetPose()
             print(f"si:{step_index} time:{elap:.2f} cp:{cp} co:{co}")
         if step_index < 2:
             print(f"resetting world step:{step_index}")
             my_world.reset()
-            robwrap.Reset()
+            rocuWrap1.Reset()
+            if rocuWrap2 is not None:
+                rocuWrap2.Reset()
 
         # ---------------------------------
         #    Obstacles Processing
         # ---------------------------------
 
         if step_index == 50 or step_index % 1000 == 0:
-            print("Updating world, reading w.r.t.", robwrap.robot_prim_path)
+            print("Updating world, reading w.r.t.", rocuWrap1.robot_prim_path)
             obstacles = usd_help.get_obstacles_from_stage(
                 # only_paths=[obstacles_path],
-                reference_prim_path=robwrap.robot_prim_path,
+                reference_prim_path=rocuWrap1.robot_prim_path,
                 ignore_substring=[
-                    robwrap.robot_prim_path,
+                    rocuWrap1.robot_prim_path,
                     "/World/target",
                     "/World/defaultGroundPlane",
                     "/curobo",
@@ -260,19 +268,22 @@ def main():
             ).get_collision_check_world()
             print(f"obstacle objects:{len(obstacles.objects)}")
 
-            robwrap.update_world(obstacles)
+            rocuWrap1.update_world(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
         # position and orientation of target virtual cube:
 
-        robwrap.UpdateJointState()
+        rocuWrap1.UpdateJointState()
+        rocuWrap1.ProcessCollisionSpheres()
+        rocuWrap1.HandleTargetProcessing()
+        rocuWrap1.ExecuteMoGenCmdPlan()
 
-        robwrap.ProcessCollisionSpheres()
-
-        robwrap.HandleTargetProcessing()
-
-        robwrap.ExecuteMoGenCmdPlan()
+        if rocuWrap2 is not None:
+            rocuWrap2.UpdateJointState()
+            rocuWrap2.ProcessCollisionSpheres()
+            rocuWrap2.HandleTargetProcessing()
+            rocuWrap2.ExecuteMoGenCmdPlan()
 
     simulation_app.close()
 

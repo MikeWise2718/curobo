@@ -58,8 +58,6 @@ parser.add_argument(
     help="When True, runs in reactive mode",
     default=False,
 )
-
-
 parser.add_argument(
     "--constrain_grasp_approach",
     action="store_true",
@@ -81,6 +79,12 @@ parser.add_argument(
     metavar=("qx", "qy", "qz", "x", "y", "z"),
     help="Hold partial pose while moving to goal",
     type=float,
+    default=None,
+)
+parser.add_argument(
+    "--jakas",
+    help="L for left, R for right, LR for both arms",
+    type=str,
     default=None,
 )
 

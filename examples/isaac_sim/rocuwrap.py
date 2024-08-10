@@ -14,7 +14,7 @@ from torch.fx.experimental.symbolic_shapes import expect_true
 import time
 import carb
 import numpy as np
-from helper import add_extensions, add_robot_to_scene
+from helper import add_robot_to_scene
 
 ########### OV #################
 from omni.isaac.core import World
@@ -53,20 +53,20 @@ from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, g
 args = get_args()
 
 
-class TranMan:
-    def __init__(self, usealt=True):
+class RocuTranMan:
+    def __init__(self, robid, usealt=True):
         self.rob_pos = Gf.Vec3d(0, 0, 0)
         self.rob_ori_quat = Gf.Quatd(1, 0, 0, 0)
         self.rob_ori_euler = Gf.Vec3d(0, 0, 0)
         self.rob_ori_sel = "0,0,0"
         # self.memstage: Usd.Stage = Usd.Stage.CreateInMemory()
         self.memstage: Usd.Stage = get_current_stage()
-        self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
-        self.xformpath = self.default_prim.GetPath().AppendPath("Xform")
-        self.memstage.SetDefaultPrim(self.default_prim)
+        # self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
+        # self.memstage.SetDefaultPrim(self.default_prim)
+        # self.xformpath = self.default_prim.GetPath().AppendPath(f"Xform_{robid}")
 
-        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformFull")
-        self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, "/World/XformRobProxy")
+        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, f"/World/XformFull_{robid}")
+        self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, f"/World/XformRobProxy_{robid}")
 
         self.xform_full_pre_rot_op = self.xformw_full_prim.AddRotateXYZOp(opSuffix='prerot')
         self.xform_full_tran_op = self.xformw_full_prim.AddTranslateOp()
@@ -193,10 +193,11 @@ def dst(p1, p2):
     rv = np.linalg.norm(p1 - p2)
     return rv
 
-class RobotCuroboWrapper:
+class RocuWrapper:
 
-    def __init__(self):
-        self.tranman = TranMan()
+    def __init__(self, robid):
+        self.robid = robid
+        self.rocuTranman = RocuTranMan(robid)
 
     def Initialize(self, robot_config_path, external_asset_path, external_robot_configs_path, my_world):
         self.robot_config_path = robot_config_path
@@ -249,30 +250,27 @@ class RobotCuroboWrapper:
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-        # self.tranman.set_transform(prerot=get_vek(args.robprerot), pos=get_vek(args.robpos), ori=get_vek(args.robori))
-        # rp, ro = self.tranman.get_robot_base()
-
-        # robot, robot_prim_path = add_robot_to_scene(self.robot_cfg, my_world, position=rp, orient=ro)
 
     def wc_to_rcc(self, pos, ori):
-        return self.tranman.wc_to_rcc(pos, ori)
+        return self.rocuTranman.wc_to_rcc(pos, ori)
 
     def rcc_to_wc(self, pos, ori):
-        return self.tranman.rcc_to_wc(pos, ori)
+        return self.rocuTranman.rcc_to_wc(pos, ori)
 
     def get_start_pos(self):
         return self.motion_gen.get_start_pose()
 
-    def get_cur_pos(self):
-        return self.motion_gen.get_cur_pos()
+    def get_cur_pose(self, joint_state):
+        return self.motion_gen.get_cur_pose(joint_state)
 
     def update_world(self, obstacles):
         return self.motion_gen.update_world(obstacles)
 
-    def PositionRobot(self, prerot, pos, ori):
-        self.tranman.set_transform(prerot=prerot, pos=pos, ori=ori)
-        rp, ro = self.tranman.get_robot_base()
-        self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro)
+    def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
+        self.rocuTranman.set_transform(prerot=prerot, pos=pos, ori=ori)
+        rp, ro = self.rocuTranman.get_robot_base()
+        self.robot_name = f"robot_{self.robid}"
+        self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro, subroot=subroot, robot_name=self.robot_name)
         self.articulation_controller = self.robot.get_articulation_controller()
 
     def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
@@ -303,7 +301,7 @@ class RobotCuroboWrapper:
             trajopt_tsteps = 40
             trajopt_dt = 0.04
             optimize_dt = False
-            max_attempts = 1
+            self.max_attempts = 1
             trim_steps = [1, None]
             interpolation_dt = trajopt_dt
         self.motion_gen_config = MotionGenConfig.load_from_robot_config(
@@ -344,7 +342,7 @@ class RobotCuroboWrapper:
 
         if target_pos is None or target_ori is None:
             sp_rcc, sq_rcc = self.motion_gen.get_start_pose()
-            sp_wc, sq_wc = self.tranman.rcc_to_wc(sp_rcc, sq_rcc)
+            sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
             if type(sq_wc) is Gf.Quatd:
                 sq_wc = quatd_to_list4(sq_wc)
 
@@ -355,7 +353,7 @@ class RobotCuroboWrapper:
             target_ori = sq_wc
 
         self.target = cuboid.VisualCuboid(
-            "/World/target",
+            f"/World/target_{self.robid}",
             position=target_pos,
             orientation=target_ori,
             color=np.array([1.0, 0, 0]),
@@ -441,7 +439,7 @@ class RobotCuroboWrapper:
                     if "scolor" in sphentry:
                         clr = np.array(sphentry["scolor"])
                 s_ori = np.array([1, 0, 0, 0])
-                sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
+                sp_wc, _ = self.rocuTranman.rcc_to_wc(sph.position, s_ori)
                 sp = sphere.VisualSphere(
                     prim_path=sname,
                     position=np.ravel(sp_wc),
@@ -458,7 +456,7 @@ class RobotCuroboWrapper:
         s_ori = np.array([1, 0, 0, 0])
         for sidx, sph in enumerate(self.sph_list[0]):
             if not np.isnan(sph.position[0]):
-                sp_wc, _ = self.tranman.rcc_to_wc(sph.position, s_ori)
+                sp_wc, _ = self.rocuTranman.rcc_to_wc(sph.position, s_ori)
                 self.spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
                 self.spheres[sidx].set_radius(float(sph.radius))
 
@@ -484,7 +482,7 @@ class RobotCuroboWrapper:
     def HandleTargetProcessing(self):
 
         self.cube_position, self.cube_orientation = self.target.get_world_pose()
-        triggerMoGen = self.CalcMoGenTargetTrigger(self.cube_position, self.cube_orientation)
+        triggerMoGen = self.CalcMoGenTargetTrigger()
         if triggerMoGen:
             print("Triggering MoGen")
 
@@ -504,17 +502,15 @@ class RobotCuroboWrapper:
         self.cube_orientation = ori
         return
 
-    def CalcMoGenTargetTrigger(self, cube_pos, cube_ori):
-        self.cube_position = cube_pos
-        self.cube_orientation = cube_ori
+    def CalcMoGenTargetTrigger(self):
         if self.past_pose is None:
-            self.past_pose = cube_pos
+            self.past_pose = self.cube_position
         if self.target_pose is None:
-            self.target_pose = cube_pos
+            self.target_pose = self.cube_position
         if self.target_orientation is None:
-            self.target_orientation = cube_ori
+            self.target_orientation = self.cube_orientation
         if self.past_orientation is None:
-            self.past_orientation = cube_ori
+            self.past_orientation = self.cube_orientation
 
         self.static_robo = True
         # robot_static = True
@@ -522,6 +518,7 @@ class RobotCuroboWrapper:
         # if (velmag < 0.2) or reactive:
         #     static_robo = True
         #     pass
+        cube_pos, cube_ori = self.cube_position, self.cube_orientation
         pretrig = (dst(cube_pos, self.target_pose) > 1e-3 or
                    dst(cube_ori, self.target_orientation) > 1e-3)
         self.trigger = (pretrig and
@@ -545,7 +542,7 @@ class RobotCuroboWrapper:
 
     def DoMoGenToPosOri(self, pos, ori):
         # Set EE teleop goals, use cube for simple non-vr init:
-        ee_pos_rcc, ee_ori_rcc = self.tranman.wc_to_rcc(pos, ori)
+        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
         if type(ee_ori_rcc) is Gf.Quatd:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
