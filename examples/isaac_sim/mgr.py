@@ -55,12 +55,15 @@ from curobo.util_file import (
 
 from mgrut import get_args, get_vek
 from rocuwrap import RocuWrapper
-
+import curobo.curobolib as curobolib
+from matman import MatMan
 
 def main():
     # ---------------------------------
     #    Misc Initialization
     # ---------------------------------
+    print("curobolib dir")
+    print(dir(curobolib))
     args = get_args()
 
     add_extensions(simulation_app, args.headless_mode)
@@ -68,6 +71,7 @@ def main():
     # assuming obstacles are in objects_path:
     my_world = World(stage_units_in_meters=0.05)
     stage = my_world.stage
+    matman = MatMan(stage)
 
     xform = stage.DefinePrim("/World", "Xform")
     stage.SetDefaultPrim(xform)
@@ -116,10 +120,10 @@ def main():
 
     match args.jakas:
         case "R":
-            prerot1, pos1, ori1 = [0, 0, 60], [-0.05, 0, 1], [0, 150, 180]
+            prerot1, pos1, ori1 = [0, 0, 60], [-0.2, 0, 1], [0, 150, 180]
             numrobs = 1
         case "L":
-            prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
+            prerot1, pos1, ori1 = [0, 0, -90], [+0.2, 0, 1], [0, -150, 180]
             numrobs = 1
         case "LR":
             prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
@@ -134,7 +138,7 @@ def main():
 
     def defineRobot(prerot, pos, ori, robid="") -> RocuWrapper:
         rw: RocuWrapper = RocuWrapper(robid)
-        rw.Initialize(robot_cfg_path, assetpath, configpath, my_world)
+        rw.Initialize(robot_cfg_path, assetpath, configpath, my_world, matman)
         rw.SetMoGenOptions(reactive=args.reactive,
                            reach_partial_pose=args.reach_partial_pose,
                            hold_partial_pose=args.hold_partial_pose,
@@ -145,6 +149,7 @@ def main():
         rw.Warmup()
         rw.SetupMoGenPlanConfig()
         rw.CreateTarget()
+        rw.ChangeMaterial("Blue_Glass")
         return rw
 
     rocuWrap1: RocuWrapper = defineRobot(prerot1, pos1, ori1, "1")
@@ -179,7 +184,9 @@ def main():
 
         if keyboard.is_pressed("a"):
             k = keyboard.read_key()
-            rocuWrap1.circle_target = not rocuWrap1.circle_target
+            rocuWrap1.ToggleCirclingTarget()
+            if rocuWrap2 is not None:
+                rocuWrap2.ToggleCirclingTarget()
             print(f"You pressed ‘a’. circle_target is now:{rocuWrap1.circle_target}")
 
         elif keyboard.is_pressed("b"):
@@ -199,9 +206,13 @@ def main():
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
             print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting position in rcc
+            sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting pose in rcc
             sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
             rocuWrap1.SetTargetPose(sp_wc, sq_wc)
+            if rocuWrap2 is not None:
+                sp_rcc, sq_rcc = rocuWrap2.get_start_pose()
+                sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
+                rocuWrap2.SetTargetPose(sp_wc, sq_wc)
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
@@ -210,6 +221,15 @@ def main():
                 sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
                 sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
                 rocuWrap1.SetTargetPose(sp_wc, sq_wc)
+            if rocuWrap2 is not None:
+                if rocuWrap2.cu_js is not None:
+                    sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
+                    sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
+                    rocuWrap2.SetTargetPose(sp_wc, sq_wc)
+
+        elif keyboard.is_pressed("e"):
+            k = keyboard.read_key()
+            rocuWrap1.dump_robot_transforms()
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
@@ -237,7 +257,7 @@ def main():
                 last_play_time = time.time()
             continue
 
-        rocuWrap1.CircleTarget()
+        rocuWrap1.UpdateCirclingTarget()
 
         if (step_index % 100) == 0:
             elap = time.time() - loop_start

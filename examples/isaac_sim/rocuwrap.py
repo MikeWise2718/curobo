@@ -60,13 +60,13 @@ class RocuTranMan:
         self.rob_ori_euler = Gf.Vec3d(0, 0, 0)
         self.rob_ori_sel = "0,0,0"
         # self.memstage: Usd.Stage = Usd.Stage.CreateInMemory()
-        self.memstage: Usd.Stage = get_current_stage()
+        self.stage: Usd.Stage = get_current_stage()
         # self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
         # self.memstage.SetDefaultPrim(self.default_prim)
         # self.xformpath = self.default_prim.GetPath().AppendPath(f"Xform_{robid}")
 
-        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, f"/World/XformFull_{robid}")
-        self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, f"/World/XformRobProxy_{robid}")
+        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.stage, f"/World/XformFull_{robid}")
+        self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.stage, f"/World/XformRobProxy_{robid}")
 
         self.xform_full_pre_rot_op = self.xformw_full_prim.AddRotateXYZOp(opSuffix='prerot')
         self.xform_full_tran_op = self.xformw_full_prim.AddTranslateOp()
@@ -125,7 +125,8 @@ class RocuTranMan:
         npmat3x3 = self.to_npmat3x3(self.inv_rotmat3d)
         self.rotmat3d_quat_nparray_inv = rot_matrix_to_quat(npmat3x3)
         self.rotmat3d_eulers_inv = matrix_to_euler_angles(npmat3x3, degrees=True)
-        (t, r, _, w) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
+        # (t, r, _, w) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
+        (t, r, _, w) = self.set_robot_proxy_tran(self.rob_pos, self.rotmat3d_quat_nparray)
         (self.robproxy_tran, self.robproxy_rot, self.robproxy_world_tran) = (t, r, w)
 
         print("----- input values -----")
@@ -170,17 +171,19 @@ class RocuTranMan:
 
     def rcc_to_wc(self, pos, ori):
         pos_gfv = self.to_gfvec(pos)
-        pos_new = self.tran + pos_gfv * self.inv_rotmat3d
+        # pos_new = self.tran + pos_gfv * self.inv_rotmat3d
+        pos_new = self.rob_pos + pos_gfv * self.inv_rotmat3d
         return pos_new, ori
 
     def wc_to_rcc(self, pos, ori):
         pos_gfv = self.to_gfvec(pos)
-        pos_new = (pos_gfv - self.tran) * self.rotmat3d
+        # pos_new = (pos_gfv - self.tran) * self.rotmat3d
+        pos_new = (pos_gfv - self.rob_pos) * self.rotmat3d
         return pos_new, ori
 
     def dump_robot_transforms(self, robpathname):
         robpath = Sdf.Path(robpathname)
-        robprim = self.memstage.GetPrimAtPath(robpath)
+        robprim = self.stage.GetPrimAtPath(robpath)
         (t, r, s, m) = self.get_world_xform(robprim)
         print("world_tranlate:", t)
         print("world_rotate:", r)
@@ -199,7 +202,7 @@ class RocuWrapper:
         self.robid = robid
         self.rocuTranman = RocuTranMan(robid)
 
-    def Initialize(self, robot_config_path, external_asset_path, external_robot_configs_path, my_world):
+    def Initialize(self, robot_config_path, external_asset_path, external_robot_configs_path, my_world, matman=None):
         self.robot_config_path = robot_config_path
         self.robot_cfg = None
         self.robot_prim_path = None
@@ -217,6 +220,7 @@ class RocuWrapper:
         self.my_world = my_world
         self.stage = my_world.stage
         self.cu_js = None
+        self.matman = matman
 
         self.spheres = None
         self.spherenames = None
@@ -250,14 +254,17 @@ class RocuWrapper:
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-
     def wc_to_rcc(self, pos, ori):
         return self.rocuTranman.wc_to_rcc(pos, ori)
 
     def rcc_to_wc(self, pos, ori):
         return self.rocuTranman.rcc_to_wc(pos, ori)
 
-    def get_start_pos(self):
+    def dump_robot_transforms(self):
+        robpathname = self.robot_prim_path
+        self.rocuTranman.dump_robot_transforms(robpathname)
+
+    def get_start_pose(self):
         return self.motion_gen.get_start_pose()
 
     def get_cur_pose(self, joint_state):
@@ -370,7 +377,7 @@ class RocuWrapper:
 
         return self.target
 
-    def CircleTarget(self):
+    def UpdateCirclingTarget(self):
         if self.circle_target:
             self.curang += self.curvel
             newpos = np.zeros(3)
@@ -381,7 +388,18 @@ class RocuWrapper:
                 position=newpos,
                 orientation=self.curori
             )
-        pass
+
+    def StartCirclingTarget(self):
+        self.curcen, self.curori = self.target.get_world_pose()
+        self.curvel = 0.02
+        self.curang = 0
+        self.currad = 0.1
+
+    def ToggleCirclingTarget(self):
+        self.circle_target = not self.circle_target
+        if self.circle_target:
+            self.StartCirclingTarget()
+
 
     def SetupMoGenPlanConfig(self):
         self.plan_config = MotionGenPlanConfig(
@@ -641,3 +659,7 @@ class RocuWrapper:
                 self.cmd_idx = 0
                 self.cur_cmd_plan = None
                 self.past_cmd = None
+
+    def ChangeMaterial(self, matname):
+        from senut import apply_material_to_prim_and_children
+        apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)
