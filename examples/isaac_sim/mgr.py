@@ -235,9 +235,10 @@ def main():
             k = keyboard.read_key()
             break
 
-        elif keyboard.is_pressed("s"):
+        elif keyboard.is_pressed("m"):
             k = keyboard.read_key()
-            print("You pressed ‘s’.")
+            rocuWrap1.toggle_material()
+            print("You pressed ‘m’.")
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()

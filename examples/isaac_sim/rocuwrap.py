@@ -12,6 +12,7 @@
 
 from torch.fx.experimental.symbolic_shapes import expect_true
 import time
+import copy
 import carb
 import numpy as np
 from helper import add_robot_to_scene
@@ -41,6 +42,7 @@ from curobo.wrap.reacher.motion_gen import (
 from pxr import Gf, Sdf, Usd, UsdGeom
 from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
+from senut import apply_material_to_prim_and_children, apply_matdict_to_prim_and_children, build_material_dict
 
 ############################################################
 
@@ -244,6 +246,7 @@ class RocuWrapper:
 
         self.cmd_plan_queue = []
 
+
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_cfg_path)
 
@@ -253,6 +256,8 @@ class RocuWrapper:
             self.robot_cfg["kinematics"]["external_robot_configs_path"] = external_robot_configs_path
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
+
+
 
     def wc_to_rcc(self, pos, ori):
         return self.rocuTranman.wc_to_rcc(pos, ori)
@@ -279,6 +284,7 @@ class RocuWrapper:
         self.robot_name = f"robot_{self.robid}"
         self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro, subroot=subroot, robot_name=self.robot_name)
         self.articulation_controller = self.robot.get_articulation_controller()
+        self.init_alarm_skin()
 
     def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
                         constrain_grasp_approach=None, vizi_spheres=None):
@@ -661,5 +667,84 @@ class RocuWrapper:
                 self.past_cmd = None
 
     def ChangeMaterial(self, matname):
-        from senut import apply_material_to_prim_and_children
         apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)
+
+    def check_alarm_status(self):
+        for j, jn in enumerate(self.dof_names):
+            if self.joint_limits[j] is not None:
+                jval = self.joint_values[j]
+                jmin = self.joint_limits[j][0]
+                jmax = self.joint_limits[j][1]
+                if jval < jmin or jval > jmax:
+                    self.dof_alarm[j] = True
+                else:
+                    self.dof_alarm[j] = False
+
+    def init_alarm_skin(self):
+        self.robmatskin = "default"
+        self.alarmskin = "Red_Glass"
+        self.show_joints_close_to_limits = False
+        # self.realize_joint_alarms(force=True)
+        self.ensure_orimat()
+
+    def ensure_orimat(self):
+        if not hasattr(self, "orimat"):
+            self.orimat = build_material_dict(self.stage, self.robot_prim_path)
+
+    def toggle_material(self):
+        if self.robmatskin == "default":
+            self.robmatskin = "Red_Glass"
+            apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, self.robot_prim_path)
+        else:
+            self.robmatskin = "default"
+            apply_matdict_to_prim_and_children(self.stage, self.orimat, self.robot_prim_path)
+
+    def toggle_show_joints_close_to_limits(self, ridx, notoggle=False):
+        if not notoggle:
+            self.show_joints_close_to_limits = not self.show_joints_close_to_limits
+        # print(f"toggle_show_joints_close_to_limits on {rcfg.robot_name} {rcfg.robot_id} - {rcfg.show_joints_close_to_limits}")
+        if self.show_joints_close_to_limits:
+            self.assign_alarm_skin(ridx)
+            self.check_alarm_status()
+            self.dof_alarm_last = copy.deepcopy(self.dof_alarm)
+            self.realize_joint_alarms(force=True)
+        else:
+            if self.robmatskin == "default":
+                self.ensure_orimat()
+                # print("Reverting to original materials (default)")
+                apply_matdict_to_prim_and_children(self._stage, self.orimat, self.robot_prim_path)
+            else:
+                 #print(f"Reverting to {rcfg.robmatskin}")
+                apply_material_to_prim_and_children(self._stage, self._matman, self.robmatskin, self.robot_prim_path)
+        # print("toggle_show_joints_close_to_limits done")
+        return self.show_joints_close_to_limits
+
+    def assign_alarm_skin(self, ridx):
+        if self.robmatskin == "Red_Glass":
+            self.alarmskin = "Blue_Glass"
+        else:
+            self.alarmskin = "Red_Glass"
+
+    def realize_joint_alarms(self, force=False):
+        # print(f"realize_joint_alarms force:{force}")
+        if self.show_joints_close_to_limits:
+            self.assign_alarm_skin()
+            self.check_alarm_status()
+            for j, jn in enumerate(self.dof_names):
+                if force or (self.dof_alarm[j] != self.dof_alarm_last[j]):
+                    link_path = self.link_paths[j]
+                    joint_in_alarm = self.dof_alarm[j]
+                    if joint_in_alarm:
+                        # print(f"   changing {link_path} to {rcfg.alarmskin} - inalarm:{joint_in_alarm}")
+                        # print(f"Joint {jn} is close to limit for {rcfg.robot_name} {rcfg.robot_id} link_path:{link_path}")
+                        apply_material_to_prim_and_children(self.stage, self.matman, self.alarmskin, link_path)
+                    else:
+                        # print(f"Joint {jn} is not close to limit for {rcfg.robot_name} {rcfg.robot_id} link_path:{link_path}")
+                        if self.robmatskin == "default":
+                            self.ensure_orimat()
+                            # print(f"   changing {link_path} to rcfg.orimat - inalarm:{joint_in_alarm}")
+                            apply_matdict_to_prim_and_children(self.stage, self.orimat, link_path)
+                        else:
+                            # print(f"   changing {link_path} to {rcfg.robmatskin} - inalarm:{joint_in_alarm}")
+                            apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, link_path)
+            self.dof_alarm_last = copy.deepcopy(self.dof_alarm)
