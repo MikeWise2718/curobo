@@ -149,7 +149,8 @@ def main():
         rw.Warmup()
         rw.SetupMoGenPlanConfig()
         rw.CreateTarget()
-        rw.ChangeMaterial("Blue_Glass")
+        # rw.change_material("Blue_Glass")
+        # note that we have not actually loaded the robot yet
         return rw
 
     rocuWrap1: RocuWrapper = defineRobot(prerot1, pos1, ori1, "1")
@@ -181,69 +182,78 @@ def main():
         # ---------------------------------
         #    Keyboard Input Processing
         # ---------------------------------
+        dokeyboard = step_index > 10
 
-        if keyboard.is_pressed("a"):
-            k = keyboard.read_key()
-            rocuWrap1.ToggleCirclingTarget()
-            if rocuWrap2 is not None:
-                rocuWrap2.ToggleCirclingTarget()
-            print(f"You pressed ‘a’. circle_target is now:{rocuWrap1.circle_target}")
+        if dokeyboard:
+            if keyboard.is_pressed("a"):
+                k = keyboard.read_key()
+                rocuWrap1.ToggleCirclingTarget()
+                if rocuWrap2 is not None:
+                    rocuWrap2.ToggleCirclingTarget()
+                print(f"You pressed ‘a’. circle_target is now:{rocuWrap1.circle_target}")
 
-        elif keyboard.is_pressed("b"):
-            k = keyboard.read_key()
-            print("You pressed ‘b’.")
+            elif keyboard.is_pressed("b"):
+                k = keyboard.read_key()
+                print("You pressed ‘b’.")
 
-        elif keyboard.is_pressed("*"):
-            k = keyboard.read_key()
-            rocuWrap1.curvel *= 1.5
-            print(f"You pressed ‘*’. curvel:{rocuWrap1.curvel}")
+            elif keyboard.is_pressed("*"):
+                k = keyboard.read_key()
+                rocuWrap1.curvel *= 1.5
+                print(f"You pressed ‘*’. curvel:{rocuWrap1.curvel}")
 
-        elif keyboard.is_pressed("/"):
-            k = keyboard.read_key()
-            rocuWrap1.curvel /= 1.5
-            print(f"You pressed ‘/’. curvel:{rocuWrap1.curvel}")
+            elif keyboard.is_pressed("/"):
+                k = keyboard.read_key()
+                rocuWrap1.curvel /= 1.5
+                print(f"You pressed ‘/’. curvel:{rocuWrap1.curvel}")
 
-        elif keyboard.is_pressed("c"):
-            k = keyboard.read_key()
-            print("You pressed ‘c’ - will reset object to start pose.")
-            sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting pose in rcc
-            sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
-            rocuWrap1.SetTargetPose(sp_wc, sq_wc)
-            if rocuWrap2 is not None:
-                sp_rcc, sq_rcc = rocuWrap2.get_start_pose()
-                sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
-                rocuWrap2.SetTargetPose(sp_wc, sq_wc)
-
-        elif keyboard.is_pressed("d"):
-            k = keyboard.read_key()
-            print("You pressed ‘d’ - will move to robot's current end-effector pose.")
-            if rocuWrap1.cu_js is not None:
-                sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
+            elif keyboard.is_pressed("c"):
+                k = keyboard.read_key()
+                print("You pressed ‘c’ - will reset object to start pose.")
+                sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting pose in rcc
                 sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
                 rocuWrap1.SetTargetPose(sp_wc, sq_wc)
-            if rocuWrap2 is not None:
-                if rocuWrap2.cu_js is not None:
-                    sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
+                if rocuWrap2 is not None:
+                    sp_rcc, sq_rcc = rocuWrap2.get_start_pose()
                     sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
                     rocuWrap2.SetTargetPose(sp_wc, sq_wc)
 
-        elif keyboard.is_pressed("e"):
-            k = keyboard.read_key()
-            rocuWrap1.dump_robot_transforms()
+            elif keyboard.is_pressed("d"):
+                k = keyboard.read_key()
+                print("You pressed ‘d’ - will move to robot's current end-effector pose.")
+                if rocuWrap1.cu_js is not None:
+                    sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
+                    sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
+                    rocuWrap1.SetTargetPose(sp_wc, sq_wc)
+                if rocuWrap2 is not None:
+                    if rocuWrap2.cu_js is not None:
+                        sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
+                        sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
+                        rocuWrap2.SetTargetPose(sp_wc, sq_wc)
 
-        elif keyboard.is_pressed("q"):
-            k = keyboard.read_key()
-            break
+            elif keyboard.is_pressed("e"):
+                k = keyboard.read_key()
+                rocuWrap1.dump_robot_transforms()
 
-        elif keyboard.is_pressed("m"):
-            k = keyboard.read_key()
-            rocuWrap1.toggle_material()
-            print("You pressed ‘m’.")
+            elif keyboard.is_pressed("q"):
+                k = keyboard.read_key()
+                break
 
-        elif keyboard.is_pressed("v"):
-            k = keyboard.read_key()
-            rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
-            print(f"You pressed 'v' - vizi_spheres is now {rocuWrap1.vizi_spheres}.")
+            elif keyboard.is_pressed("m"):
+                k = keyboard.read_key()
+                rocuWrap1.toggle_material()
+                rocuWrap1.check_alarm_status()
+                print("You pressed ‘m’")
+
+            elif keyboard.is_pressed("t"):
+                k = keyboard.read_key()
+                rocuWrap1.toggle_show_joints_close_to_limits()
+                print("You pressed ‘t’")
+
+
+            elif keyboard.is_pressed("v"):
+                k = keyboard.read_key()
+                rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
+                print(f"You pressed 'v' - vizi_spheres is now {rocuWrap1.vizi_spheres}.")
 
         # ---------------------------------
         #    World Processing
@@ -299,12 +309,14 @@ def main():
         rocuWrap1.ProcessCollisionSpheres()
         rocuWrap1.HandleTargetProcessing()
         rocuWrap1.ExecuteMoGenCmdPlan()
+        rocuWrap1.realize_joint_alarms()
 
         if rocuWrap2 is not None:
             rocuWrap2.UpdateJointState()
             rocuWrap2.ProcessCollisionSpheres()
             rocuWrap2.HandleTargetProcessing()
             rocuWrap2.ExecuteMoGenCmdPlan()
+            rocuWrap2.realize_joint_alarms()
 
     simulation_app.close()
 

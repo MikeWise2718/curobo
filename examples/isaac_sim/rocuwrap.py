@@ -42,7 +42,7 @@ from curobo.wrap.reacher.motion_gen import (
 from pxr import Gf, Sdf, Usd, UsdGeom
 from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
-from senut import apply_material_to_prim_and_children, apply_matdict_to_prim_and_children, build_material_dict
+from senut import apply_material_to_prim_and_children, apply_matdict_to_prim_and_children, build_material_dict, get_link_paths
 
 ############################################################
 
@@ -246,6 +246,9 @@ class RocuWrapper:
 
         self.cmd_plan_queue = []
 
+        self.upper_dof_lim = None
+        self.lower_dof_lim = None
+
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_cfg_path)
@@ -419,6 +422,17 @@ class RocuWrapper:
     def UpdateJointState(self):
         self.sim_js = self.robot.get_joints_state()
         self.sim_js_names = self.robot.dof_names
+        if self.upper_dof_lim is None:
+            self.upper_dof_lim = self.robot.dof_properties["upper"]
+            self.lower_dof_lim = self.robot.dof_properties["lower"]
+        # rcfg.dof_paths = art._prim_view._dof_paths[0] # why is this a list while the following ones are not?
+        # rcfg.dof_types = art._prim_view._dof_types
+        # rcfg.dof_names = art._prim_view._dof_names
+        # rcfg.dof_properties = art._prim_view._dof_properties
+            dofpaths = self.robot._articulation_view._dof_paths[0]
+            self.link_paths = get_link_paths(dofpaths)
+
+
         if np.any(np.isnan(self.sim_js.positions)):
             print("isaac sim has returned NAN joint position values.")
             log_error("isaac sim has returned NAN joint position values.")
@@ -666,26 +680,36 @@ class RocuWrapper:
                 self.cur_cmd_plan = None
                 self.past_cmd = None
 
-    def ChangeMaterial(self, matname):
-        apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)
-
-    def check_alarm_status(self):
-        for j, jn in enumerate(self.dof_names):
-            if self.joint_limits[j] is not None:
-                jval = self.joint_values[j]
-                jmin = self.joint_limits[j][0]
-                jmax = self.joint_limits[j][1]
-                if jval < jmin or jval > jmax:
-                    self.dof_alarm[j] = True
-                else:
-                    self.dof_alarm[j] = False
-
     def init_alarm_skin(self):
         self.robmatskin = "default"
         self.alarmskin = "Red_Glass"
         self.show_joints_close_to_limits = False
         # self.realize_joint_alarms(force=True)
         self.ensure_orimat()
+
+    def check_alarm_status(self):
+        self.jchk_str = ""
+        self.jchk_str_val = ""
+        for j,jn in enumerate(self.sim_js_names):
+            jpos = self.sim_js.positions[j]
+            llim = self.lower_dof_lim[j]
+            ulim = self.upper_dof_lim[j]
+            denom = ulim - llim
+            if denom == 0:
+                denom = 1
+            pct = 100*(jpos - llim)/denom
+            self.jchk_str_val += f"{pct:.0f} "
+            if pct < 10:
+                self.jchk_str += "L"
+            elif pct > 90:
+                self.jchk_str += "U"
+            else:
+                self.jchk_str += "."
+        print("joint_check:", self.jchk_str, " ", self.jchk_str_val)
+
+
+    def change_material(self, matname):
+        apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)
 
     def ensure_orimat(self):
         if not hasattr(self, "orimat"):
@@ -698,15 +722,15 @@ class RocuWrapper:
         else:
             self.robmatskin = "default"
             apply_matdict_to_prim_and_children(self.stage, self.orimat, self.robot_prim_path)
+        self.assign_alarm_skin()
 
-    def toggle_show_joints_close_to_limits(self, ridx, notoggle=False):
+    def toggle_show_joints_close_to_limits(self, notoggle=False):
         if not notoggle:
             self.show_joints_close_to_limits = not self.show_joints_close_to_limits
         # print(f"toggle_show_joints_close_to_limits on {rcfg.robot_name} {rcfg.robot_id} - {rcfg.show_joints_close_to_limits}")
         if self.show_joints_close_to_limits:
-            self.assign_alarm_skin(ridx)
+            self.assign_alarm_skin()
             self.check_alarm_status()
-            self.dof_alarm_last = copy.deepcopy(self.dof_alarm)
             self.realize_joint_alarms(force=True)
         else:
             if self.robmatskin == "default":
@@ -719,7 +743,7 @@ class RocuWrapper:
         # print("toggle_show_joints_close_to_limits done")
         return self.show_joints_close_to_limits
 
-    def assign_alarm_skin(self, ridx):
+    def assign_alarm_skin(self):
         if self.robmatskin == "Red_Glass":
             self.alarmskin = "Blue_Glass"
         else:
@@ -728,12 +752,11 @@ class RocuWrapper:
     def realize_joint_alarms(self, force=False):
         # print(f"realize_joint_alarms force:{force}")
         if self.show_joints_close_to_limits:
-            self.assign_alarm_skin()
             self.check_alarm_status()
-            for j, jn in enumerate(self.dof_names):
-                if force or (self.dof_alarm[j] != self.dof_alarm_last[j]):
+            for j, jstate in enumerate(self.jchk_str):
+                if force or (jstate != self.last_jchk_str[j]):
                     link_path = self.link_paths[j]
-                    joint_in_alarm = self.dof_alarm[j]
+                    joint_in_alarm = jstate != "."
                     if joint_in_alarm:
                         # print(f"   changing {link_path} to {rcfg.alarmskin} - inalarm:{joint_in_alarm}")
                         # print(f"Joint {jn} is close to limit for {rcfg.robot_name} {rcfg.robot_id} link_path:{link_path}")
@@ -747,4 +770,4 @@ class RocuWrapper:
                         else:
                             # print(f"   changing {link_path} to {rcfg.robmatskin} - inalarm:{joint_in_alarm}")
                             apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, link_path)
-            self.dof_alarm_last = copy.deepcopy(self.dof_alarm)
+            self.last_jchk_str = copy.deepcopy(self.jchk_str)
