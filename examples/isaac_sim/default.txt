@@ -1,0 +1,1823 @@
+------------------ kinematics_fused_cu.forward -----------------sc:0
+                  kinematics_fused_cu.forward took 0.000501 secs
+Solver was not initialized, warming up solver
+        warming up solver 0
+------------------ kinematics_fused_cu.forward -----------------sc:1
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:0
+                  geom_cu.self_collision_distance took 0.002999 secs
+------------------ geom_cu.closest_point -----------------sc:0
+                  geom_cu.closest_point took 0.006499 secs
+------------------ geom_cu.pose_distance -----------------sc:0
+                  geom_cu.pose_distance took 0.000500 secs
+------------------ kinematics_fused_cu.forward -----------------sc:2
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:1
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:1
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:1
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:3
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:2
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:2
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:2
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:4
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:3
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:3
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:3
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:5
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:4
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:4
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:4
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:6
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:5
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:5
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:5
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:7
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:6
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:6
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:6
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:8
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.self_collision_distance -----------------sc:7
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:7
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:7
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:9
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:8
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:8
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:8
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:10
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:9
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:9
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:9
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:11
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:10
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:10
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:10
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:12
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:11
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:11
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:11
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:13
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:12
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:12
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:12
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:14
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:13
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:13
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:13
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:15
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:14
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:14
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:14
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:16
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:15
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:15
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:15
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:17
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:16
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:16
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:16
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:18
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.self_collision_distance -----------------sc:17
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:17
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:17
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:19
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:18
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:18
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:18
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:20
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:19
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:19
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:19
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:21
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:20
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:20
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:20
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:0
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:0
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:0
+                  lbfgs_step_cu.forward took 0.000501 secs
+------------------ line_search_cu.update_best -----------------sc:0
+                  line_search_cu.update_best took 0.000499 secs
+------------------ kinematics_fused_cu.forward -----------------sc:22
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:21
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:21
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:21
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:1
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:1
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:1
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:1
+                  line_search_cu.update_best took 0.000499 secs
+------------------ kinematics_fused_cu.forward -----------------sc:23
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:22
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:22
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:22
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:2
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:2
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:2
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:2
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:24
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:23
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:23
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:23
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:3
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:3
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:3
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:3
+                  line_search_cu.update_best took 0.000499 secs
+------------------ kinematics_fused_cu.forward -----------------sc:25
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:24
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:24
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:24
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:4
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:4
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:4
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:4
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:26
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:25
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:25
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:25
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:5
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:5
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:5
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:5
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:27
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:26
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:26
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:26
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:6
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:6
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:6
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:6
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:28
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:27
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:27
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:27
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:7
+                  kinematics_fused_cu.backward took 0.000500 secs
+------------------ line_search_cu.line_search -----------------sc:7
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:7
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:7
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:29
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:28
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:28
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:28
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:8
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:8
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:8
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:8
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:30
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:29
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:29
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:29
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:9
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:9
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:9
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:9
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:31
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:30
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:30
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:30
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:10
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:10
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:10
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:10
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:32
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:31
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:31
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:31
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:11
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:11
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:11
+                  lbfgs_step_cu.forward took 0.000500 secs
+------------------ line_search_cu.update_best -----------------sc:11
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:33
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:32
+                  geom_cu.self_collision_distance took 0.000501 secs
+------------------ geom_cu.closest_point -----------------sc:32
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:32
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:12
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:12
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:12
+                  lbfgs_step_cu.forward took 0.000499 secs
+------------------ line_search_cu.update_best -----------------sc:12
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:34
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:33
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:33
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:33
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:13
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:13
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:13
+                  lbfgs_step_cu.forward took 0.000497 secs
+------------------ line_search_cu.update_best -----------------sc:13
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:35
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:34
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:34
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:34
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:14
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:14
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:14
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:14
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:36
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:35
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:35
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:35
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:15
+                  kinematics_fused_cu.backward took 0.000499 secs
+------------------ line_search_cu.line_search -----------------sc:15
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:15
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:15
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:37
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:36
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:36
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:36
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:16
+                  kinematics_fused_cu.backward took 0.000499 secs
+------------------ line_search_cu.line_search -----------------sc:16
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:16
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:16
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:38
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:37
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:37
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:37
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:17
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:17
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:17
+                  lbfgs_step_cu.forward took 0.000500 secs
+------------------ line_search_cu.update_best -----------------sc:17
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:39
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:38
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:38
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:38
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:18
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:18
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:18
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:18
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:40
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:39
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:39
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:39
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:19
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:19
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:19
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:19
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:41
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:40
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:40
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:40
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:20
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:20
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:20
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:20
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:42
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:41
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:41
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:41
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:21
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:21
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:21
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:21
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:43
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:42
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:42
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:42
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:22
+                  kinematics_fused_cu.backward took 0.000500 secs
+------------------ line_search_cu.line_search -----------------sc:22
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:22
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:22
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:44
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:43
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:43
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:43
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:23
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:23
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:23
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:23
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:45
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:44
+                  geom_cu.self_collision_distance took 0.000498 secs
+------------------ geom_cu.closest_point -----------------sc:44
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:44
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:24
+                  kinematics_fused_cu.backward took 0.000499 secs
+------------------ line_search_cu.line_search -----------------sc:24
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:24
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:24
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:46
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:45
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:45
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:45
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:25
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:25
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:25
+                  lbfgs_step_cu.forward took 0.000500 secs
+------------------ line_search_cu.update_best -----------------sc:25
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:47
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:46
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:46
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:46
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:26
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:26
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:26
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:26
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:48
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.self_collision_distance -----------------sc:47
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:47
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:47
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:27
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:27
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:27
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:27
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:49
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.self_collision_distance -----------------sc:48
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:48
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:48
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:28
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:28
+                  line_search_cu.line_search took 0.000501 secs
+------------------ lbfgs_step_cu.forward -----------------sc:28
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:28
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:50
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:49
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:49
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:49
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:29
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:29
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:29
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:29
+                  line_search_cu.update_best took 0.000500 secs
+------------------ kinematics_fused_cu.forward -----------------sc:51
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:50
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:50
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:50
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:30
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:30
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:30
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:30
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:52
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:51
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:51
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:51
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:31
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:31
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:31
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:31
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:53
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:52
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:52
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:52
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:32
+                  kinematics_fused_cu.backward took 0.000499 secs
+------------------ line_search_cu.line_search -----------------sc:32
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:32
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:32
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:54
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:53
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:53
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:53
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:33
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:33
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:33
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:33
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:55
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:54
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:54
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:54
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:34
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:34
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:34
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:34
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:56
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:55
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:55
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:55
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:35
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:35
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:35
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:35
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:57
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:56
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:56
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:56
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:36
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:36
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:36
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:36
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:58
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:57
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:57
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:57
+                  geom_cu.pose_distance took 0.000500 secs
+------------------ kinematics_fused_cu.backward -----------------sc:37
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:37
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:37
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:37
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:59
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:58
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:58
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:58
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:38
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:38
+                  line_search_cu.line_search took 0.000500 secs
+------------------ lbfgs_step_cu.forward -----------------sc:38
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:38
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:60
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:59
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:59
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:59
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:39
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:39
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:39
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:39
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:61
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:60
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:60
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:60
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:40
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:40
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:40
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:40
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:62
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:61
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:61
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:61
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:41
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:41
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:41
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:41
+                  line_search_cu.update_best took 0.000500 secs
+------------------ kinematics_fused_cu.forward -----------------sc:63
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:62
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:62
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:62
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:42
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:42
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:42
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:42
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:64
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.self_collision_distance -----------------sc:63
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:63
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:63
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:43
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:43
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:43
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:43
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:65
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:64
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:64
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:64
+                  geom_cu.pose_distance took 0.000503 secs
+------------------ kinematics_fused_cu.backward -----------------sc:44
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:44
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:44
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:44
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:66
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:65
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:65
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:65
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:45
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:45
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:45
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:45
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:67
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:66
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:66
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:66
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:46
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:46
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:46
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:46
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:68
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:67
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:67
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:67
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:47
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:47
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:47
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:47
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:69
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:68
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:68
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:68
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:48
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:48
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:48
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:48
+                  line_search_cu.update_best took 0.000502 secs
+------------------ kinematics_fused_cu.forward -----------------sc:70
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:69
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:69
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:69
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:49
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:49
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:49
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:49
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:71
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:70
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:70
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:70
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:50
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:50
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:50
+                  lbfgs_step_cu.forward took 0.000501 secs
+------------------ line_search_cu.update_best -----------------sc:50
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:72
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:71
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:71
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:71
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:51
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:51
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:51
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:51
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:73
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:72
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:72
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:72
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:52
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:52
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:52
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:52
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:74
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:73
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:73
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:73
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:53
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:53
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:53
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:53
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:75
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:74
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:74
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:74
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:54
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:54
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:54
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:54
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:76
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:75
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:75
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:75
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:55
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:55
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:55
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:55
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:77
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:76
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:76
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:76
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:56
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:56
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:56
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:56
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:78
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:77
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:77
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:77
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:57
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:57
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:57
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:57
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:79
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:78
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:78
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:78
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:58
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:58
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:58
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:58
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:80
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:79
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:79
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:79
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:59
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:59
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:59
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:59
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:81
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:80
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:80
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:80
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:60
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:60
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:60
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:60
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:82
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:81
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:81
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:81
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:61
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:61
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:61
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:61
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:83
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:82
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:82
+                  geom_cu.closest_point took 0.000501 secs
+------------------ geom_cu.pose_distance -----------------sc:82
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:62
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:62
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:62
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:62
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:84
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:83
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:83
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:83
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:63
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:63
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:63
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:63
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:85
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:84
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:84
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:84
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:64
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:64
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:64
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:64
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:86
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:85
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:85
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:85
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:65
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:65
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:65
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:65
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:87
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:86
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:86
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:86
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:66
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:66
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:66
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:66
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:88
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:87
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:87
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:87
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:67
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:67
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:67
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:67
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:89
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:88
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:88
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:88
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:68
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:68
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:68
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:68
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:90
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:89
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:89
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:89
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:69
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:69
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:69
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:69
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:91
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:90
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:90
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:90
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:70
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:70
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:70
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:70
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:92
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:91
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:91
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:91
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:71
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:71
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:71
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:71
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:93
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:92
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:92
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:92
+                  geom_cu.pose_distance took 0.000500 secs
+------------------ kinematics_fused_cu.backward -----------------sc:72
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:72
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:72
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:72
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:94
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:93
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:93
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:93
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:73
+                  kinematics_fused_cu.backward took 0.000501 secs
+------------------ line_search_cu.line_search -----------------sc:73
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:73
+                  lbfgs_step_cu.forward took 0.000499 secs
+------------------ line_search_cu.update_best -----------------sc:73
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:95
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:94
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:94
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:94
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:74
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:74
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:74
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:74
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:96
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:95
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:95
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:95
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:75
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:75
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:75
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:75
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:97
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:96
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:96
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:96
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:76
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:76
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:76
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:76
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:98
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:97
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:97
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:97
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:77
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:77
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:77
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:77
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:99
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:98
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:98
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:98
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:78
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:78
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:78
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:78
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:100
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:99
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:99
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:99
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:79
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:79
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:79
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:79
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:101
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:100
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:100
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:100
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:80
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:80
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:80
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:80
+                  line_search_cu.update_best took 0.000500 secs
+------------------ kinematics_fused_cu.forward -----------------sc:102
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:101
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:101
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:101
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:81
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:81
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:81
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:81
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:103
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:102
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:102
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:102
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:82
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:82
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:82
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:82
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:104
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:103
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:103
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:103
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:83
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:83
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:83
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:83
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:105
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:104
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:104
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:104
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:84
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:84
+                  line_search_cu.line_search took 0.000500 secs
+------------------ lbfgs_step_cu.forward -----------------sc:84
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:84
+                  line_search_cu.update_best took 0.000499 secs
+------------------ kinematics_fused_cu.forward -----------------sc:106
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:105
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:105
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:105
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:85
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:85
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:85
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:85
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:107
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:106
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:106
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:106
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:86
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:86
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:86
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:86
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:108
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:107
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:107
+                  geom_cu.closest_point took 0.000501 secs
+------------------ geom_cu.pose_distance -----------------sc:107
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:87
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:87
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:87
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:87
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:109
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:108
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:108
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:108
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:88
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:88
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:88
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:88
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:110
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:109
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:109
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:109
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:89
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:89
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:89
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:89
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:111
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:110
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:110
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:110
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:90
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:90
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:90
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:90
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:112
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:111
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:111
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:111
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:91
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:91
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:91
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:91
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:113
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:112
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:112
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:112
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:92
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:92
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:92
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:92
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:114
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:113
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:113
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:113
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:93
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:93
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:93
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:93
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:115
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:114
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:114
+                  geom_cu.closest_point took 0.000500 secs
+------------------ geom_cu.pose_distance -----------------sc:114
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:94
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:94
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:94
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:94
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:116
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:115
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:115
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:115
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:95
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:95
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:95
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:95
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:117
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:116
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:116
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:116
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:96
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:96
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:96
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:96
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:118
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:117
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:117
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:117
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:97
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:97
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:97
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:97
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:119
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:118
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:118
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:118
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:98
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:98
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:98
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:98
+                  line_search_cu.update_best took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:120
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:119
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:119
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:119
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.backward -----------------sc:99
+                  kinematics_fused_cu.backward took 0.000000 secs
+------------------ line_search_cu.line_search -----------------sc:99
+                  line_search_cu.line_search took 0.000000 secs
+------------------ lbfgs_step_cu.forward -----------------sc:99
+                  lbfgs_step_cu.forward took 0.000000 secs
+------------------ line_search_cu.update_best -----------------sc:99
+                  line_search_cu.update_best took 0.000000 secs
+        warming up solver 1
+Solve - Optimizing
+Done - Optimizing elap: 2.215364694595337
+------------------ kinematics_fused_cu.forward -----------------sc:121
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:120
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:120
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:120
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:121
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:121
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:121
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:122
+                  kinematics_fused_cu.forward took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:122
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:122
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:122
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:123
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:123
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:123
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ kinematics_fused_cu.forward -----------------sc:123
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:124
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:124
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:124
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:125
+                  geom_cu.self_collision_distance took 0.000500 secs
+------------------ geom_cu.closest_point -----------------sc:125
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:125
+                  geom_cu.pose_distance took 0.000499 secs
+------------------ kinematics_fused_cu.forward -----------------sc:124
+                  kinematics_fused_cu.forward took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:126
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:126
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:126
+                  geom_cu.pose_distance took 0.000000 secs
+------------------ geom_cu.self_collision_distance -----------------sc:127
+                  geom_cu.self_collision_distance took 0.000000 secs
+------------------ geom_cu.closest_point -----------------sc:127
+                  geom_cu.closest_point took 0.000000 secs
+------------------ geom_cu.pose_distance -----------------sc:127
+                  geom_cu.pose_distance took 0.000000 secs

@@ -13,6 +13,8 @@ import torch
 
 # CuRobo
 from curobo.util.logger import log_warn
+from curobo.util.yatelem import start_cuda_call, end_cuda_call
+
 
 try:
     # CuRobo
@@ -48,6 +50,8 @@ def tensor_step_pos_clique_idx_fwd(
     dof,
     mode=-1,
 ):
+    # print("------------------ tensor_step_cu.step_idx_position2 ------------------")
+    ccd = start_cuda_call("tensor_step_cu.step_idx_position2")
     r = tensor_step_cu.step_idx_position2(
         out_position,
         out_velocity,
@@ -64,6 +68,7 @@ def tensor_step_pos_clique_idx_fwd(
         dof,
         mode,
     )
+    end_cuda_call(ccd,r)
     return (r[0], r[1], r[2], r[3])
 
 
@@ -82,6 +87,8 @@ def tensor_step_pos_clique_fwd(
     dof,
     mode=-1,
 ):
+    # print("------------------ tensor_step_cu.step_position2 ------------------")
+    ccd =  start_cuda_call("tensor_step_cu.step_position2")
     r = tensor_step_cu.step_position2(
         out_position,
         out_velocity,
@@ -97,6 +104,7 @@ def tensor_step_pos_clique_fwd(
         dof,
         mode,
     )
+    end_cuda_call(ccd,r)
     return (r[0], r[1], r[2], r[3])
 
 
@@ -115,6 +123,8 @@ def tensor_step_acc_fwd(
     dof,
     use_rk2=True,
 ):
+    #  print("------------------ tensor_step_cu.step_acceleration ------------------")
+    ccd = start_cuda_call("tensor_step_cu.step_acceleration")
     r = tensor_step_cu.step_acceleration(
         out_position,
         out_velocity,
@@ -130,6 +140,7 @@ def tensor_step_acc_fwd(
         dof,
         use_rk2,
     )
+    end_cuda_call(ccd, r)
     return (r[0], r[1], r[2], r[3])  # output: best_cost, best_q, best_iteration
 
 
@@ -149,6 +160,8 @@ def tensor_step_acc_idx_fwd(
     dof,
     use_rk2=True,
 ):
+    # print("------------------ tensor_step_cu.step_acceleration_idx ------------------")
+    ccd = start_cuda_call("tensor_step_cu.step_acceleration_idx")
     r = tensor_step_cu.step_acceleration_idx(
         out_position,
         out_velocity,
@@ -165,6 +178,7 @@ def tensor_step_acc_idx_fwd(
         dof,
         use_rk2,
     )
+    end_cuda_call(ccd, r)
     return (r[0], r[1], r[2], r[3])  # output: best_cost, best_q, best_iteration
 
 
@@ -180,6 +194,8 @@ def tensor_step_pos_clique_bwd(
     dof,
     mode=-1,
 ):
+    # print("------------------ tensor_step_cu.step_position_backward2 ------------------")
+    ccd = start_cuda_call("tensor_step_cu.step_position_backward2")
     r = tensor_step_cu.step_position_backward2(
         out_grad_position,
         grad_position,
@@ -192,4 +208,5 @@ def tensor_step_pos_clique_bwd(
         dof,
         mode,
     )
+    end_cuda_call(ccd, r)
     return r[0]

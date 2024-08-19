@@ -13,11 +13,18 @@
 import torch
 
 a = torch.zeros(4, device="cuda:0")
+from curobo.util.yatelem import writeout_log
 
 # Standard Library
 import argparse
 
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--robot",
+    type=str,
+    default="ur5e.yml",
+    help="robot configuration to load"
+)
 parser.add_argument(
     "--headless_mode",
     type=str,
@@ -31,7 +38,40 @@ parser.add_argument(
     default=False,
 )
 
-parser.add_argument("--robot", type=str, default="ur5e.yml", help="robot configuration to load")
+parser.add_argument(
+    "--yalog",
+    action="store_true",
+    help="Log telemetry",
+)
+parser.add_argument(
+    "--yalogname",
+    type=str,
+    default="default.txt",
+    help="File name to log results to",
+)
+
+parser.add_argument(
+    "--ya_print_log",
+    action="store_true",
+    help="Do not print log",
+    default=False,
+)
+
+parser.add_argument(
+    "-ar",
+    "--ya_add_results",
+    action="store_true",
+    help="Add results to log",
+)
+
+parser.add_argument(
+    "-at",
+    "--ya_add_traceback",
+    action="store_true",
+    help="Add traceback to log",
+)
+
+
 args = parser.parse_args()
 
 ############################################################
@@ -46,6 +86,7 @@ simulation_app = SimulationApp(
         "height": "1080",
     }
 )
+
 # Standard Library
 from typing import Dict
 
@@ -84,6 +125,20 @@ from curobo.wrap.reacher.mpc import MpcSolver, MpcSolverConfig
 
 ########### OV #################
 
+import curobo.util.yatelem as yatelem
+
+yatelem.opt_enable_logging = args.yalog
+yatelem.opt_print_out = args.ya_print_log
+yatelem.opt_file_out = args.yalog
+yatelem.opt_output_results = args.ya_add_results
+yatelem.opt_output_traceback = args.ya_add_traceback
+yatelem.opt_log_file_name = args.yalogname
+
+if args.yalog:
+    print("Logging enabled to ", args.yalogname)
+
+if args.ya_print_log:
+    print("Printing log enabled")
 
 ############################################################
 
@@ -202,7 +257,8 @@ def main():
     ik_solver = IKSolver(ik_config)
 
     # get pose grid:
-    position_grid_offset = tensor_args.to_device(get_pose_grid(10, 10, 5, 0.5, 0.5, 0.5))
+    gpr = get_pose_grid(10, 10, 5, 0.5, 0.5, 0.5)
+    position_grid_offset = tensor_args.to_device(gpr)
 
     # read current ik pose and warmup?
     fk_state = ik_solver.fk(ik_solver.get_retract_config().view(1, -1))
@@ -223,6 +279,9 @@ def main():
     my_world.scene.add_default_ground_plane()
     i = 0
     spheres = None
+    step_index = 0
+
+
     while simulation_app.is_running():
         my_world.step(render=True)
         if not my_world.is_playing():
@@ -233,6 +292,7 @@ def main():
             #    my_world.play()
             continue
 
+        print(f"========================= Step Index {step_index} =========================")
         step_index = my_world.current_time_step_index
         # print(step_index)
         if step_index <= 2:
@@ -320,12 +380,11 @@ def main():
             result = ik_solver.solve_batch(goal_pose)
 
             succ = torch.any(result.success)
-            print(
-                "IK completed: Poses: "
-                + str(goal_pose.batch)
-                + " Time(s): "
-                + str(result.solve_time)
-            )
+            ntrue = torch.sum(result.success).item()
+            ntry = len(result.success)
+            elap = result.solve_time
+            msg = f"IK completed: Poses: {str(goal_pose.batch)}  Success: {ntrue} of {ntry}  Time(s): {elap}"
+            print(msg)
             # get spheres and flags:
             draw_points(goal_pose, result.success)
 
@@ -367,4 +426,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        writeout_log()
+    except Exception as e:
+        writeout_log()

@@ -13,6 +13,7 @@ import torch
 
 # CuRobo
 from curobo.util.logger import log_warn
+from curobo.util.yatelem import start_cuda_call, end_cuda_call
 from curobo.util.torch_utils import get_torch_jit_decorator
 
 try:
@@ -56,6 +57,7 @@ def get_self_collision_distance(
     checks_per_thread=32,
     experimental_kernel=True,
 ):
+    ccd = start_cuda_call("geom_cu.self_collision_distance")
     r = geom_cu.self_collision_distance(
         out_distance,
         out_vec,
@@ -75,6 +77,7 @@ def get_self_collision_distance(
 
     out_distance = r[0]
     out_vec = r[1]
+    end_cuda_call(ccd, r)
     return out_distance, out_vec
 
 
@@ -168,7 +171,8 @@ def get_pose_distance(
 ):
     if batch_pose_idx.shape[0] != batch_size:
         raise ValueError("Index buffer size is different from batch size")
-
+    # print("------------------ CUDA call: geom_cu.pose_distance ------------------")
+    ccd = start_cuda_call("geom_cu.pose_distance")
     r = geom_cu.pose_distance(
         out_distance,
         out_position_distance,
@@ -206,6 +210,7 @@ def get_pose_distance(
     out_q_vec = r[4]
 
     out_idx = r[5]
+    end_cuda_call(ccd, r)
     return out_distance, out_position_distance, out_rotation_distance, out_p_vec, out_q_vec, out_idx
 
 
@@ -221,6 +226,9 @@ def get_pose_distance_backward(
     batch_size,
     use_distance=False,
 ):
+
+    # print("------------------ CUDA call: geom_cu.pose_distance_backward ------------------")
+    ccd = start_cuda_call("geom_cu.pose_distance_backward")
     r = geom_cu.pose_distance_backward(
         out_grad_p,
         out_grad_q,
@@ -233,6 +241,7 @@ def get_pose_distance_backward(
         batch_size,
         use_distance,
     )
+    end_cuda_call(ccd, r)
     return r[0], r[1]
 
 
@@ -589,6 +598,7 @@ class SdfSphereOBB(torch.autograd.Function):
         sum_collisions: bool = True,
         compute_esdf: bool = False,
     ):
+        ccd = start_cuda_call("geom_cu.closest_point")
         r = geom_cu.closest_point(
             query_sphere,
             out_buffer,
@@ -617,6 +627,7 @@ class SdfSphereOBB(torch.autograd.Function):
         ctx.compute_esdf = compute_esdf
         ctx.return_loss = return_loss
         ctx.save_for_backward(r[1])
+        end_cuda_call(ccd, r)
         return r[0]
 
     @staticmethod
@@ -685,6 +696,8 @@ class SdfSweptSphereOBB(torch.autograd.Function):
         return_loss: bool = False,
         sum_collisions: bool = True,
     ):
+        # print("------------------ CUDA call: geom_cu.swept_closest_point ------------------")
+        ccd = start_cuda_call("geom_cu.swept_closest_point")
         r = geom_cu.swept_closest_point(
             query_sphere,
             out_buffer,
@@ -714,6 +727,7 @@ class SdfSweptSphereOBB(torch.autograd.Function):
         ctx.save_for_backward(
             r[1],
         )
+        end_cuda_call(ccd, r)
         return r[0]
 
     @staticmethod
@@ -780,7 +794,8 @@ class SdfSphereVoxel(torch.autograd.Function):
         sum_collisions: bool = True,
         compute_esdf: bool = False,
     ):
-
+        # print("------------------ CUDA call: geom_cu.closest_point_voxel ------------------")
+        ccd = start_cuda_call("geom_cu.closest_point_voxel")
         r = geom_cu.closest_point_voxel(
             query_sphere,
             out_buffer,
@@ -808,6 +823,7 @@ class SdfSphereVoxel(torch.autograd.Function):
         ctx.compute_esdf = compute_esdf
         ctx.return_loss = return_loss
         ctx.save_for_backward(r[1])
+        end_cuda_call(ccd, r)
         return r[0]
 
     @staticmethod
@@ -877,6 +893,8 @@ class SdfSweptSphereVoxel(torch.autograd.Function):
         return_loss: bool = False,
         sum_collisions: bool = True,
     ):
+        # print("------------------ CUDA call: geom_cu.swept_closest_point_voxel ------------------")
+        ccd = start_cuda_call("geom_cu.swept_closest_point_voxel")
         r = geom_cu.swept_closest_point_voxel(
             query_sphere,
             out_buffer,
@@ -908,6 +926,7 @@ class SdfSweptSphereVoxel(torch.autograd.Function):
         ctx.save_for_backward(
             r[1],
         )
+        end_cuda_call(ccd, r)
         return r[0]
 
     @staticmethod

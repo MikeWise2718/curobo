@@ -13,6 +13,7 @@ import torch
 
 # CuRobo
 from curobo.util.logger import log_warn
+from curobo.util.yatelem import start_cuda_call, end_cuda_call
 
 try:
     # CuRobo
@@ -57,6 +58,8 @@ def wolfe_line_search(
     batchsize = g_x.shape[0]
     l1 = g_x.shape[1]
     l2 = g_x.shape[2]
+    # print("------------------ line_search_cu.line_search ------------------")
+    ccd = start_cuda_call("line_search_cu.line_search")
     r = line_search_cu.line_search(
         # m_idx,
         best_x,
@@ -77,6 +80,7 @@ def wolfe_line_search(
         batchsize,
     )
     # print("batchsize:" + str(batchsize))
+    end_cuda_call(ccd, r)
     return (r[0], r[1], r[2])
 
 
@@ -94,6 +98,8 @@ def update_best(
 ):
     cost_s1 = cost.shape[0]
     cost_s2 = cost.shape[1]
+    # print("------------------ line_search_cu.update_best ------------------")
+    ccd = start_cuda_call("line_search_cu.update_best")
     r = line_search_cu.update_best(
         best_cost,
         best_q,
@@ -109,4 +115,5 @@ def update_best(
         relative_threshold,
     )
     # print("batchsize:" + str(batchsize))
+    end_cuda_call(ccd, r)
     return (r[0], r[1], r[2])  # output: best_cost, best_q, best_iteration

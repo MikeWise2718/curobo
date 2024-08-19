@@ -14,6 +14,7 @@ from torch.autograd import Function
 
 # CuRobo
 from curobo.util.logger import log_warn
+from curobo.util.yatelem import start_cuda_call, end_cuda_call
 
 try:
     # CuRobo
@@ -38,7 +39,10 @@ except ImportError:
 
 
 def rotation_matrix_to_quaternion(in_mat, out_quat):
+    # print("------------------ kinematics_fused_cu.matrix_to_quaternion ------------------")
+    ccd = start_cuda_call("kinematics_fused_cu.matrix_to_quaternion")
     r = kinematics_fused_cu.matrix_to_quaternion(out_quat, in_mat.reshape(-1, 9))
+    end_cuda_call(ccd, r)
     return r[0]
 
 
@@ -70,6 +74,8 @@ class KinematicsFusedFunction(Function):
         n_spheres = b_robot_spheres.shape[1]
         n_joints = joint_seq.shape[-1]
 
+        # print("------------------ kinematics_fused_cu.forward ------------------")
+        ccd = start_cuda_call("kinematics_fused_cu.forward")
         r = kinematics_fused_cu.forward(
             link_pos,
             link_quat,
@@ -108,6 +114,7 @@ class KinematicsFusedFunction(Function):
             grad_out,
             global_cumul_mat,
         )
+        end_cuda_call(ccd, out_link_pos)
         return out_link_pos, out_link_quat, out_spheres
 
     @staticmethod
@@ -197,6 +204,9 @@ class KinematicsFusedFunction(Function):
             grad_out = grad_out.view(-1)
         else:
             grad_out = grad_out.reshape(-1)
+
+        # print("------------------ kinematics_fused_cu.backward ------------------")
+        ccd = start_cuda_call("kinematics_fused_cu.backward")
         r = kinematics_fused_cu.backward(
             grad_out,
             link_pos_out,
@@ -221,6 +231,7 @@ class KinematicsFusedFunction(Function):
         )
         out_q = r[0].view(b_size, -1)
 
+        end_cuda_call(ccd, out_q)
         return out_q
 
 

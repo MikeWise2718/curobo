@@ -54,7 +54,7 @@ from curobo.util_file import (
 
 
 from mgrut import get_args, get_vek
-from rocuwrap import RocuWrapper
+from rocuwrap import RocuWrapper, RocuMoveMode, RocuConfig
 import curobo.curobolib as curobolib
 from matman import MatMan
 
@@ -136,16 +136,16 @@ def main():
         case _:
             print("Bad Jaka specification")
 
-    def defineRobot(prerot, pos, ori, robid="") -> RocuWrapper:
+    def defineRobot(robid, prerot, pos, ori) -> RocuWrapper:
         rw: RocuWrapper = RocuWrapper(robid)
-        rw.Initialize(robot_cfg_path, assetpath, configpath, my_world, matman)
+        rw.Initialize()
+        rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
+        rw.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh)
         rw.SetMoGenOptions(reactive=args.reactive,
                            reach_partial_pose=args.reach_partial_pose,
                            hold_partial_pose=args.hold_partial_pose,
                            constrain_grasp_approach=args.constrain_grasp_approach,
                            vizi_spheres=args.visualize_spheres)
-        rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
-        rw.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
         rw.Warmup()
         rw.SetupMoGenPlanConfig()
         rw.CreateTarget()
@@ -153,10 +153,18 @@ def main():
         # note that we have not actually loaded the robot yet
         return rw
 
-    rocuWrap1: RocuWrapper = defineRobot(prerot1, pos1, ori1, "1")
+    RocuConfig.external_asset_path = assetpath
+    RocuConfig.external_robot_configs_path = configpath
+    RocuConfig.robot_config_path = robot_cfg_path
+    RocuConfig.my_world = my_world
+    RocuConfig.world_cfg = world_cfg
+    RocuConfig.matman = matman
+
+    mode = RocuMoveMode.FollowTargetWithMoGen
+    rocuWrap1: RocuWrapper = defineRobot("1", prerot1, pos1, ori1)
 
     if numrobs == 2:
-        rocuWrap2: RocuWrapper = defineRobot(prerot2, pos2, ori2, "2")
+        rocuWrap2: RocuWrapper = defineRobot("2", prerot2, pos2, ori2)
     else:
         rocuWrap2 = None
 
@@ -249,7 +257,6 @@ def main():
                 rocuWrap1.toggle_show_joints_close_to_limits()
                 print("You pressed ‘t’")
 
-
             elif keyboard.is_pressed("v"):
                 k = keyboard.read_key()
                 rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
@@ -268,18 +275,20 @@ def main():
                 last_play_time = time.time()
             continue
 
-        rocuWrap1.UpdateCirclingTarget()
-
-        if (step_index % 100) == 0:
-            elap = time.time() - loop_start
-            cp,co = rocuWrap1.GetTargetPose()
-            print(f"si:{step_index} time:{elap:.2f} cp:{cp} co:{co}")
-        if step_index < 2:
+        if step_index == 1: # step index will be set to 1 when play is pressed, so we should reset only
             print(f"resetting world step:{step_index}")
             my_world.reset()
-            rocuWrap1.Reset()
-            if rocuWrap2 is not None:
-                rocuWrap2.Reset()
+
+        rocuWrap1.StartStep(step_index)
+        if rocuWrap2 is not None:
+            rocuWrap2.StartStep(step_index)
+
+        # if step_index == 1: # step index will be 1 on first play, so we should reset only
+        #     print(f"resetting world step:{step_index}")
+        #     my_world.reset()
+        #     rocuWrap1.Reset()
+        #     if rocuWrap2 is not None:
+        #         rocuWrap2.Reset()
 
         # ---------------------------------
         #    Obstacles Processing
@@ -306,17 +315,17 @@ def main():
         # position and orientation of target virtual cube:
 
         rocuWrap1.UpdateJointState()
+        rocuWrap1.realize_joint_alarms()
         rocuWrap1.ProcessCollisionSpheres()
         rocuWrap1.HandleTargetProcessing()
         rocuWrap1.ExecuteMoGenCmdPlan()
-        rocuWrap1.realize_joint_alarms()
 
         if rocuWrap2 is not None:
             rocuWrap2.UpdateJointState()
+            rocuWrap2.realize_joint_alarms()
             rocuWrap2.ProcessCollisionSpheres()
             rocuWrap2.HandleTargetProcessing()
             rocuWrap2.ExecuteMoGenCmdPlan()
-            rocuWrap2.realize_joint_alarms()
 
     simulation_app.close()
 

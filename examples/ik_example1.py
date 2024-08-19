@@ -31,6 +31,7 @@ torch.backends.cudnn.allow_tf32 = True
 
 def demo_basic_ik():
     tensor_args = TensorDeviceType()
+    torch.set_printoptions(precision=6)
 
     config_file = load_yaml(join_path(get_robot_configs_path(), "ur10e.yml"))
     urdf_file = config_file["robot_cfg"]["kinematics"][
@@ -45,7 +46,7 @@ def demo_basic_ik():
         None,
         rotation_threshold=0.05,
         position_threshold=0.005,
-        num_seeds=20,
+        num_seeds=1000,
         self_collision_check=False,
         self_collision_opt=False,
         tensor_args=tensor_args,
@@ -54,24 +55,33 @@ def demo_basic_ik():
     ik_solver = IKSolver(ik_config)
 
     # print(kin_state)
+    nsamples = 5
     for _ in range(1):
-        q_sample = ik_solver.sample_configs(5)
+        q_sample = ik_solver.sample_configs(nsamples)
+        print("q_sample.shape:", q_sample.shape)
+        print("q_sample:\n", q_sample)
         kin_state = ik_solver.fk(q_sample)
+        print("\nkin_state.shape\n:", kin_state)
         goal = Pose(kin_state.ee_position, kin_state.ee_quaternion)
-        print("Goal:", goal)
 
         st_time = time.time()
         result = ik_solver.solve_batch(goal)
         torch.cuda.synchronize()
-        print(result)
         print(
-            "Success, Solve Time(s), hz ",
+            "\nSuccess, Solve Time(s), hz ",
             torch.count_nonzero(result.success).item() / len(q_sample),
             result.solve_time,
             q_sample.shape[0] / (time.time() - st_time),
             torch.mean(result.position_error),
             torch.mean(result.rotation_error),
         )
+        print("result:")
+        print(result)
+        unique = result.get_batch_unique_solution()
+        print("unique:")
+        print(unique)
+        pass
+
 
 
 def demo_full_config_collision_free_ik():

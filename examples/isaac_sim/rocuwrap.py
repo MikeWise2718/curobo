@@ -16,6 +16,7 @@ import copy
 import carb
 import numpy as np
 from helper import add_robot_to_scene
+from enum import Enum
 
 ########### OV #################
 from omni.isaac.core import World
@@ -198,14 +199,42 @@ def dst(p1, p2):
     rv = np.linalg.norm(p1 - p2)
     return rv
 
+class RocuMoveMode(Enum):
+    FollowTargetWithMoGen = 1
+    FollowTargetWithInvKin = 2
+    ReachabilityWithInvKin = 3
+
+class RocuConfiguator:
+    def __init__(self):
+        self.robot_config_path = "robot"
+        self.external_asset_path = "assetpath"
+        self.external_robot_configs_path = "config"
+        self.my_world = None
+        self.world_cfg = None
+        self.matman = None
+
+RocuConfig = RocuConfiguator()
+
 class RocuWrapper:
 
     def __init__(self, robid):
         self.robid = robid
         self.rocuTranman = RocuTranMan(robid)
 
-    def Initialize(self, robot_config_path, external_asset_path, external_robot_configs_path, my_world, matman=None):
-        self.robot_config_path = robot_config_path
+    def Initialize(self):
+        # self.robot_config_path = robot_config_path
+        # self.external_asset_path = external_asset_path
+        # self.external_robot_configs_path = external_robot_configs_path
+        # self.my_world = my_world
+        # self.matman = matman
+
+        self.robot_config_path = RocuConfig.robot_config_path
+        self.external_asset_path = RocuConfig.external_asset_path
+        self.external_robot_configs_path = RocuConfig.external_robot_configs_path
+
+        self.my_world = RocuConfig.my_world
+        self.matman = RocuConfig.matman
+
         self.robot_cfg = None
         self.robot_prim_path = None
         self.robot = None
@@ -216,13 +245,8 @@ class RocuWrapper:
         self.max_attempts = 0
         self.tensor_args = TensorDeviceType()
         self.world_cfg = None
-        self.robot_cfg_path = robot_config_path
-        self.external_asset_path = external_asset_path
-        self.external_robot_configs_path = external_robot_configs_path
-        self.my_world = my_world
-        self.stage = my_world.stage
+        self.stage = self.my_world.stage
         self.cu_js = None
-        self.matman = matman
 
         self.spheres = None
         self.spherenames = None
@@ -251,16 +275,27 @@ class RocuWrapper:
 
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
-        self.LoadRobotCfg(self.robot_cfg_path)
+        self.LoadRobotCfg(self.robot_config_path)
 
-        if external_asset_path is not None:
-            self.robot_cfg["kinematics"]["external_asset_path"] = external_asset_path
-        if external_robot_configs_path is not None:
-            self.robot_cfg["kinematics"]["external_robot_configs_path"] = external_robot_configs_path
+        if self.external_asset_path is not None:
+            self.robot_cfg["kinematics"]["external_asset_path"] = self.external_asset_path
+        if self.external_robot_configs_path is not None:
+            self.robot_cfg["kinematics"]["external_robot_configs_path"] = self.external_robot_configs_path
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
 
+    def SetMotionMode(self, mode: RocuMoveMode,  n_obstacle_cuboids, n_obstacle_mesh, world_cfg):
+        self.move_mode = mode
+
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                self.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
+                self.SetupMoGenPlanConfig()
+                self.Warmup()
+                self.CreateTarget()
+            case _:
+                carb.log_warn(f"Move Mode {mode} not implemented yet.")
 
     def wc_to_rcc(self, pos, ori):
         return self.rocuTranman.wc_to_rcc(pos, ori)
@@ -305,13 +340,13 @@ class RocuWrapper:
     def LoadRobotCfg(self, robot_pathname):
         self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
 
-    def InitMotionGen(self, n_obstacle_cuboids, n_obstacle_mesh, world_cfg):
+    def InitMotionGen(self, n_obstacle_cuboids, n_obstacle_mesh):
         trajopt_dt = None
         optimize_dt = True
         trajopt_tsteps = 16
         trim_steps = None
         self.max_attempts = 4
-        self.world_cfg = world_cfg
+        self.world_cfg = RocuConfig.world_cfg
         interpolation_dt = 0.05
         if self.reactive:
             trajopt_tsteps = 40
@@ -336,8 +371,14 @@ class RocuWrapper:
         )
         self.motion_gen = MotionGen(self.motion_gen_config)
 
+       #  self.robot._articulation_view.initialize() # don't do this - causes an exceptino - can't create phyics sim  view
+
+    def StartStep(self,step_index):
+        if step_index == 1:
+            self.Reset()
+        self.UpdateCirclingTarget()
+
     def Reset(self):
-        self.robot._articulation_view.initialize()
         self.idx_list = [self.robot.get_dof_index(x) for x in self.j_names]
         self.robot.set_joint_positions(self.default_config, self.idx_list)
 
@@ -706,7 +747,6 @@ class RocuWrapper:
             else:
                 self.jchk_str += "."
         print("joint_check:", self.jchk_str, " ", self.jchk_str_val)
-
 
     def change_material(self, matname):
         apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)

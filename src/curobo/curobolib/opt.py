@@ -14,6 +14,9 @@ from torch.autograd import Function
 
 # CuRobo
 from curobo.util.logger import log_warn
+from curobo.util.yatelem import start_cuda_call, end_cuda_call
+
+
 
 try:
     # CuRobo
@@ -55,6 +58,8 @@ class LBFGScu(Function):
     ):
         m, b, v_dim, _ = y_buffer.shape
 
+        # print("------------------ lbfgs_step_cu.forward ------------------")
+        ccd = start_cuda_call("lbfgs_step_cu.forward")
         R = lbfgs_step_cu.forward(
             step_vec,  # .view(-1),
             rho_buffer,  # .view(-1),
@@ -72,6 +77,7 @@ class LBFGScu(Function):
             use_shared_buffers,
         )
         step_v = R[0].view(step_vec.shape)
+        end_cuda_call(ccd, step_v)
 
         # ctx.save_for_backward(batch_spheres, robot_spheres, link_mats, link_sphere_map)
         return step_v

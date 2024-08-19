@@ -74,7 +74,7 @@ def set_prim_transform(
         UsdGeom.Xformable(prim).AddTranslateOp(UsdGeom.XformOp.PrecisionFloat)
     if not prim.GetAttribute("xformOp:scale").IsValid():
         UsdGeom.Xformable(prim).AddScaleOp(UsdGeom.XformOp.PrecisionFloat)
-    quat = pose[3:]
+    quat = np.asfarray(pose[3:])
 
     if use_float:
         position = Gf.Vec3f(pose[:3])
@@ -83,7 +83,8 @@ def set_prim_transform(
 
     else:
         position = Gf.Vec3d(pose[:3])
-        q = Gf.Quatd(quat[0], quat[1:])
+        q2 = Gf.Vec3d(float(quat[1]),float(quat[2]), float(quat[3]))
+        q = Gf.Quatd(float(quat[0]), q2)
         dims = Gf.Vec3d(scale)
 
     prim.GetAttribute("xformOp:translate").Set(position)
