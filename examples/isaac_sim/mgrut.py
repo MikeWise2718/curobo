@@ -88,6 +88,22 @@ parser.add_argument(
     default=None,
 )
 
+parser.add_argument(
+    "-vw",
+    "--view",
+    help="L for left, T for top",
+    type=str,
+    default=None,
+)
+
+parser.add_argument(
+    "-mmd",
+    "--movmode",
+    help="MOT for mogen-target, IKT for invkin-target",
+    type=str,
+    default=None,
+)
+
 def get_args():
     args = parser.parse_args()
     return args

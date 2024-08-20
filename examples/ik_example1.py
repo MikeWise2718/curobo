@@ -82,8 +82,6 @@ def demo_basic_ik():
         print(unique)
         pass
 
-
-
 def demo_full_config_collision_free_ik():
     tensor_args = TensorDeviceType()
     world_file = "collision_cage.yml"

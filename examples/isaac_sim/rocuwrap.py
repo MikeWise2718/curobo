@@ -17,12 +17,10 @@ import carb
 import numpy as np
 from helper import add_robot_to_scene
 from enum import Enum
-
 ########### OV #################
 from omni.isaac.core import World
 from omni.isaac.core.objects import cuboid, sphere
 from omni.isaac.core.utils.types import ArticulationAction
-from omni.isaac.core.utils.viewports import set_camera_view
 
 
 # CuRobo
@@ -40,12 +38,16 @@ from curobo.wrap.reacher.motion_gen import (
     MotionGenPlanConfig,
     PoseCostMetric,
 )
+
+from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
+
 from pxr import Gf, Sdf, Usd, UsdGeom
 from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
 from senut import apply_material_to_prim_and_children, apply_matdict_to_prim_and_children, build_material_dict, get_link_paths
 
 ############################################################
+import torch
 
 
 # ########## OV #################;;;;;
@@ -219,15 +221,12 @@ class RocuWrapper:
 
     def __init__(self, robid):
         self.robid = robid
-        self.rocuTranman = RocuTranMan(robid)
+        self.Initialize()
 
     def Initialize(self):
-        # self.robot_config_path = robot_config_path
-        # self.external_asset_path = external_asset_path
-        # self.external_robot_configs_path = external_robot_configs_path
-        # self.my_world = my_world
-        # self.matman = matman
 
+        self.rocuTranman = RocuTranMan(self.robid)
+        self.move_mode = None
         self.robot_config_path = RocuConfig.robot_config_path
         self.external_asset_path = RocuConfig.external_asset_path
         self.external_robot_configs_path = RocuConfig.external_robot_configs_path
@@ -270,9 +269,10 @@ class RocuWrapper:
 
         self.cmd_plan_queue = []
 
+        self.ik_result = None
+
         self.upper_dof_lim = None
         self.lower_dof_lim = None
-
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
@@ -284,14 +284,26 @@ class RocuWrapper:
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-
-    def SetMotionMode(self, mode: RocuMoveMode,  n_obstacle_cuboids, n_obstacle_mesh, world_cfg):
+    def SetRobotMoveMode(self, mode: RocuMoveMode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh):
         self.move_mode = mode
-
-        match self.move_mode:
+        match mode:
             case RocuMoveMode.FollowTargetWithMoGen:
-                self.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh, world_cfg)
+                self.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh)
+                self.SetMoGenOptions(reactive=reactive,
+                                     reach_partial_pose=hold_pp,
+                                     hold_partial_pose=reach_pp,
+                                     constrain_grasp_approach=con_grasp
+                                     )
+                self.Warmup()
                 self.SetupMoGenPlanConfig()
+                self.CreateTarget()
+            case RocuMoveMode.FollowTargetWithInvKin:
+                self.InitInvKin(n_obstacle_cuboids, n_obstacle_mesh)
+                self.SetMoGenOptions(reactive=reactive,
+                                     reach_partial_pose=hold_pp,
+                                     hold_partial_pose=reach_pp,
+                                     constrain_grasp_approach=con_grasp
+                                     )
                 self.Warmup()
                 self.CreateTarget()
             case _:
@@ -308,13 +320,43 @@ class RocuWrapper:
         self.rocuTranman.dump_robot_transforms(robpathname)
 
     def get_start_pose(self):
-        return self.motion_gen.get_start_pose()
+        """Returns the start pose of the robot."""
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                rollout_fn = self.motion_gen.rollout_fn
+            case RocuMoveMode.FollowTargetWithInvKin:
+                rollout_fn = self.ik_solver.solver.rollout_fn
 
-    def get_cur_pose(self, joint_state):
-        return self.motion_gen.get_cur_pose(joint_state)
+        start_state = JointState.from_position(
+            rollout_fn.dynamics_model.retract_config.view(1, -1).clone(),
+            joint_names=rollout_fn.joint_names,
+        )
+        state = rollout_fn.compute_kinematics(start_state)
+        sp = state.ee_pos_seq.cpu()[0]
+        sq = state.ee_quat_seq.cpu()[0]
+        return sp, sq
+        # return self.motion_gen.get_start_pose()
+
+    def get_cur_pose(self):
+        cur_pose = self.cu_js.position.view(1,-1)
+        # return self.motion_gen.get_cur_pose(joint_state)
+        return cur_pose
+
+    def get_cur_pose_old(self, joint_state):
+        cur_pose =  self.motion_gen.get_cur_pose(joint_state)
+        return cur_pose
+
 
     def update_world(self, obstacles):
-        return self.motion_gen.update_world(obstacles)
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                rv = self.motion_gen.update_world(obstacles)
+            case RocuMoveMode.FollowTargetWithInvKin:
+                rv = self.ik_solver.update_world(obstacles)
+            case _:
+                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
+                rv = None
+        return rv
 
     def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
         self.rocuTranman.set_transform(prerot=prerot, pos=pos, ori=ori)
@@ -373,10 +415,50 @@ class RocuWrapper:
 
        #  self.robot._articulation_view.initialize() # don't do this - causes an exceptino - can't create phyics sim  view
 
-    def StartStep(self,step_index):
+    def InitInvKin(self, n_obstacle_cuboids, n_obstacle_mesh):
+        self.world_cfg = RocuConfig.world_cfg
+        self.ik_config = IKSolverConfig.load_from_robot_config(
+            self.robot_cfg,
+            self.world_cfg,
+            rotation_threshold=0.05,
+            position_threshold=0.005,
+            num_seeds=20,
+            self_collision_check=True,
+            self_collision_opt=True,
+            tensor_args=self.tensor_args,
+            use_cuda_graph=True,
+            collision_checker_type=CollisionCheckerType.MESH,
+            collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
+            # use_fixed_samples=True,
+        )
+        self.ik_solver = IKSolver(self.ik_config)
+
+    def StartStep(self, step_index):
         if step_index == 1:
             self.Reset()
-        self.UpdateCirclingTarget()
+
+        if self.circle_target:
+            self.UpdateCirclingTarget()
+
+    def EndStep(self)->bool:
+        requestPause = False
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                self.UpdateJointState()
+                self.realize_joint_alarms()
+                self.ProcessCollisionSpheres()
+                self.HandleTargetProcessing()
+                requestPause = self.ExecuteMoGenCmdPlan()
+            case RocuMoveMode.FollowTargetWithInvKin:
+                self.UpdateJointState()
+                self.realize_joint_alarms()
+                self.ProcessCollisionSpheres()
+                self.HandleTargetProcessing()
+                requestPause = self.ExecuteInvKinCmdPlan()
+            case _:
+                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
+
+        return requestPause
 
     def Reset(self):
         self.idx_list = [self.robot.get_dof_index(x) for x in self.j_names]
@@ -387,18 +469,26 @@ class RocuWrapper:
         )
 
     def Warmup(self):
-        print("warming up...")
-        start_warmup = time.time()
-
-        self.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
-
-        elap = time.time() - start_warmup
-        print(f"Curobo is Ready and Warmed-up - took:{elap:.2f} secs")
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                start_warmup = time.time()
+                print("Warming up MoGen...")
+                self.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
+                elap = time.time() - start_warmup
+                print(f"Curobo MoGen is Ready and Warmed-up - took:{elap:.2f} secs")
+            case RocuMoveMode.FollowTargetWithInvKin:
+                print("Warming up InvKin...")
+                start_warmup = time.time()
+                elap = time.time() - start_warmup
+                print(f"Curobo InvKin is Ready and Warmed-up - took:{elap:.2f} secs")
+                pass
+            case _:
+                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
 
     def CreateTarget(self, target_pos=None, target_ori=None):
 
         if target_pos is None or target_ori is None:
-            sp_rcc, sq_rcc = self.motion_gen.get_start_pose()
+            sp_rcc, sq_rcc = self.get_start_pose()
             sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
             if type(sq_wc) is Gf.Quatd:
                 sq_wc = quatd_to_list4(sq_wc)
@@ -428,18 +518,17 @@ class RocuWrapper:
         return self.target
 
     def UpdateCirclingTarget(self):
-        if self.circle_target:
-            self.curang += self.curvel
-            newpos = np.zeros(3)
-            newpos[0] = self.curcen[0] + self.currad * np.cos(self.curang)
-            newpos[1] = self.curcen[1] + self.currad * np.sin(self.curang)
-            newpos[2] = self.curcen[2]
-            self.target.set_world_pose(
-                position=newpos,
-                orientation=self.curori
-            )
+        self.curang += self.curvel
+        newpos = np.zeros(3)
+        newpos[0] = self.curcen[0] + self.currad * np.cos(self.curang)
+        newpos[1] = self.curcen[1] + self.currad * np.sin(self.curang)
+        newpos[2] = self.curcen[2]
+        self.target.set_world_pose(
+            position=newpos,
+            orientation=self.curori
+        )
 
-    def StartCirclingTarget(self):
+    def InitCirclingTargetValues(self):
         self.curcen, self.curori = self.target.get_world_pose()
         self.curvel = 0.02
         self.curang = 0
@@ -448,8 +537,7 @@ class RocuWrapper:
     def ToggleCirclingTarget(self):
         self.circle_target = not self.circle_target
         if self.circle_target:
-            self.StartCirclingTarget()
-
+            self.InitCirclingTargetValues()
 
     def SetupMoGenPlanConfig(self):
         self.plan_config = MotionGenPlanConfig(
@@ -493,7 +581,8 @@ class RocuWrapper:
             self.cu_js.position[:] = self.past_cmd.position
             self.cu_js.velocity[:] = self.past_cmd.velocity
             self.cu_js.acceleration[:] = self.past_cmd.acceleration
-        self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
+        # self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
+        self.cu_js = self.cu_js.get_ordered_joint_state(self.j_names)
 
     def CreateCollisionSpheres(self):
         # get a fresh list of spheres:
@@ -561,11 +650,19 @@ class RocuWrapper:
     def HandleTargetProcessing(self):
 
         self.cube_position, self.cube_orientation = self.target.get_world_pose()
-        triggerMoGen = self.CalcMoGenTargetTrigger()
-        if triggerMoGen:
-            print("Triggering MoGen")
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                triggerMoGen = self.CalcMoGenTargetTrigger()
+                if triggerMoGen:
+                    print("Triggering MoGen")
 
-            self.DoMoGenToTarget()
+                    self.DoMoGenToTarget()
+            case RocuMoveMode.FollowTargetWithInvKin:
+                triggerInvKin = self.CalcMoGenTargetTrigger()
+                if triggerInvKin:
+                    print("Triggering InvKin")
+
+                    self.DoInvKinToTarget()
 
         self.past_pose = self.cube_position
         self.past_orientation = self.cube_orientation
@@ -625,6 +722,7 @@ class RocuWrapper:
         if type(ee_ori_rcc) is Gf.Quatd:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
+        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
         # compute curobo solution:
         ik_goal = Pose(
             # position=tensor_args.to_device(ee_translation_goal),
@@ -685,6 +783,37 @@ class RocuWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
+    def DoInvKinToTarget(self):
+        rv = self.DoInvKinToPosOri(self.cube_position, self.cube_orientation)
+        return rv
+
+    def DoInvKinToPosOri(self, pos, ori):
+
+        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
+        if type(ee_ori_rcc) is Gf.Quatd:
+            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
+
+        # compute curobo solution:
+        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        ik_goal = Pose(
+            position=self.tensor_args.to_device(ee_pos_rcc),
+            quaternion=self.tensor_args.to_device(ee_ori_rcc),
+        )
+        st_time = time.time()
+        # ik_result = self.ik_solver.solve_single(ik_goal)
+        ik_result = self.ik_solver.solve_single(ik_goal, self.cu_js.position.view(1,-1), self.cu_js.position.view(1,1,-1))
+        total_time = (time.time() - st_time)
+        print(
+            "Success, Solve Time(s), Total Time(s)",
+            torch.count_nonzero(ik_result.success).item(),
+            ik_result.solve_time,
+            total_time,
+            1.0 / total_time,
+            torch.mean(ik_result.position_error) * 100.0,
+            torch.mean(ik_result.rotation_error) * 100.0,
+        )
+        self.ik_result = ik_result
+
     def QueCmdPlan(self, cmd_plan):
         # should do a plausiblity check on cmd_plan
         self.cmd_plan_queue.append(cmd_plan)
@@ -698,6 +827,7 @@ class RocuWrapper:
                 print(f"AssignCurCmdPlan len_bef:{len_bef} len_aft:{len_aft}")
 
     def ExecuteMoGenCmdPlan(self):
+        requestPause = False
         self.AssignCurCmdPlan()
         if self.cur_cmd_plan is not None:
             print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
@@ -713,13 +843,35 @@ class RocuWrapper:
             # print(f"Applying action: {art_action}")
             #  articulation_controller.apply_action(art_action)
             self.ApplyAction(art_action)
+            print("Applied Action - ArtAction:", art_action)
             self.cmd_idx += 1
             for _ in range(2):
                 self.my_world.step(render=False)
+            requestPause = True
             if self.cmd_idx >= len(self.cur_cmd_plan.position):
                 self.cmd_idx = 0
                 self.cur_cmd_plan = None
                 self.past_cmd = None
+            return requestPause
+
+    def ExecuteInvKinCmdPlan(self):
+        requestPause = False
+        if self.ik_result is not None:
+            if torch.count_nonzero(self.ik_result.success) > 0:
+                joint_positions = self.ik_result.js_solution.position[0]
+                jp_numpy = joint_positions.cpu().numpy()
+                art_action = ArticulationAction(
+                    jp_numpy,
+                    None,
+                    joint_indices=self.idx_list,
+                )
+                self.ApplyAction(art_action)
+                print("Applied Action - ArtAction:", art_action)
+                # for _ in range(2):
+                #     self.my_world.step(render=False)
+                requestPause = True
+            self.ik_result = None
+            return requestPause
 
     def init_alarm_skin(self):
         self.robmatskin = "default"

@@ -39,6 +39,7 @@ from omni.isaac.core import World
 
 ########### OV #################
 from omni.isaac.core.utils.viewports import set_camera_view
+import omni
 
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
@@ -57,6 +58,15 @@ from mgrut import get_args, get_vek
 from rocuwrap import RocuWrapper, RocuMoveMode, RocuConfig
 import curobo.curobolib as curobolib
 from matman import MatMan
+
+
+def DefineRobot(robid, prerot, pos, ori, ) -> RocuWrapper:
+    rw: RocuWrapper = RocuWrapper(robid)
+    rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
+    # rw.change_material("Blue_Glass")
+    # note that we have not actually loaded the robot yet
+    return rw
+
 
 def main():
     # ---------------------------------
@@ -113,6 +123,15 @@ def main():
     assetpath = args.external_asset_path
     configpath = args.external_robot_configs_path
 
+    # Setup RocuConfig
+    RocuConfig.external_asset_path = assetpath
+    RocuConfig.external_robot_configs_path = configpath
+    RocuConfig.robot_config_path = robot_cfg_path
+    RocuConfig.my_world = my_world
+    RocuConfig.world_cfg = world_cfg
+    RocuConfig.matman = matman
+
+    # Robot Positionining
     prerot1 = get_vek(args.robprerot)
     pos1 = get_vek(args.robpos)
     ori1 = get_vek(args.robori)
@@ -136,35 +155,29 @@ def main():
         case _:
             print("Bad Jaka specification")
 
-    def defineRobot(robid, prerot, pos, ori) -> RocuWrapper:
-        rw: RocuWrapper = RocuWrapper(robid)
-        rw.Initialize()
-        rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
-        rw.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh)
-        rw.SetMoGenOptions(reactive=args.reactive,
-                           reach_partial_pose=args.reach_partial_pose,
-                           hold_partial_pose=args.hold_partial_pose,
-                           constrain_grasp_approach=args.constrain_grasp_approach,
-                           vizi_spheres=args.visualize_spheres)
-        rw.Warmup()
-        rw.SetupMoGenPlanConfig()
-        rw.CreateTarget()
-        # rw.change_material("Blue_Glass")
-        # note that we have not actually loaded the robot yet
-        return rw
+    # Setup Robots
 
-    RocuConfig.external_asset_path = assetpath
-    RocuConfig.external_robot_configs_path = configpath
-    RocuConfig.robot_config_path = robot_cfg_path
-    RocuConfig.my_world = my_world
-    RocuConfig.world_cfg = world_cfg
-    RocuConfig.matman = matman
-
+    # mode = RocuMoveMode.FollowTargetWithMoGen
+    modesel = args.movmode
     mode = RocuMoveMode.FollowTargetWithMoGen
-    rocuWrap1: RocuWrapper = defineRobot("1", prerot1, pos1, ori1)
+    if modesel in ["IKT", "IKV", "INK", "ikv", "ikt", "inkt"]:
+        mode = RocuMoveMode.FollowTargetWithInvKin
+    else:
+        mode = RocuMoveMode.FollowTargetWithMoGen
+    reactive = args.reactive
+    reach_pp = args.reach_partial_pose
+    hold_pp = args.hold_partial_pose
+    con_grasp = args.constrain_grasp_approach
+
+    # rocuWrap1: RocuWrapper = DefineRobot("1", prerot1, pos1, ori1)
+    rocuWrap1: RocuWrapper = RocuWrapper("1")
+    rocuWrap1.LoadAndPositionRobot(prerot1, pos1, ori1)
+    rocuWrap1.SetRobotMoveMode(mode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh)
 
     if numrobs == 2:
-        rocuWrap2: RocuWrapper = defineRobot("2", prerot2, pos2, ori2)
+        rocuWrap2: RocuWrapper = RocuWrapper("2")
+        rocuWrap2.LoadAndPositionRobot(prerot2, pos2, ori2)
+        rocuWrap2.SetRobotMoveMode(mode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh)
     else:
         rocuWrap2 = None
 
@@ -178,10 +191,14 @@ def main():
     loop_start = time.time()
 
     # Front view
-    set_camera_view(eye=[0.0, 2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-    # Overhead view
-    # set_camera_view(eye=[0.0, 0, 4.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    viewsel = args.view
+    if viewsel in ["L", "l"]:
+        set_camera_view(eye=[0.0, 2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    elif viewsel in ["T", "t"]:
+        set_camera_view(eye=[0.0, 0, 4.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
+    timeline = omni.timeline.get_timeline_interface()
+            # self.timeline.play()
     # ---------------------------------
     #    LOOP
     # ---------------------------------
@@ -229,12 +246,14 @@ def main():
                 k = keyboard.read_key()
                 print("You pressed ‘d’ - will move to robot's current end-effector pose.")
                 if rocuWrap1.cu_js is not None:
-                    sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
+                    # sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
+                    sp_rcc, sq_rcc = rocuWrap1.get_cur_pose()
                     sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
                     rocuWrap1.SetTargetPose(sp_wc, sq_wc)
                 if rocuWrap2 is not None:
                     if rocuWrap2.cu_js is not None:
-                        sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
+                        # sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
+                        sp_rcc, sq_rcc = rocuWrap2.get_cur_pose()
                         sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
                         rocuWrap2.SetTargetPose(sp_wc, sq_wc)
 
@@ -270,7 +289,7 @@ def main():
         step_index = my_world.current_time_step_index
         if not my_world.is_playing():
             elap = time.time() - last_play_time
-            if elap > 5:
+            if elap > 60:
                 print(f"**** Click Play to start simulation ***** si:{step_index} elap:{elap:.2f}")
                 last_play_time = time.time()
             continue
@@ -282,13 +301,6 @@ def main():
         rocuWrap1.StartStep(step_index)
         if rocuWrap2 is not None:
             rocuWrap2.StartStep(step_index)
-
-        # if step_index == 1: # step index will be 1 on first play, so we should reset only
-        #     print(f"resetting world step:{step_index}")
-        #     my_world.reset()
-        #     rocuWrap1.Reset()
-        #     if rocuWrap2 is not None:
-        #         rocuWrap2.Reset()
 
         # ---------------------------------
         #    Obstacles Processing
@@ -314,18 +326,13 @@ def main():
 
         # position and orientation of target virtual cube:
 
-        rocuWrap1.UpdateJointState()
-        rocuWrap1.realize_joint_alarms()
-        rocuWrap1.ProcessCollisionSpheres()
-        rocuWrap1.HandleTargetProcessing()
-        rocuWrap1.ExecuteMoGenCmdPlan()
+        requestPause = rocuWrap1.EndStep()
+        # if requestPause:
+        #     print("Pauseing timeline")
+        #     timeline.pause()
 
         if rocuWrap2 is not None:
-            rocuWrap2.UpdateJointState()
-            rocuWrap2.realize_joint_alarms()
-            rocuWrap2.ProcessCollisionSpheres()
-            rocuWrap2.HandleTargetProcessing()
-            rocuWrap2.ExecuteMoGenCmdPlan()
+            rocuWrap2.EndStep()
 
     simulation_app.close()
 
