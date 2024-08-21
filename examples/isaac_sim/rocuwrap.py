@@ -338,14 +338,20 @@ class RocuWrapper:
         # return self.motion_gen.get_start_pose()
 
     def get_cur_pose(self):
-        cur_pose = self.cu_js.position.view(1,-1)
         # return self.motion_gen.get_cur_pose(joint_state)
-        return cur_pose
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                rollout_fn = self.motion_gen.rollout_fn
+            case RocuMoveMode.FollowTargetWithInvKin:
+                rollout_fn = self.ik_solver.solver.rollout_fn
+        state = rollout_fn.compute_kinematics(self.cu_js)
+        sp = state.ee_pos_seq.cpu()[0]
+        sq = state.ee_quat_seq.cpu()[0]
+        return sp, sq
 
     def get_cur_pose_old(self, joint_state):
         cur_pose =  self.motion_gen.get_cur_pose(joint_state)
         return cur_pose
-
 
     def update_world(self, obstacles):
         match self.move_mode:
@@ -928,10 +934,10 @@ class RocuWrapper:
             if self.robmatskin == "default":
                 self.ensure_orimat()
                 # print("Reverting to original materials (default)")
-                apply_matdict_to_prim_and_children(self._stage, self.orimat, self.robot_prim_path)
+                apply_matdict_to_prim_and_children(self.stage, self.orimat, self.robot_prim_path)
             else:
                  #print(f"Reverting to {rcfg.robmatskin}")
-                apply_material_to_prim_and_children(self._stage, self._matman, self.robmatskin, self.robot_prim_path)
+                apply_material_to_prim_and_children(self.stage, self._matman, self.robmatskin, self.robot_prim_path)
         # print("toggle_show_joints_close_to_limits done")
         return self.show_joints_close_to_limits
 
