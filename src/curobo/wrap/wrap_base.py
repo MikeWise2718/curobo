@@ -154,20 +154,20 @@ class WrapBase(WrapConfig):
             logmsg(msg)
             for i in range(2):
                 msg1 = f"        warming up solver {i}"
-                print(msg1)
-                logmsg(msg1)
+                # print(msg1)
+                # logmsg(msg1)
                 if i == 1:
                     pass
                 act_seq = self.optimize(seed, shift_steps=0)
             self._init_solver = True
-        logmsg("Solve - Optimizing")
-        print("Solve - Optimizing")
-        print("\nseed.shape:", seed.shape)
+        # logmsg("Solve - Optimizing")
+        # print("Solve - Optimizing")
+        # print("\nseed.shape:", seed.shape)
         act_seq = self.optimize(seed, shift_steps=0)
         self.opt_dt = time.time() - start_time
 
-        logmsg(f"Done - Optimizing elap: {self.opt_dt}")
-        print(f"Done - Optimizing elap: {self.opt_dt}")
+        # logmsg(f"Done - Optimizing elap: {self.opt_dt}")
+        # print(f"Done - Optimizing elap: {self.opt_dt}")
         act = self.safety_rollout.get_robot_command(
             filtered_state, act_seq, state_idx=goal.batch_current_state_idx
         )

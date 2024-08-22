@@ -87,31 +87,43 @@ parser.add_argument(
     type=str,
     default=None,
 )
-
 parser.add_argument(
     "-vw",
     "--view",
-    help="L for left, T for top",
+    help="L for left view, R for left view, F for front view, B for back view, T for top",
     type=str,
     default=None,
 )
-
 parser.add_argument(
     "-mmd",
     "--movmode",
-    help="MOT for mogen-target, IKT for invkin-target",
+    help="mogen for mogen-target, inv for invkin-target, r for reachability",
     type=str,
+    default=None,
+)
+parser.add_argument(
+    "--ngrid",
+    help="Nodes per grid dimension",
+    type=int,
+    default=None,
+)
+parser.add_argument(
+    "--gridspan",
+    help="Span of grid dimension in meters",
+    type=float,
+    default=None,
+)
+parser.add_argument(
+    "--gridtimerticks",
+    "--gtt",
+    help="Number of timer ticks for grid",
+    type=int,
     default=None,
 )
 
 def get_args():
     args = parser.parse_args()
     return args
-
-# def to_list3(gft):
-#     lst = [gft[0], gft[1], gft[2]]
-#     return lst
-
 
 def quatd_to_list4(q: Gf.Quatd):
     w = q.GetReal()
@@ -122,20 +134,19 @@ def quatd_to_list4(q: Gf.Quatd):
     lst = [w, x, y, z]
     return lst
 
-
 def list4to_quatd(lst: list):
     q = Gf.Quatd(lst[0], Gf.Vec3d(lst[1], lst[2], lst[3]))
     return q
 
 
-def get_vek(s:str, default=[0.0, 0.0, 0.0]):
+def get_vek(s: str, default=[0.0, 0.0, 0.0]):
     if s is None:
         return np.array(default)
-    if s=="":
+    if s == "":
         return np.array(default)
-    if s[0]=="[":
+    if s[0] == "[":
         s = s[1:]
-    if s[-1]=="]":
+    if s[-1] == "]":
         s = s[:-1]
     sar = s.split(",")
     far = np.array([float(x) for x in sar])
@@ -147,7 +158,7 @@ def print_gfvec3d(name, v: Gf.Vec3d):
         s = name + " " + s
     print(s)
 
-def fmtrow(ncol,r):
+def fmtrow(ncol, r):
     s = ""
     if ncol > len(r):
         ncol = len(r)

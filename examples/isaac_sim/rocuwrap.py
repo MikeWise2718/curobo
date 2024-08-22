@@ -280,6 +280,15 @@ class RocuWrapper:
         self.ik_solver_grid = None
         self.motion_gen = None
 
+        self.n_x = 9
+        self.n_y = 9
+        self.n_z = 9
+        self.max_x = 0.5
+        self.max_y = 0.5
+        self.max_z = 0.5
+
+        self.grid_timer_tick = 20
+
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
 
@@ -427,11 +436,27 @@ class RocuWrapper:
         )
         self.motion_gen = MotionGen(self.motion_gen_config)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
+        self.InitPositionGridOffset()
 
        #  self.robot._articulation_view.initialize() # don't do this - causes an exceptino - can't create phyics sim  view
 
+    def SetGridSize(self, n_x=9, n_y=9, n_z=9):
+        self.n_x = n_x
+        self.n_y = n_y
+        self.n_z = n_z
+        self.InitPositionGridOffset()
+
+    def SetGridSpan(self, max_x=0.5, max_y=0.5, max_z=0.5):
+        self.max_x = max_x
+        self.max_y = max_y
+        self.max_z = max_z
+        self.InitPositionGridOffset()
+
+    def SetGridTimererTick(self, timer_tick):
+        self.grid_timer_tick = timer_tick
+
     def InitPositionGridOffset(self):
-        self.gpr = self.get_pose_grid(10, 10, 10, 0.5, 0.5, 0.5)
+        self.gpr = self.get_pose_grid(self.n_x, self.n_y, self.n_z, self.max_x, self.max_y, self.max_z)
         self.position_grid_offset = self.tensor_args.to_device(self.gpr)
         pos = self.ik_solver_grid.get_retract_config().view(1, -1)
         fk_state = self.ik_solver_grid.fk(pos)
@@ -455,7 +480,6 @@ class RocuWrapper:
             # use_fixed_samples=True,
         )
         self.ik_solver_grid = IKSolver(self.ik_config_grid)
-        self.InitPositionGridOffset()
 
     def InitInvKin(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.world_cfg = RocuConfig.world_cfg
@@ -637,6 +661,9 @@ class RocuWrapper:
 
     def CreateCollisionSpheres(self):
         # get a fresh list of spheres:
+        if self.motion_gen is None:
+            carb.log_warn("MotionGen not initialized - can't do collision sphers")
+            return
         self.sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
         if self.spheres is None:
             config_spheres = self.robot_cfg["kinematics"]["collision_spheres"]
@@ -826,7 +853,9 @@ class RocuWrapper:
             # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
             cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
-            self.QueCmdPlan(cmd_plan)
+            nsteps = len(cmd_plan.position)
+            msg = f" interpolated plan with {nsteps} steps"
+            self.QueCmdPlan(cmd_plan, msg)
 
             self.cmd_idx = 0
 
@@ -903,7 +932,7 @@ class RocuWrapper:
                 sizes += [40.0]
             else:
                 colors += [fail_color]
-                sizes += [10.0]
+                sizes += [20.0]
         # sizes = [40.0 for _ in range(b)]
         draw.draw_points(point_list, colors, sizes)
 
@@ -949,6 +978,8 @@ class RocuWrapper:
         self.draw_points(self.goal_pose, ik_result.success)
 
         successfull = torch.any(ik_result.success)
+        nsucess = torch.sum(ik_result.success).item()
+
         if self.num_targets == 1:
             if self.constrain_grasp_approach:
                 # print("2: Creating grasp approach metric - cga --------- ")
@@ -977,7 +1008,8 @@ class RocuWrapper:
             # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
             cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
-            self.QueCmdPlan(cmd_plan)
+            msg = f" - Grid with {nsucess} reachable solutions"
+            self.QueCmdPlan(cmd_plan, msg)
 
             self.cmd_idx = 0
 
@@ -1013,6 +1045,8 @@ class RocuWrapper:
             torch.mean(ik_result.rotation_error) * 100.0,
         )
         self.ik_result = ik_result
+        self.target_pose = self.cube_position
+        self.target_orientation = self.cube_orientation
 
     def DoReachabilityToTarget(self):
         rv = self.DoReachabilityToPosOri(self.cube_position, self.cube_orientation)
@@ -1051,15 +1085,17 @@ class RocuWrapper:
         )
         self.ik_result = ik_result
 
-    def QueCmdPlan(self, cmd_plan):
+    def QueCmdPlan(self, cmd_plan, comment=""):
         # should do a plausiblity check on cmd_plan
-        self.cmd_plan_queue.append(cmd_plan)
+        if comment=="":
+            comment = f"CmdPlan-{len(self.cmd_plan_queue)}"
+        self.cmd_plan_queue.append((cmd_plan, comment))
 
     def ShuffleCmdPlanQueue(self):
         if self.cur_cmd_plan is None:
             if len(self.cmd_plan_queue) > 0:
                 len_bef = len(self.cmd_plan_queue)
-                self.cur_cmd_plan = self.cmd_plan_queue.pop(0)
+                (self.cur_cmd_plan, self.cur_cmd_plan_cmt) = self.cmd_plan_queue.pop(0)
                 len_aft = len(self.cmd_plan_queue)
                 print(f"ShuffleCmdPlanQueue len_bef:{len_bef} len_aft:{len_aft}")
 
@@ -1067,7 +1103,7 @@ class RocuWrapper:
         requestPause = False
         self.ShuffleCmdPlanQueue()
         if self.cur_cmd_plan is not None:
-            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
+            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)} - {self.cur_cmd_plan_cmt}")
             cmd_state = self.cur_cmd_plan[self.cmd_idx]
             self.past_cmd = cmd_state.clone()
             # get full dof state
@@ -1102,7 +1138,7 @@ class RocuWrapper:
         requestPause = False
         self.ShuffleCmdPlanQueue()
         if self.cur_cmd_plan is not None and self.step_index % 20 == 0 and True:
-            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
+            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)} - {self.cur_cmd_plan_cmt}")
             requestPause = True
             cmd_state = self.cur_cmd_plan[self.cmd_idx]
 
@@ -1162,7 +1198,7 @@ class RocuWrapper:
                 self.jchk_str += "U"
             else:
                 self.jchk_str += "."
-        print("joint_check:", self.jchk_str, " ", self.jchk_str_val)
+        # print("joint_check:", self.jchk_str, " ", self.jchk_str_val)
 
     def change_material(self, matname):
         apply_material_to_prim_and_children(self.stage, self.matman, matname, self.robot_prim_path)

@@ -253,11 +253,11 @@ class ParticleOptBase(Optimizer, ParticleOptConfig):
         self.update_seed(init_act)
         if not self.use_cuda_graph and self.store_debug:
             self.debug.append(self._get_action_seq(mode=self.sample_mode).clone())
-        print("ParticleOptBase._run_opt_iters - n_problems: ", self.n_problems," particles_per_problem: ", self.particles_per_problem, " action_horizon: ", self.action_horizon, " d_action: ", self.d_action)
+        # print("ParticleOptBase._run_opt_iters - n_problems: ", self.n_problems," particles_per_problem: ", self.particles_per_problem, " action_horizon: ", self.action_horizon, " d_action: ", self.d_action)
 
         for iter in range(n_iters):
             # generate random simulated trajectories
-            print(f"ParticleOptBase._run_opt_iters - iter: {iter} of {n_iters}")
+            # print(f"ParticleOptBase._run_opt_iters - iter: {iter} of {n_iters}")
             trajectory = self.generate_rollouts()
             trajectory.actions = trajectory.actions.view(
                 self.n_problems, self.particles_per_problem, self.action_horizon, self.d_action

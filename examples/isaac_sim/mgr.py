@@ -164,7 +164,7 @@ def main():
     mode = RocuMoveMode.FollowTargetWithMoGen
     if modesel in ["ikv", "ikt", "inkt", "inv"]:
         mode = RocuMoveMode.FollowTargetWithInvKin
-    elif modesel in ["mg","mogen"]:
+    elif modesel in ["mg", "mogen"]:
         mode = RocuMoveMode.FollowTargetWithMoGen
     elif modesel in ["r", "reach"]:
         mode = RocuMoveMode.ReachabilityWithInvKin
@@ -185,6 +185,23 @@ def main():
     else:
         rocuWrap2 = None
 
+    if args.ngrid is not None:
+        ng = args.ngrid
+        rocuWrap1.SetGridSize(ng, ng, ng)
+        if rocuWrap2 is not None:
+            rocuWrap2.SetGridSize(ng, ng, ng)
+
+    if args.gridspan is not None:
+        span = args.gridspan
+        rocuWrap1.SetGridSpan(span, span, span)
+        if rocuWrap2 is not None:
+            rocuWrap2.SetGridSpan(span, span, span)
+
+    if args.gridtimerticks is not None:
+        rocuWrap1.SetGridTimerTicks(args.gridtimerticks)
+        if rocuWrap2 is not None:
+            rocuWrap2.SetGridTimerTicks(args.gridtimerticks)
+
     usd_help.load_stage(my_world.stage)
     usd_help.add_world_to_stage(world_cfg, base_frame="/World")
 
@@ -197,9 +214,15 @@ def main():
     # Front view
     viewsel = args.view
     if viewsel in ["L", "l"]:
-        set_camera_view(eye=[0.0, 2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        set_camera_view(eye=[0.0, +2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    if viewsel in ["R", "r"]:
+        set_camera_view(eye=[0.0, -2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    if viewsel in ["F", "f"]:
+        set_camera_view(eye=[+2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    if viewsel in ["B", "f"]:
+        set_camera_view(eye=[-2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
     elif viewsel in ["T", "t"]:
-        set_camera_view(eye=[0.0, 0, 4.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        set_camera_view(eye=[0.0, 0, 2.5], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
     timeline = omni.timeline.get_timeline_interface()
     zingle_step = False
