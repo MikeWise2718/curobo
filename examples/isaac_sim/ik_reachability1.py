@@ -281,7 +281,6 @@ def main():
     spheres = None
     step_index = 0
 
-
     while simulation_app.is_running():
         my_world.step(render=True)
         if not my_world.is_playing():

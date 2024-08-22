@@ -256,6 +256,7 @@ class RocuWrapper:
         self.target_pose = None
         self.target_orientation = None
         self.trigger = False
+        self.step_index = -1
 
         self.vizi_spheres = False
         self.reactive = None
@@ -297,7 +298,7 @@ class RocuWrapper:
                 self.Warmup()
                 self.SetupMoGenPlanConfig()
                 self.CreateTarget()
-            case RocuMoveMode.FollowTargetWithInvKin:
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
                 self.InitInvKin(n_obstacle_cuboids, n_obstacle_mesh)
                 self.SetMoGenOptions(reactive=reactive,
                                      reach_partial_pose=hold_pp,
@@ -324,7 +325,7 @@ class RocuWrapper:
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 rollout_fn = self.motion_gen.rollout_fn
-            case RocuMoveMode.FollowTargetWithInvKin:
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
                 rollout_fn = self.ik_solver.solver.rollout_fn
 
         start_state = JointState.from_position(
@@ -342,7 +343,7 @@ class RocuWrapper:
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 rollout_fn = self.motion_gen.rollout_fn
-            case RocuMoveMode.FollowTargetWithInvKin:
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
                 rollout_fn = self.ik_solver.solver.rollout_fn
         state = rollout_fn.compute_kinematics(self.cu_js)
         sp = state.ee_pos_seq.cpu()[0]
@@ -357,7 +358,7 @@ class RocuWrapper:
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 rv = self.motion_gen.update_world(obstacles)
-            case RocuMoveMode.FollowTargetWithInvKin:
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
                 rv = self.ik_solver.update_world(obstacles)
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
@@ -438,8 +439,16 @@ class RocuWrapper:
             # use_fixed_samples=True,
         )
         self.ik_solver = IKSolver(self.ik_config)
+        self.gpr = self.get_pose_grid(10, 10, 5, 0.5, 0.5, 0.5)
+        self.position_grid_offset = self.tensor_args.to_device(self.gpr)
+        pos = self.ik_solver.get_retract_config().view(1, -1)
+        fk_state = self.ik_solver.fk(pos)
+        self.goal_pose = fk_state.ee_pose
+        self.goal_pose = self.goal_pose.repeat(self.position_grid_offset.shape[0])
+        self.goal_pose.position += self.position_grid_offset
 
     def StartStep(self, step_index):
+        self.step_index = step_index
         if step_index == 1:
             self.Reset()
 
@@ -461,6 +470,13 @@ class RocuWrapper:
                 self.ProcessCollisionSpheres()
                 self.HandleTargetProcessing()
                 requestPause = self.ExecuteInvKinCmdPlan()
+            case RocuMoveMode.ReachabilityWithInvKin:
+                # TODO - implement reachability with InvKin
+                self.UpdateJointState()
+                self.realize_joint_alarms()
+                self.ProcessCollisionSpheres()
+                self.HandleTargetProcessing()
+                requestPause = self.ExecuteGridInvKinCmdPlan()
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
 
@@ -482,7 +498,7 @@ class RocuWrapper:
                 self.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
                 elap = time.time() - start_warmup
                 print(f"Curobo MoGen is Ready and Warmed-up - took:{elap:.2f} secs")
-            case RocuMoveMode.FollowTargetWithInvKin:
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
                 print("Warming up InvKin...")
                 start_warmup = time.time()
                 elap = time.time() - start_warmup
@@ -670,6 +686,13 @@ class RocuWrapper:
 
                     self.DoInvKinToTarget()
 
+            case RocuMoveMode.ReachabilityWithInvKin:
+                triggerGridInvKin = self.CalcMoGenTargetTrigger()
+                if triggerGridInvKin:
+                    print("Triggering GridInvKin")
+
+                    self.DoGridInvKinToTarget()
+
         self.past_pose = self.cube_position
         self.past_orientation = self.cube_orientation
 
@@ -701,14 +724,12 @@ class RocuWrapper:
         #     static_robo = True
         #     pass
         cube_pos, cube_ori = self.cube_position, self.cube_orientation
-        pretrig = (dst(cube_pos, self.target_pose) > 1e-3 or
-                   dst(cube_ori, self.target_orientation) > 1e-3)
-        self.trigger = (pretrig and
-                        dst(self.past_pose, cube_pos) == 0.0 and
-                        dst(self.past_orientation, cube_ori) == 0.0 and
-                        self.static_robo)
-        # print(f"trigger:{trigger} pretrig:{pretrig} velmag:{velmag:.2f} static_robo:{static_robo}")
-        # print("pretrig:", pretrig, "  trigger:", self.trigger, "  static_robo:", self.static_robo)
+        cubeDiffFromTarget = (dst(cube_pos, self.target_pose) > 1e-3
+                             or dst(cube_ori, self.target_orientation) > 1e-3)
+        cubeStill = dst(self.past_pose, cube_pos) == 0.0 and dst(self.past_orientation, cube_ori) == 0.0
+
+        self.trigger = (cubeDiffFromTarget and cubeStill and self.static_robo)
+        # print(f"trigger:{self.trigger} cubeDiffFromTarget:{cubeDiffFromTarget} cubeStill:{cubeStill}")
 
         if self.circle_target:
             self.trigger = self.cur_cmd_plan is None
@@ -789,6 +810,111 @@ class RocuWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
+    def get_pose_grid(self, n_x, n_y, n_z, max_x, max_y, max_z):
+        x = np.linspace(-max_x, max_x, n_x)
+        y = np.linspace(-max_y, max_y, n_y)
+        z = np.linspace(0, max_z, n_z)
+        x, y, z = np.meshgrid(x, y, z, indexing="ij")
+
+        position_arr = np.zeros((n_x * n_y * n_z, 3))
+        position_arr[:, 0] = x.flatten()
+        position_arr[:, 1] = y.flatten()
+        position_arr[:, 2] = z.flatten()
+        return position_arr
+
+    def draw_points(self, pose, success):
+        # Third Party
+        from omni.isaac.debug_draw import _debug_draw
+
+        draw = _debug_draw.acquire_debug_draw_interface()
+        N = 100
+        # if draw.get_num_points() > 0:
+        draw.clear_points()
+        cpu_pos = pose.position.cpu().numpy()
+        b, _ = cpu_pos.shape
+        point_list = []
+        colors = []
+        for i in range(b):
+            # get list of points:
+            point_list += [(cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])]
+            if success[i].item():
+                colors += [(0, 1, 0, 0.25)]
+            else:
+                colors += [(1, 0, 0, 0.25)]
+        sizes = [40.0 for _ in range(b)]
+
+        draw.draw_points(point_list, colors, sizes)
+
+    def DoGridInvKinToTarget(self):
+        rv = self.DoGridInvKinToPosOri(self.cube_position, self.cube_orientation)
+        return rv
+
+    def DoGridInvKinToPosOri(self, pos, ori):
+
+        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
+        if type(ee_ori_rcc) is Gf.Quatd:
+            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
+
+        # compute curobo solution:
+        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        ik_goal = Pose(
+            position=self.tensor_args.to_device(ee_pos_rcc),
+            quaternion=self.tensor_args.to_device(ee_ori_rcc),
+        )
+
+        self.goal_pose.position[:] = ik_goal.position[:] + self.position_grid_offset
+        self.goal_pose.quaternion[:] = ik_goal.quaternion[:]
+
+        st_time = time.time()
+        # ik_result = self.ik_solver.solve_single(ik_goal)
+        ik_result = self.ik_solver.solve_batch(self.goal_pose)
+        ntrue = torch.sum(ik_result.success).item()
+        ntry = len(ik_result.success)
+
+        elap = (time.time() - st_time)
+        selap = ik_result.solve_time
+        msg = f"IK completed: Poses: {str(self.goal_pose.batch)}  Success: {ntrue} of {ntry}  Solve time(s): {selap:.3f}  elap:{elap:3f}"
+        print(msg)
+        self.draw_points(self.goal_pose, ik_result.success)
+
+        self.ik_result = ik_result
+
+        successfull = torch.any(ik_result.success)
+        if self.num_targets == 1:
+            if self.constrain_grasp_approach:
+                # print("2: Creating grasp approach metric - cga --------- ")
+                self.pose_metric = PoseCostMetric.create_grasp_approach_metric()
+            if self.reach_partial_pose is not None:
+                # print("2: Creating grasp approach metric - rpp --------- ")
+                reach_vec = self.motion_gen.tensor_args.to_device(self.reach_partial_pose)
+                self.pose_metric = PoseCostMetric(
+                    reach_partial_pose=True, reach_vec_weight=reach_vec
+                )
+            if self.hold_partial_pose is not None:
+                # print("2: Creating grasp approach metric - hpp --------- ")
+                hold_vec = self.motion_gen.tensor_args.to_device(self.hold_partial_pose)
+                self.pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
+
+        if successfull:
+            self.num_targets += 1
+            cmd_plan = ik_result.js_solution[ik_result.success]
+            # get only joint names that are in both:
+            idx_list = []
+            common_js_names = []
+            for x in self.sim_js_names:
+                if x in cmd_plan.joint_names:
+                    idx_list.append(self.robot.get_dof_index(x))
+                    common_js_names.append(x)
+            # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
+
+            cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
+            self.QueCmdPlan(cmd_plan)
+
+            self.cmd_idx = 0
+
+        self.target_pose = self.cube_position
+        self.target_orientation = self.cube_orientation
+
     def DoInvKinToTarget(self):
         rv = self.DoInvKinToPosOri(self.cube_position, self.cube_orientation)
         return rv
@@ -820,31 +946,76 @@ class RocuWrapper:
         )
         self.ik_result = ik_result
 
+    def DoReachabilityToTarget(self):
+        rv = self.DoReachabilityToPosOri(self.cube_position, self.cube_orientation)
+        return rv
+
+    def DoReachabilityToPosOri(self, pos, ori):
+
+        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
+        if type(ee_ori_rcc) is Gf.Quatd:
+            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
+
+        # compute curobo solution:
+        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        ik_goal = Pose(
+            position=self.tensor_args.to_device(ee_pos_rcc),
+            quaternion=self.tensor_args.to_device(ee_ori_rcc),
+        )
+        st_time = time.time()
+        # ik_result = self.ik_solver.solve_single(ik_goal)
+        pos = self.ik_solver.get_retract_config().view(1, -1)
+        fk_state = self.ik_solver.fk(pos)
+        goal_pose = fk_state.ee_pose
+        goal_pose = goal_pose.repeat(self.position_grid_offset.shape[0])
+        goal_pose.position += self.position_grid_offset
+
+        ik_result = self.ik_solver.solve_batch(goal_pose)
+
+        total_time = (time.time() - st_time)
+        print(
+            "Success, Solve Time(s), Total Time(s)",
+            torch.count_nonzero(ik_result.success).item(),
+            ik_result.solve_time,
+            total_time,
+            1.0 / total_time,
+            torch.mean(ik_result.position_error) * 100.0,
+            torch.mean(ik_result.rotation_error) * 100.0,
+        )
+        self.ik_result = ik_result
+
     def QueCmdPlan(self, cmd_plan):
         # should do a plausiblity check on cmd_plan
         self.cmd_plan_queue.append(cmd_plan)
 
-    def AssignCurCmdPlan(self):
+    def ShuffleCmdPlanQueue(self):
         if self.cur_cmd_plan is None:
             if len(self.cmd_plan_queue) > 0:
                 len_bef = len(self.cmd_plan_queue)
                 self.cur_cmd_plan = self.cmd_plan_queue.pop(0)
                 len_aft = len(self.cmd_plan_queue)
-                print(f"AssignCurCmdPlan len_bef:{len_bef} len_aft:{len_aft}")
+                print(f"ShuffleCmdPlanQueue len_bef:{len_bef} len_aft:{len_aft}")
 
     def ExecuteMoGenCmdPlan(self):
         requestPause = False
-        self.AssignCurCmdPlan()
+        self.ShuffleCmdPlanQueue()
         if self.cur_cmd_plan is not None:
             print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
             cmd_state = self.cur_cmd_plan[self.cmd_idx]
             self.past_cmd = cmd_state.clone()
             # get full dof state
-            art_action = ArticulationAction(
-                cmd_state.position.cpu().numpy(),
-                cmd_state.velocity.cpu().numpy(),
-                joint_indices=self.idx_list,
-            )
+            if cmd_state.velocity is None:
+                art_action = ArticulationAction(
+                    cmd_state.position.cpu().numpy(),
+                    None,
+                    joint_indices=self.idx_list,
+                )
+            else:
+                art_action = ArticulationAction(
+                    cmd_state.position.cpu().numpy(),
+                    cmd_state.velocity.cpu().numpy(),
+                    joint_indices=self.idx_list,
+                )
             # set desired joint angles obtained from IK:
             # print(f"Applying action: {art_action}")
             #  articulation_controller.apply_action(art_action)
@@ -859,6 +1030,26 @@ class RocuWrapper:
                 self.cur_cmd_plan = None
                 self.past_cmd = None
             return requestPause
+
+    def ExecuteGridInvKinCmdPlan(self):
+        requestPause = False
+        self.ShuffleCmdPlanQueue()
+        if self.cur_cmd_plan is not None and self.step_index % 20 == 0 and True:
+            print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)}")
+            requestPause = True
+            cmd_state = self.cur_cmd_plan[self.cmd_idx]
+
+            self.robot.set_joint_positions(cmd_state.position.cpu().numpy(), self.idx_list)
+
+            # set desired joint angles obtained from IK:
+            # articulation_controller.apply_action(art_action)
+            self.cmd_idx += 1
+            if self.cmd_idx >= len(self.cur_cmd_plan.position):
+                self.cmd_idx = 0
+                self.cur_cmd_plan = None
+                self.my_world.step(render=True)
+                self.robot.set_joint_positions(self.default_config, self.idx_list)
+        return requestPause
 
     def ExecuteInvKinCmdPlan(self):
         requestPause = False

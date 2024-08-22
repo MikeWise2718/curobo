@@ -159,11 +159,15 @@ def main():
 
     # mode = RocuMoveMode.FollowTargetWithMoGen
     modesel = args.movmode
+    if modesel is not None:
+        modesel = modesel.lower()
     mode = RocuMoveMode.FollowTargetWithMoGen
-    if modesel in ["IKT", "IKV", "INK", "ikv", "ikt", "inkt"]:
+    if modesel in ["ikv", "ikt", "inkt"]:
         mode = RocuMoveMode.FollowTargetWithInvKin
-    else:
+    elif modesel in ["mg","mogen"]:
         mode = RocuMoveMode.FollowTargetWithMoGen
+    elif modesel in ["r", "reach"]:
+        mode = RocuMoveMode.ReachabilityWithInvKin
     reactive = args.reactive
     reach_pp = args.reach_partial_pose
     hold_pp = args.hold_partial_pose
