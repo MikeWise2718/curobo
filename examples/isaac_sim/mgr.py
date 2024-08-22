@@ -162,7 +162,7 @@ def main():
     if modesel is not None:
         modesel = modesel.lower()
     mode = RocuMoveMode.FollowTargetWithMoGen
-    if modesel in ["ikv", "ikt", "inkt"]:
+    if modesel in ["ikv", "ikt", "inkt", "inv"]:
         mode = RocuMoveMode.FollowTargetWithInvKin
     elif modesel in ["mg","mogen"]:
         mode = RocuMoveMode.FollowTargetWithMoGen
@@ -202,6 +202,7 @@ def main():
         set_camera_view(eye=[0.0, 0, 4.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
     timeline = omni.timeline.get_timeline_interface()
+    zingle_step = False
             # self.timeline.play()
     # ---------------------------------
     #    LOOP
@@ -228,11 +229,15 @@ def main():
             elif keyboard.is_pressed("*"):
                 k = keyboard.read_key()
                 rocuWrap1.curvel *= 1.5
+                if rocuWrap2 is not None:
+                    rocuWrap2.curvel = rocuWrap1.curvel
                 print(f"You pressed ‘*’. curvel:{rocuWrap1.curvel}")
 
             elif keyboard.is_pressed("/"):
                 k = keyboard.read_key()
                 rocuWrap1.curvel /= 1.5
+                if rocuWrap2 is not None:
+                    rocuWrap2.curvel = rocuWrap1.curvel
                 print(f"You pressed ‘/’. curvel:{rocuWrap1.curvel}")
 
             elif keyboard.is_pressed("c"):
@@ -273,17 +278,36 @@ def main():
                 k = keyboard.read_key()
                 rocuWrap1.toggle_material()
                 rocuWrap1.check_alarm_status()
+                if rocuWrap2 is not None:
+                    rocuWrap2.toggle_material()
+                    rocuWrap2.check_alarm_status()
                 print("You pressed ‘m’")
 
             elif keyboard.is_pressed("t"):
                 k = keyboard.read_key()
                 rocuWrap1.toggle_show_joints_close_to_limits()
+                if rocuWrap2 is not None:
+                    rocuWrap2.toggle_show_joints_close_to_limits()
                 print("You pressed ‘t’")
+
+            elif keyboard.is_pressed("r"):
+                k = keyboard.read_key()
+                rocuWrap1.ShowReachability(clear=True)
+                if rocuWrap2 is not None:
+                    rocuWrap2.ShowReachability(clear=False)
+                print("You pressed ‘r’ - showing reachability")
 
             elif keyboard.is_pressed("v"):
                 k = keyboard.read_key()
                 rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
+                if rocuWrap2 is not None:
+                    rocuWrap2.vizi_spheres = rocuWrap1.vizi_spheres
                 print(f"You pressed 'v' - vizi_spheres is now {rocuWrap1.vizi_spheres}.")
+
+            elif keyboard.is_pressed("z"):
+                k = keyboard.read_key()
+                zingle_step = not zingle_step
+                print(f"You pressed 'z' - for zingle stepping - now {zingle_step}.")
 
         # ---------------------------------
         #    World Processing
@@ -325,16 +349,18 @@ def main():
             print(f"obstacle objects:{len(obstacles.objects)}")
 
             rocuWrap1.update_world(obstacles)
+            if rocuWrap2 is not None:
+                rocuWrap2.update_world(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
         # position and orientation of target virtual cube:
 
-        requestPause = rocuWrap1.EndStep()
-        # if requestPause:
-        #     print("Pauseing timeline")
-        #     timeline.pause()
+        if zingle_step:
+            print("Pauseing timeline - zingle stepping")
+            timeline.pause()
 
+        rocuWrap1.EndStep()
         if rocuWrap2 is not None:
             rocuWrap2.EndStep()
 

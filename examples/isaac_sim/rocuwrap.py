@@ -274,6 +274,11 @@ class RocuWrapper:
 
         self.upper_dof_lim = None
         self.lower_dof_lim = None
+        self.count_unique_solutions = True
+
+        self.ik_solver = None
+        self.ik_solver_grid = None
+        self.motion_gen = None
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
@@ -363,6 +368,8 @@ class RocuWrapper:
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
                 rv = None
+        if self.ik_solver_grid is not None:
+            self.ik_solver_grid.update_world(obstacles)
         return rv
 
     def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
@@ -419,8 +426,36 @@ class RocuWrapper:
             trim_steps=trim_steps,
         )
         self.motion_gen = MotionGen(self.motion_gen_config)
+        self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
 
        #  self.robot._articulation_view.initialize() # don't do this - causes an exceptino - can't create phyics sim  view
+
+    def InitPositionGridOffset(self):
+        self.gpr = self.get_pose_grid(10, 10, 10, 0.5, 0.5, 0.5)
+        self.position_grid_offset = self.tensor_args.to_device(self.gpr)
+        pos = self.ik_solver_grid.get_retract_config().view(1, -1)
+        fk_state = self.ik_solver_grid.fk(pos)
+        self.goal_pose = fk_state.ee_pose
+        self.goal_pose = self.goal_pose.repeat(self.position_grid_offset.shape[0])
+        self.goal_pose.position += self.position_grid_offset
+
+    def InitInvKinGrid(self, n_obstacle_cuboids, n_obstacle_mesh):
+        self.ik_config_grid = IKSolverConfig.load_from_robot_config(
+            self.robot_cfg,
+            self.world_cfg,
+            rotation_threshold=0.05,
+            position_threshold=0.005,
+            num_seeds=20,
+            self_collision_check=True,
+            self_collision_opt=True,
+            tensor_args=self.tensor_args,
+            use_cuda_graph=True,
+            collision_checker_type=CollisionCheckerType.MESH,
+            collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
+            # use_fixed_samples=True,
+        )
+        self.ik_solver_grid = IKSolver(self.ik_config_grid)
+        self.InitPositionGridOffset()
 
     def InitInvKin(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.world_cfg = RocuConfig.world_cfg
@@ -439,13 +474,7 @@ class RocuWrapper:
             # use_fixed_samples=True,
         )
         self.ik_solver = IKSolver(self.ik_config)
-        self.gpr = self.get_pose_grid(10, 10, 5, 0.5, 0.5, 0.5)
-        self.position_grid_offset = self.tensor_args.to_device(self.gpr)
-        pos = self.ik_solver.get_retract_config().view(1, -1)
-        fk_state = self.ik_solver.fk(pos)
-        self.goal_pose = fk_state.ee_pose
-        self.goal_pose = self.goal_pose.repeat(self.position_grid_offset.shape[0])
-        self.goal_pose.position += self.position_grid_offset
+        self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
 
     def StartStep(self, step_index):
         self.step_index = step_index
@@ -766,7 +795,6 @@ class RocuWrapper:
             return
 
         print("motion_gen.plan_single success:", result.success)
-        # ik_result = ik_solver.solve_single(ik_goal, cu_js.position.view(1,-1), cu_js.position.view(1,1,-1))
 
         successfull = result.success.item()  # ik_result.success.item()
         if self.num_targets == 1:
@@ -810,10 +838,20 @@ class RocuWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
+    def ShowReachability(self, clear=True):
+        print(f"ShowReachability {self.robid}")
+        res = self.CalcReachabilityToTarget()
+        if self.count_unique_solutions:
+            unique = res.get_batch_unique_solution()
+        else:
+            unique = None
+        self.draw_points(self.goal_pose, res.success, unique=unique, clear=clear)
+        pass
+
     def get_pose_grid(self, n_x, n_y, n_z, max_x, max_y, max_z):
         x = np.linspace(-max_x, max_x, n_x)
         y = np.linspace(-max_y, max_y, n_y)
-        z = np.linspace(0, max_z, n_z)
+        z = np.linspace(-max_z, max_z, n_z)
         x, y, z = np.meshgrid(x, y, z, indexing="ij")
 
         position_arr = np.zeros((n_x * n_y * n_z, 3))
@@ -822,35 +860,62 @@ class RocuWrapper:
         position_arr[:, 2] = z.flatten()
         return position_arr
 
-    def draw_points(self, pose, success):
+    def draw_points(self, pose, success, unique=None, clear=True):
         # Third Party
         from omni.isaac.debug_draw import _debug_draw
 
         draw = _debug_draw.acquire_debug_draw_interface()
         N = 100
         # if draw.get_num_points() > 0:
-        draw.clear_points()
+        if clear:
+            draw.clear_points()
         cpu_pos = pose.position.cpu().numpy()
         b, _ = cpu_pos.shape
         point_list = []
         colors = []
+        sizes = []
+        multi_color =  (0, 0, 1, 0.25)
+        single_sucess_color = (0, 1, 0, 0.25)
+        error_color = (1, 0, 1, 0.25)
+        fail_color = (1, 0, 0, 0.25)
+        color_on_solution_number = self.count_unique_solutions and unique is not None
         for i in range(b):
             # get list of points:
-            point_list += [(cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])]
-            if success[i].item():
-                colors += [(0, 1, 0, 0.25)]
+            # point_list += [(cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])]
+            pt_rcc = (cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])
+            pt_wc, qt_wc = self.rcc_to_wc(pt_rcc, [1, 0, 0, 0])
+            point_list += [pt_wc]
+            if unique is not None:
+                nsol = len(unique[i])
             else:
-                colors += [(1, 0, 0, 0.25)]
-        sizes = [40.0 for _ in range(b)]
-
+                nsol = 1
+            if success[i].item():
+                if color_on_solution_number:
+                    if nsol == 0:
+                        clr = error_color
+                    elif nsol == 1:
+                        clr = single_sucess_color
+                    else:
+                        clr = multi_color
+                else:
+                    clr = single_sucess_color
+                colors += [clr]
+                sizes += [40.0]
+            else:
+                colors += [fail_color]
+                sizes += [10.0]
+        # sizes = [40.0 for _ in range(b)]
         draw.draw_points(point_list, colors, sizes)
 
     def DoGridInvKinToTarget(self):
         rv = self.DoGridInvKinToPosOri(self.cube_position, self.cube_orientation)
         return rv
 
-    def DoGridInvKinToPosOri(self, pos, ori):
+    def CalcReachabilityToTarget(self):
+        rv = self.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
+        return rv
 
+    def CalcReachabilityToPosOri(self, pos, ori):
         ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
         if type(ee_ori_rcc) is Gf.Quatd:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
@@ -866,8 +931,7 @@ class RocuWrapper:
         self.goal_pose.quaternion[:] = ik_goal.quaternion[:]
 
         st_time = time.time()
-        # ik_result = self.ik_solver.solve_single(ik_goal)
-        ik_result = self.ik_solver.solve_batch(self.goal_pose)
+        ik_result = self.ik_solver_grid.solve_batch(self.goal_pose)
         ntrue = torch.sum(ik_result.success).item()
         ntry = len(ik_result.success)
 
@@ -875,9 +939,14 @@ class RocuWrapper:
         selap = ik_result.solve_time
         msg = f"IK completed: Poses: {str(self.goal_pose.batch)}  Success: {ntrue} of {ntry}  Solve time(s): {selap:.3f}  elap:{elap:3f}"
         print(msg)
-        self.draw_points(self.goal_pose, ik_result.success)
 
-        self.ik_result = ik_result
+        return ik_result
+
+    def DoGridInvKinToPosOri(self, pos, ori):
+
+        ik_result = self.CalcReachabilityToPosOri(pos, ori)
+        # self.ik_result = ik_result
+        self.draw_points(self.goal_pose, ik_result.success)
 
         successfull = torch.any(ik_result.success)
         if self.num_targets == 1:
@@ -932,7 +1001,6 @@ class RocuWrapper:
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
         )
         st_time = time.time()
-        # ik_result = self.ik_solver.solve_single(ik_goal)
         ik_result = self.ik_solver.solve_single(ik_goal, self.cu_js.position.view(1,-1), self.cu_js.position.view(1,1,-1))
         total_time = (time.time() - st_time)
         print(
@@ -963,14 +1031,13 @@ class RocuWrapper:
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
         )
         st_time = time.time()
-        # ik_result = self.ik_solver.solve_single(ik_goal)
-        pos = self.ik_solver.get_retract_config().view(1, -1)
-        fk_state = self.ik_solver.fk(pos)
+        pos = self.ik_solver_grid.get_retract_config().view(1, -1)
+        fk_state = self.ik_solver_grid.fk(pos)
         goal_pose = fk_state.ee_pose
         goal_pose = goal_pose.repeat(self.position_grid_offset.shape[0])
         goal_pose.position += self.position_grid_offset
 
-        ik_result = self.ik_solver.solve_batch(goal_pose)
+        ik_result = self.ik_solver_grid.solve_batch(goal_pose)
 
         total_time = (time.time() - st_time)
         print(
@@ -1128,7 +1195,7 @@ class RocuWrapper:
                 apply_matdict_to_prim_and_children(self.stage, self.orimat, self.robot_prim_path)
             else:
                  #print(f"Reverting to {rcfg.robmatskin}")
-                apply_material_to_prim_and_children(self.stage, self._matman, self.robmatskin, self.robot_prim_path)
+                apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, self.robot_prim_path)
         # print("toggle_show_joints_close_to_limits done")
         return self.show_joints_close_to_limits
 
