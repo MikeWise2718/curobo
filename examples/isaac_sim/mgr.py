@@ -85,6 +85,21 @@ def DefineTrays(stage, matman):
     mm.AddMotoTray("tray4", "000000", rot=[a90,0,zang],pos=[+xoff,-yoff,0.03])
     return mm
 
+def setcamview(viewsel):
+    if viewsel is None:
+        return
+    viewsel = viewsel.lower()
+    match viewsel:
+        case "top-view" | "t":
+            set_camera_view(eye=[0.0, 0, 2.5], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        case "front-view" | "f":
+            set_camera_view(eye=[-2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        case "back-view" | "b":
+            set_camera_view(eye=[2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        case "left-view" | "l":
+            set_camera_view(eye=[0.0, +2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+        case "right-view" | "r":
+            set_camera_view(eye=[0.0, -2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
 
 def main():
@@ -250,16 +265,7 @@ def main():
 
     # Front view
     viewsel = args.view
-    if viewsel in ["L", "l"]:
-        set_camera_view(eye=[0.0, +2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-    if viewsel in ["R", "r"]:
-        set_camera_view(eye=[0.0, -2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-    if viewsel in ["F", "f"]:
-        set_camera_view(eye=[+2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-    if viewsel in ["B", "f"]:
-        set_camera_view(eye=[-2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-    elif viewsel in ["T", "t"]:
-        set_camera_view(eye=[0.0, 0, 2.5], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
+    setcamview(viewsel)
 
     timeline = omni.timeline.get_timeline_interface()
     zingle_step = False
@@ -267,6 +273,8 @@ def main():
     # ---------------------------------
     #    LOOP
     # ---------------------------------
+    wpressedtime = loop_start
+
     while simulation_app.is_running():
 
         # ---------------------------------
@@ -284,7 +292,9 @@ def main():
 
             elif keyboard.is_pressed("b"):
                 k = keyboard.read_key()
-                print("You pressed ‘b’.")
+                if time.time() - wpressedtime < 1.0:
+                    setcamview("back-view")
+                print("You pressed ‘wb’ for back-view.")
 
             elif keyboard.is_pressed("*"):
                 k = keyboard.read_key()
@@ -326,13 +336,27 @@ def main():
                         sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
                         rocuWrap2.SetTargetPose(sp_wc, sq_wc)
 
+            # elif keyboard.is_pressed("e"):
+            #     k = keyboard.read_key()
+            #     rocuWrap1.dump_robot_transforms()
+
             elif keyboard.is_pressed("e"):
                 k = keyboard.read_key()
-                rocuWrap1.dump_robot_transforms()
+                if time.time() - wpressedtime < 1.0:
+                    setcamview("front-view")
+                print("You pressed ‘we’ for front-view.")
 
             elif keyboard.is_pressed("q"):
                 k = keyboard.read_key()
                 break
+
+            elif keyboard.is_pressed("l"):
+                k = keyboard.read_key()
+                if time.time() - wpressedtime < 1.0:
+                    setcamview("left-view")
+                print("You pressed ‘wf’ for left-view.")
+
+
 
             elif keyboard.is_pressed("m"):
                 k = keyboard.read_key()
@@ -345,17 +369,30 @@ def main():
 
             elif keyboard.is_pressed("t"):
                 k = keyboard.read_key()
-                rocuWrap1.toggle_show_joints_close_to_limits()
-                if rocuWrap2 is not None:
-                    rocuWrap2.toggle_show_joints_close_to_limits()
-                print("You pressed ‘t’")
+                if time.time() - wpressedtime < 1.0:
+                    setcamview("top-view")
+                    print("You pressed ‘wt’ for top-view.")
+                else:
+                    rocuWrap1.toggle_show_joints_close_to_limits()
+                    if rocuWrap2 is not None:
+                        rocuWrap2.toggle_show_joints_close_to_limits()
+                    print("You pressed ‘t’ for show joints close to limits.")
 
             elif keyboard.is_pressed("r"):
                 k = keyboard.read_key()
-                rocuWrap1.ShowReachability(clear=True)
-                if rocuWrap2 is not None:
-                    rocuWrap2.ShowReachability(clear=False)
-                print("You pressed ‘r’ - showing reachability")
+                if time.time() - wpressedtime < 1.0:
+                    setcamview("right-view")
+                    print("You pressed ‘wr' for right-view.")
+                else:
+                    rocuWrap1.ShowReachability(clear=True)
+                    if rocuWrap2 is not None:
+                        rocuWrap2.ShowReachability(clear=False)
+                    print("You pressed ‘r’ - showing reachability")
+
+            elif keyboard.is_pressed("w"):
+                k = keyboard.read_key()
+                wpressedtime = time.time()
+
 
             elif keyboard.is_pressed("v"):
                 k = keyboard.read_key()
