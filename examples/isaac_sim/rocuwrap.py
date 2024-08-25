@@ -161,6 +161,19 @@ class RocuTranMan:
         z = float(vek[2])
         return Gf.Vec3d(x, y, z)
 
+    def gfvec_to_numpy(self, vek):
+        lst = [vek[0], vek[1], vek[2]]
+        arr_np = np.array(lst, dtype=np.float32)
+        return arr_np
+
+    def quat_to_numpy(self, q):
+        if hasattr(q, "cpu"):
+            rv = q.cpu().numpy()
+        else:
+            lst = [q[0], q[1], q[2], q[3]]
+            rv = np.array(lst, dtype=np.float32)
+        return rv
+
     def to_npmat3x3(self, gfmat):
         npmat3x3 = np.zeros((3, 3), dtype=np.float32)
         for i in range(3):
@@ -265,6 +278,9 @@ class RocuWrapper:
         self.constrain_grasp_approach = None
 
         self.cur_cmd_plan = None
+        self.grid_closest = None
+        self.grid_closeest_dist = 1e6
+
         self.pose_metric = None
         self.num_targets = 0
 
@@ -286,6 +302,9 @@ class RocuWrapper:
         self.max_x = 0.5
         self.max_y = 0.5
         self.max_z = 0.5
+
+        self.grid_succ_rad = 40
+        self.grid_fail_rad = 20
 
         self.grid_timer_tick = 20
 
@@ -480,6 +499,7 @@ class RocuWrapper:
             # use_fixed_samples=True,
         )
         self.ik_solver_grid = IKSolver(self.ik_config_grid)
+        self.InitPositionGridOffset()
 
     def InitInvKin(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.world_cfg = RocuConfig.world_cfg
@@ -499,6 +519,7 @@ class RocuWrapper:
         )
         self.ik_solver = IKSolver(self.ik_config)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
+
 
     def StartStep(self, step_index):
         self.step_index = step_index
@@ -907,6 +928,8 @@ class RocuWrapper:
         single_sucess_color = (0, 1, 0, 0.25)
         error_color = (1, 0, 1, 0.25)
         fail_color = (1, 0, 0, 0.25)
+        succ_rad = self.grid_succ_rad
+        fail_rad = self.grid_fail_rad
         color_on_solution_number = self.count_unique_solutions and unique is not None
         for i in range(b):
             # get list of points:
@@ -929,10 +952,10 @@ class RocuWrapper:
                 else:
                     clr = single_sucess_color
                 colors += [clr]
-                sizes += [40.0]
+                sizes += [succ_rad]
             else:
                 colors += [fail_color]
-                sizes += [20.0]
+                sizes += [fail_rad]
         # sizes = [40.0 for _ in range(b)]
         draw.draw_points(point_list, colors, sizes)
 
@@ -1087,7 +1110,7 @@ class RocuWrapper:
 
     def QueCmdPlan(self, cmd_plan, comment=""):
         # should do a plausiblity check on cmd_plan
-        if comment=="":
+        if comment == "":
             comment = f"CmdPlan-{len(self.cmd_plan_queue)}"
         self.cmd_plan_queue.append((cmd_plan, comment))
 
@@ -1137,22 +1160,55 @@ class RocuWrapper:
     def ExecuteGridInvKinCmdPlan(self):
         requestPause = False
         self.ShuffleCmdPlanQueue()
-        if self.cur_cmd_plan is not None and self.step_index % 20 == 0 and True:
+
+        if self.cur_cmd_plan is not None and self.step_index % self.grid_timer_tick == 0 and True:
             print(f"Executing plan step {self.cmd_idx}/{len(self.cur_cmd_plan.position)} - {self.cur_cmd_plan_cmt}")
             requestPause = True
             cmd_state = self.cur_cmd_plan[self.cmd_idx]
 
-            self.robot.set_joint_positions(cmd_state.position.cpu().numpy(), self.idx_list)
+            pos = cmd_state.position.view(1, -1)
+            self.robot.set_joint_positions(pos.cpu().numpy(), self.idx_list)
+            sp_wc_np, sq_wc_np = self.CalcPoseGrid(pos, needAsNumpy=True)
+            dist = dst(sp_wc_np, self.cube_position) + dst(sq_wc_np, self.cube_orientation)
+            # print(f"Dist:{dist} - {sp_wc_np} - {self.cube_position} ")
+            if dist < self.grid_closeest_dist:
+                self.grid_closest = cmd_state
+                self.grid_closeest_dist = dist
+                # print(f"Setting closest to target idx:{self.cmd_idx} dist:{dist}")
+                # pos = self.grid_closest.position
+                # print(" moving to joint pos:", pos, " idx_list:", self.idx_list)
 
             # set desired joint angles obtained from IK:
             # articulation_controller.apply_action(art_action)
             self.cmd_idx += 1
             if self.cmd_idx >= len(self.cur_cmd_plan.position):
+                print("Plan Completed")
                 self.cmd_idx = 0
                 self.cur_cmd_plan = None
-                self.my_world.step(render=True)
-                self.robot.set_joint_positions(self.default_config, self.idx_list)
+                if self.grid_closest is not None:
+                    print("Moving closest to target closest_dist:", self.grid_closeest_dist)
+                    pos = self.grid_closest.position.view(1, -1)
+                    sp_rcc, sq_rcc = self.CalcPoseGrid(pos)
+                    # print("sp_rcc:", sp_rcc, " sq_rcc:", sq_rcc)
+                    # print(" moving to pos:", pos, " idx_list:", self.idx_list)
+                    self.robot.set_joint_positions(pos.cpu().numpy(), self.idx_list)
+
+                self.grid_closest = None      # this initialization should be done somewhere else in the next iteration
+                self.grid_closeest_dist = 1e6
+
         return requestPause
+
+    def CalcPoseGrid(self, joint_posistions, needAsNumpy=False):
+        fkstate = self.ik_solver_grid.fk(joint_posistions)
+        fk_pose = fkstate.ee_pose
+        sp_rcc, sq_rcc = fk_pose.position.squeeze(), fk_pose.quaternion.squeeze()
+        sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
+        if needAsNumpy:
+            sp_wc_np = self.rocuTranman.gfvec_to_numpy(sp_wc)
+            sq_wc_np = self.rocuTranman.quat_to_numpy(sq_wc)
+            return sp_wc_np, sq_wc_np
+        return sp_wc, sq_wc
+
 
     def ExecuteInvKinCmdPlan(self):
         requestPause = False

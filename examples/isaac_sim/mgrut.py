@@ -46,6 +46,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "-adt",
+    "--add_trays",
+    action="store_true",
+    help="Add Trays and Phones to the scene",
+    default=False,
+)
+
+parser.add_argument(
     "-vzs",
     "--visualize_spheres",
     action="store_true",
@@ -114,12 +122,27 @@ parser.add_argument(
     default=None,
 )
 parser.add_argument(
+    "--gridsuccessrad",
+    "-gsr",
+    help="Radius of success spheres in pixesls (40)",
+    type=float,
+    default=None,
+)
+parser.add_argument(
+    "--gridfailrad",
+    "-gfr",
+    help="Radius of fail spheres in pixels (20)",
+    type=float,
+    default=None,
+)
+parser.add_argument(
     "--gridtimerticks",
     "--gtt",
     help="Number of timer ticks for grid",
     type=int,
     default=None,
 )
+
 
 def get_args():
     args = parser.parse_args()

@@ -58,14 +58,33 @@ from mgrut import get_args, get_vek
 from rocuwrap import RocuWrapper, RocuMoveMode, RocuConfig
 import curobo.curobolib as curobolib
 from matman import MatMan
+from motomod import MotoMan
 
+def DefineTrays(stage, matman):
 
-def DefineRobot(robid, prerot, pos, ori, ) -> RocuWrapper:
-    rw: RocuWrapper = RocuWrapper(robid)
-    rw.LoadAndPositionRobot(prerot, pos, ori, subroot=robid)
-    # rw.change_material("Blue_Glass")
-    # note that we have not actually loaded the robot yet
-    return rw
+    mm = MotoMan(stage, matman)
+    # cage
+    # mm.AddCage()
+
+    a90 = np.pi/2
+
+    # moto_50mp
+    # mm.AddMoto50mp("moto1",rot=[-a90,0,a90],pos=[0,0,0.1])
+    # mm.AddMoto50mp("moto2",rot=[-a90,0,a90],pos=[0.1,0.1,0.1])
+
+    # moto_tray
+    zang = 5*np.pi/4
+    zang = np.pi/2
+    zang = 0
+    xoff = 0.20
+    yoff = 0.15
+
+    mm.AddMotoTray("tray1", "rgb000", rot=[a90,0,zang],pos=[+xoff,+yoff,0.03])
+    mm.AddMotoTray("tray2", "000000", rot=[a90,0,zang],pos=[-xoff,+yoff,0.03])
+    mm.AddMotoTray("tray3", "myc000", rot=[a90,0,zang],pos=[-xoff,-yoff,0.03])
+    mm.AddMotoTray("tray4", "000000", rot=[a90,0,zang],pos=[+xoff,-yoff,0.03])
+    return mm
+
 
 
 def main():
@@ -164,16 +183,15 @@ def main():
     mode = RocuMoveMode.FollowTargetWithMoGen
     if modesel in ["ikv", "ikt", "inkt", "inv"]:
         mode = RocuMoveMode.FollowTargetWithInvKin
-    elif modesel in ["mg", "mogen"]:
+    elif modesel in ["mg","mo","mog", "mogen"]:
         mode = RocuMoveMode.FollowTargetWithMoGen
-    elif modesel in ["r", "reach"]:
+    elif modesel in ["r", "re", "rea", "reach"]:
         mode = RocuMoveMode.ReachabilityWithInvKin
     reactive = args.reactive
     reach_pp = args.reach_partial_pose
     hold_pp = args.hold_partial_pose
     con_grasp = args.constrain_grasp_approach
 
-    # rocuWrap1: RocuWrapper = DefineRobot("1", prerot1, pos1, ori1)
     rocuWrap1: RocuWrapper = RocuWrapper("1")
     rocuWrap1.LoadAndPositionRobot(prerot1, pos1, ori1)
     rocuWrap1.SetRobotMoveMode(mode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh)
@@ -185,6 +203,13 @@ def main():
     else:
         rocuWrap2 = None
 
+    # Setup Trays and Phones
+    if args.add_trays:
+        mm = DefineTrays(stage, matman)
+    else:
+        mm = None
+
+    # Setup Grid
     if args.ngrid is not None:
         ng = args.ngrid
         rocuWrap1.SetGridSize(ng, ng, ng)
@@ -196,6 +221,18 @@ def main():
         rocuWrap1.SetGridSpan(span, span, span)
         if rocuWrap2 is not None:
             rocuWrap2.SetGridSpan(span, span, span)
+
+    if args.gridsuccessrad is not None:
+        rad = args.gridsuccessrad
+        rocuWrap1.grid_succ_rad = rad
+        if rocuWrap2 is not None:
+            rocuWrap2.grid_succ_rad = rad
+
+    if args.gridfailrad is not None:
+        rad = args.gridfailrad
+        rocuWrap1.grid_fail_rad = rad
+        if rocuWrap2 is not None:
+            rocuWrap2.grid_fail_rad = rad
 
     if args.gridtimerticks is not None:
         rocuWrap1.SetGridTimerTicks(args.gridtimerticks)

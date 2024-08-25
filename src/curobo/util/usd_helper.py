@@ -78,7 +78,8 @@ def set_prim_transform(
 
     if use_float:
         position = Gf.Vec3f(pose[:3])
-        q = Gf.Quatf(quat[0], quat[1:])
+        # q = Gf.Quatf(quat[0], quat[1:])
+        q = Gf.Quatf(pose[3], pose[4:])
         dims = Gf.Vec3f(scale)
 
     else:
