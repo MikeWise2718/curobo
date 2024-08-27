@@ -265,6 +265,12 @@ class MotoTray:
         rv = np.array([xp,yp,zp])
         return rv
 
+    def get_trayslot_pose_idx_quat(self, idx):
+        iw,ih = self.get_iw_ih(idx)
+        pos, ori = self.get_trayslot_pose(iw,ih)
+        ori_q = euler_angles_to_quat(ori)
+        return pos, ori_q
+
     def get_trayslot_pose_idx(self, idx):
         iw,ih = self.get_iw_ih(idx)
         pos, ori = self.get_trayslot_pose(iw,ih)

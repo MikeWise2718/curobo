@@ -58,11 +58,11 @@ from mgrut import get_args, get_vek
 from rocuwrap import RocuWrapper, RocuMoveMode, RocuConfig
 import curobo.curobolib as curobolib
 from matman import MatMan
-from motomod import MotoMan
+from motomod import MotoMan, MotoTray
 
 def DefineTrays(stage, matman):
 
-    mm = MotoMan(stage, matman)
+    mm: MotoMan = MotoMan(stage, matman)
     # cage
     # mm.AddCage()
 
@@ -220,9 +220,9 @@ def main():
 
     # Setup Trays and Phones
     if args.add_trays:
-        mm = DefineTrays(stage, matman)
+        mm: MotoMan = DefineTrays(stage, matman)
     else:
-        mm = None
+        mm: MotoMan = None
 
     # Setup Grid
     if args.ngrid is not None:
@@ -274,6 +274,10 @@ def main():
     #    LOOP
     # ---------------------------------
     wpressedtime = loop_start
+    ppressedtime = loop_start
+
+    traycmd = None
+    traynum = "0"
 
     while simulation_app.is_running():
 
@@ -367,6 +371,11 @@ def main():
                         rocuWrap2.toggle_show_joints_close_to_limits()
                     print("You pressed ‘t’ for show joints close to limits.")
 
+            elif keyboard.is_pressed("p"):
+                k = keyboard.read_key()
+                ppressedtime = time.time()
+                print("You pressed ‘p’")
+
             elif keyboard.is_pressed("r"):
                 k = keyboard.read_key()
                 if time.time() - wpressedtime < 1.0:
@@ -381,6 +390,7 @@ def main():
             elif keyboard.is_pressed("w"):
                 k = keyboard.read_key()
                 wpressedtime = time.time()
+                print("You pressed ‘w’")
 
             elif keyboard.is_pressed("v"):
                 k = keyboard.read_key()
@@ -393,6 +403,42 @@ def main():
                 k = keyboard.read_key()
                 zingle_step = not zingle_step
                 print(f"You pressed 'z' - for zingle stepping - now {zingle_step}.")
+
+            elif keyboard.is_pressed("0"):
+                k = keyboard.read_key()
+                print("You pressed ‘0’")
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_0"
+
+            elif keyboard.is_pressed("1"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_1"
+
+            elif keyboard.is_pressed("2"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_2"
+
+            elif keyboard.is_pressed("3"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_3"
+
+            elif keyboard.is_pressed("4"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_4"
+
+            elif keyboard.is_pressed("5"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_5"
+
+            elif keyboard.is_pressed("6"):
+                k = keyboard.read_key()
+                if time.time() - ppressedtime < 1.0:
+                    traycmd = f"p_{traynum}_6"
 
         # ---------------------------------
         #    World Processing
@@ -448,6 +494,15 @@ def main():
         rocuWrap1.EndStep()
         if rocuWrap2 is not None:
             rocuWrap2.EndStep()
+
+        if traycmd is not None:
+            print(f"executing traycmd:{traycmd}")
+            cmd, tray_num, phone_num = traycmd.split("_")
+            tray: MotoTray = mm.GetMotoTrayByIdx(int(tray_num))
+            p_pos, p_ori = tray.get_trayslot_pose_idx_quat(int(phone_num))
+            print("p_pos:", p_pos, "   p_ori:", p_ori)
+            rocuWrap1.SetTargetPose(p_pos, p_ori)
+            traycmd = None
 
     simulation_app.close()
 

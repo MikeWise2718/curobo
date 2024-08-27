@@ -20,7 +20,7 @@ from enum import Enum
 from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 
 from pxr import Gf, Sdf, Usd, UsdGeom
-from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
+from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat
 from omni.isaac.core.utils.stage import get_current_stage
 ############################################################
 import torch
@@ -28,7 +28,7 @@ import torch
 # ########## OV #################;;;;;
 import typing
 
-from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
+from mgrut import get_args, print_mat, list4to_quatd
 
 args = get_args()
 

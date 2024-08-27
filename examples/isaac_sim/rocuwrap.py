@@ -690,7 +690,6 @@ class RocuWrapper:
         self.rgm.InitGridSize(self.n_x, self.n_y, self.n_z,
                               self.max_x, self.max_y, self.max_z,
                               self.grid_succ_rad, self.grid_fail_rad)
-        self.rgm.get_pose_grid()
 
     def DoGridInvKinToTarget(self):
         rv = self.DoGridInvKinToPosOri(self.cube_position, self.cube_orientation)
@@ -698,7 +697,7 @@ class RocuWrapper:
 
     def DoGridInvKinToPosOri(self, pos, ori):
         ik_result = self.rgm.CalcReachabilityToPosOri(pos, ori)
-        self.rgm.show_reachability_cloud(self.rgm.goal_pose, ik_result.success)
+        self.rgm._show_reachability_cloud(self.rgm.goal_pose, ik_result.success)
 
         successfull = torch.any(ik_result.success)
         nsucess = torch.sum(ik_result.success).item()
@@ -881,7 +880,7 @@ class RocuWrapper:
             unique = res.get_batch_unique_solution()
         else:
             unique = None
-        self.rgm.show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
+        self.rgm._show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
         pass
 
 # ----------------------- Joint Alarm Code ---------------------------

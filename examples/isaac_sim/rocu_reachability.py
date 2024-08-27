@@ -75,14 +75,17 @@ class ReachGridMan():
         self.max_x, self.max_y, self.max_z = max_x, max_y, max_z
         self.grid_succ_rad = grid_succ_rad
         self.grid_fail_rad = grid_fail_rad
+        self._calc_pose_grid()
 
     def SetGridSize(self, n_x=9, n_y=9, n_z=9):
         self.n_x, self.n_y, self.n_z = n_x, n_y, n_z
+        self._calc_pose_grid()
 
     def SetGridSpan(self, max_x=0.5, max_y=0.5, max_z=0.5):
         self.max_x, self.max_y, self.max_z = max_x, max_y, max_z
+        self._calc_pose_grid()
 
-    def get_pose_grid(self):
+    def _calc_pose_grid(self):
         x = np.linspace(-self.max_x, self.max_x, self.n_x)
         y = np.linspace(-self.max_y, self.max_y, self.n_y)
         z = np.linspace(-self.max_z, self.max_z, self.n_z)
@@ -92,7 +95,6 @@ class ReachGridMan():
         self.position_arr[:, 0] = x.flatten()
         self.position_arr[:, 1] = y.flatten()
         self.position_arr[:, 2] = z.flatten()
-        return self.position_arr
 
     def InitPositionGridOffset(self):
         pos = self.ik_solver_grid.get_retract_config().view(1, -1)
@@ -100,8 +102,10 @@ class ReachGridMan():
         self.InitPositionGridOffsetElems(fk_state.ee_pose)
 
     def InitPositionGridOffsetElems(self, ee_pose):
-        self.gpr = self.get_pose_grid()
-        self.position_grid_offset = self.tensor_args.to_device(self.gpr)
+        # self.gpr = self._calc_pose_grid()
+        # self.position_grid_offset = self.tensor_args.to_device(self.gpr)
+        self._calc_pose_grid()
+        self.position_grid_offset = self.tensor_args.to_device(self.position_arr)
         self.goal_pose = ee_pose
         self.goal_pose = self.goal_pose.repeat(self.position_grid_offset.shape[0])
         self.goal_pose.position += self.position_grid_offset
@@ -144,7 +148,7 @@ class ReachGridMan():
             return sp_wc_np, sq_wc_np
         return sp_wc, sq_wc
 
-    def show_reachability_cloud(self, pose, success, unique=None, clear=True):
+    def _show_reachability_cloud(self, pose, success, unique=None, clear=True):
         # Third Party
         from omni.isaac.debug_draw import _debug_draw
 
