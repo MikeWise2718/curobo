@@ -325,20 +325,11 @@ def main():
                 k = keyboard.read_key()
                 print("You pressed ‘d’ - will move to robot's current end-effector pose.")
                 if rocuWrap1.cu_js is not None:
-                    # sp_rcc, sq_rcc = rocuWrap1.get_cur_pose(rocuWrap1.cu_js)
-                    sp_rcc, sq_rcc = rocuWrap1.get_cur_pose()
-                    sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
-                    rocuWrap1.SetTargetPose(sp_wc, sq_wc)
+                    rocuWrap1.MoveTargetToEepose()
                 if rocuWrap2 is not None:
                     if rocuWrap2.cu_js is not None:
                         # sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
-                        sp_rcc, sq_rcc = rocuWrap2.get_cur_pose()
-                        sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
-                        rocuWrap2.SetTargetPose(sp_wc, sq_wc)
-
-            # elif keyboard.is_pressed("e"):
-            #     k = keyboard.read_key()
-            #     rocuWrap1.dump_robot_transforms()
+                        rocuWrap2.MoveTargetToEepose()
 
             elif keyboard.is_pressed("e"):
                 k = keyboard.read_key()
@@ -355,8 +346,6 @@ def main():
                 if time.time() - wpressedtime < 1.0:
                     setcamview("left-view")
                 print("You pressed ‘wf’ for left-view.")
-
-
 
             elif keyboard.is_pressed("m"):
                 k = keyboard.read_key()
@@ -392,7 +381,6 @@ def main():
             elif keyboard.is_pressed("w"):
                 k = keyboard.read_key()
                 wpressedtime = time.time()
-
 
             elif keyboard.is_pressed("v"):
                 k = keyboard.read_key()

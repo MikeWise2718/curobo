@@ -9,7 +9,6 @@
 # its affiliates is strictly prohibited.
 #
 
-
 from torch.fx.experimental.symbolic_shapes import expect_true
 import time
 import copy
@@ -21,7 +20,6 @@ from enum import Enum
 from omni.isaac.core import World
 from omni.isaac.core.objects import cuboid, sphere
 from omni.isaac.core.utils.types import ArticulationAction
-
 
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
@@ -42,191 +40,17 @@ from curobo.wrap.reacher.motion_gen import (
 from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
 
 from pxr import Gf, Sdf, Usd, UsdGeom
-from rotations import euler_angles_to_quat, matrix_to_euler_angles, rot_matrix_to_quat, gf_rotation_to_np_array
 from omni.isaac.core.utils.stage import get_current_stage
 from senut import apply_material_to_prim_and_children, apply_matdict_to_prim_and_children, build_material_dict, get_link_paths
 
 ############################################################
 import torch
 
-
-# ########## OV #################;;;;;
-import typing
-
+from rocu_components import RocuConfiguator, RocuMoveMode, RocuTranMan
 from mgrut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
+from rocu_reachability import ReachGridMan
 
 args = get_args()
-
-
-class RocuTranMan:
-    def __init__(self, robid, usealt=True):
-        self.rob_pos = Gf.Vec3d(0, 0, 0)
-        self.rob_ori_quat = Gf.Quatd(1, 0, 0, 0)
-        self.rob_ori_euler = Gf.Vec3d(0, 0, 0)
-        self.rob_ori_sel = "0,0,0"
-        # self.memstage: Usd.Stage = Usd.Stage.CreateInMemory()
-        self.stage: Usd.Stage = get_current_stage()
-        # self.default_prim: Usd.Prim = UsdGeom.Xform.Define(self.memstage, Sdf.Path("/World")).GetPrim()
-        # self.memstage.SetDefaultPrim(self.default_prim)
-        # self.xformpath = self.default_prim.GetPath().AppendPath(f"Xform_{robid}")
-
-        self.xformw_full_prim: Usd.Prim = UsdGeom.Xform.Define(self.stage, f"/World/XformFull_{robid}")
-        self.xformw_robot_proxy_prim: Usd.Prim = UsdGeom.Xform.Define(self.stage, f"/World/XformRobProxy_{robid}")
-
-        self.xform_full_pre_rot_op = self.xformw_full_prim.AddRotateXYZOp(opSuffix='prerot')
-        self.xform_full_tran_op = self.xformw_full_prim.AddTranslateOp()
-        self.xform_full_rot_op = self.xformw_full_prim.AddRotateXYZOp()
-
-        self.xform_robopt_proxy_tran_op = self.xformw_robot_proxy_prim.AddTranslateOp()
-        self.xform_robopt_proxy_orient_op = self.xformw_robot_proxy_prim.AddOrientOp(UsdGeom.XformOp.PrecisionDouble)
-        self.xform_robopt_proxy_scale_op = self.xformw_robot_proxy_prim.AddScaleOp()
-
-        self.usealt = usealt
-        print("RobDeco created usealt:", usealt)
-
-    def get_world_xform(self, prim: Usd.Prim, dump=False) -> typing.Tuple[Gf.Vec3d, Gf.Rotation, Gf.Vec3d, Gf.Matrix3d]:
-        xform = UsdGeom.Xformable(prim)
-        time = Usd.TimeCode.Default()  # The time at which we compute the bounding box
-        world_transform: Gf.Matrix4d = xform.ComputeLocalToWorldTransform(time)
-        if dump:
-            print("world_transform:", world_transform)
-        translation: Gf.Vec3d = world_transform.ExtractTranslation()
-        rotation: Gf.Rotation = world_transform.ExtractRotation()
-        scale: Gf.Vec3d = Gf.Vec3d(*(v.GetLength() for v in world_transform.ExtractRotationMatrix()))
-        return translation, rotation, scale, world_transform
-
-    def find_rcc_to_wc_tansform(self, prerot_euler, pos, ori_euler):
-        self.xform_full_pre_rot_op.Set(value=prerot_euler)
-        self.xform_full_tran_op.Set(value=pos)
-        self.xform_full_rot_op.Set(value=ori_euler)
-        t, r, s, m = self.get_world_xform(self.xformw_full_prim)
-        return t, r, s, m
-
-    def set_robot_proxy_tran(self, tranvek, oriquat):
-        self.xform_robopt_proxy_tran_op.Set(tranvek)
-        qlist = oriquat.tolist()
-        q = Gf.Quatd(qlist[0], qlist[1:])
-        self.xform_robopt_proxy_orient_op.Set(value=q)
-        self.xform_robopt_proxy_scale_op.Set(Gf.Vec3d(1, 1, 1))
-        t, r, s, m = self.get_world_xform(self.xformw_robot_proxy_prim, dump=False)
-        return t, r, s, m
-
-    def set_transform(self, prerot, pos, ori):
-
-        self.rob_prerot_euler = self.to_gfvec(prerot)
-        self.prerot = prerot
-        self.rob_pos = Gf.Vec3d(float(pos[0]), float(pos[1]), float(pos[2]))
-        self.rob_ori_euler = self.to_gfvec(ori)
-        self.rob_ori_quat_nparray = euler_angles_to_quat(self.rob_ori_euler, degrees=True)
-        self.rob_ori_quat = list4to_quatd(self.rob_ori_quat_nparray)
-
-        (t, r, _, w) = self.find_rcc_to_wc_tansform(self.rob_prerot_euler, self.rob_pos, self.rob_ori_euler)
-        (self.tran, self.rotmat3d_gfrot, self.rcc_to_wc_transform) = (t, r, w)
-        self.rotmat3d = Gf.Matrix3d(self.rotmat3d_gfrot)
-        self.inv_rotmat3d = self.rotmat3d.GetTranspose()
-
-        self.rotmat3d_eulers = matrix_to_euler_angles(self.rotmat3d, degrees=True)
-        self.rotmat3d_quat_nparray = euler_angles_to_quat(self.rotmat3d_eulers, degrees=True)
-        npmat3x3 = self.to_npmat3x3(self.inv_rotmat3d)
-        self.rotmat3d_quat_nparray_inv = rot_matrix_to_quat(npmat3x3)
-        self.rotmat3d_eulers_inv = matrix_to_euler_angles(npmat3x3, degrees=True)
-        # (t, r, _, w) = self.set_robot_proxy_tran(self.tran, self.rotmat3d_quat_nparray)
-        (t, r, _, w) = self.set_robot_proxy_tran(self.rob_pos, self.rotmat3d_quat_nparray)
-        (self.robproxy_tran, self.robproxy_rot, self.robproxy_world_tran) = (t, r, w)
-
-        print("----- input values -----")
-        print("rob_pos:", self.rob_pos)
-        print("rob_ori_euler:", self.rob_ori_euler)
-        print("rob_prerot_euler:", self.rob_prerot_euler)
-        print("rob_ori_quat:", self.rob_ori_quat)
-        print("----- cacluated values -----")
-        print_mat("rcc_to_wc_transform:", 4, 4, self.rcc_to_wc_transform)
-        print_mat("rotmat3d", 3, 3, self.rotmat3d)
-        print_mat("inv_rotmat3d", 3, 3, self.inv_rotmat3d)
-        print("rob_ori_sel:", self.rob_ori_sel)
-        print("rotmat3d_eulers    :", self.rotmat3d_eulers)
-        print("rotmat3d_eulers_inv:", self.rotmat3d_eulers_inv)
-        print("tran:", self.tran)
-        print("rob_pos:", self.rob_pos)
-        print("rotmat3d_quat_nparray    :", self.rotmat3d_quat_nparray)
-        print("rotmat3d_quat_nparray_inv:", self.rotmat3d_quat_nparray_inv)
-        print_mat("robproxy_world_tran:", 4, 4, self.robproxy_world_tran)
-
-    def get_robot_base(self):
-        return self.rob_pos, self.rotmat3d_quat_nparray
-
-    def to_gfvec(self, vek):
-        x = float(vek[0])
-        y = float(vek[1])
-        z = float(vek[2])
-        return Gf.Vec3d(x, y, z)
-
-    def gfvec_to_numpy(self, vek):
-        lst = [vek[0], vek[1], vek[2]]
-        arr_np = np.array(lst, dtype=np.float32)
-        return arr_np
-
-    def quat_to_numpy(self, q):
-        if hasattr(q, "cpu"):
-            rv = q.cpu().numpy()
-        else:
-            lst = [q[0], q[1], q[2], q[3]]
-            rv = np.array(lst, dtype=np.float32)
-        return rv
-
-    def to_npmat3x3(self, gfmat):
-        npmat3x3 = np.zeros((3, 3), dtype=np.float32)
-        for i in range(3):
-            for j in range(3):
-                npmat3x3[i, j] = gfmat[i, j]
-        return npmat3x3
-
-    def quat_apply(self, q1, q2):
-        q1inv = q1.GetInverse()
-        q2q = Gf.Quatd(float(q2[0]), float(q2[1]), float(q2[2]), float(q2[3]))
-        rv = q1inv * q2q * q1
-        return rv
-
-    def rcc_to_wc(self, pos, ori):
-        pos_gfv = self.to_gfvec(pos)
-        # pos_new = self.tran + pos_gfv * self.inv_rotmat3d
-        pos_new = self.rob_pos + pos_gfv * self.inv_rotmat3d
-        return pos_new, ori
-
-    def wc_to_rcc(self, pos, ori):
-        pos_gfv = self.to_gfvec(pos)
-        # pos_new = (pos_gfv - self.tran) * self.rotmat3d
-        pos_new = (pos_gfv - self.rob_pos) * self.rotmat3d
-        return pos_new, ori
-
-    def dump_robot_transforms(self, robpathname):
-        robpath = Sdf.Path(robpathname)
-        robprim = self.stage.GetPrimAtPath(robpath)
-        (t, r, s, m) = self.get_world_xform(robprim)
-        print("world_tranlate:", t)
-        print("world_rotate:", r)
-        print_mat("world_transform:", 4, 4, m)
-        print_mat("rotmat3d:", 3, 3, self.rotmat3d)
-        print_mat("inv_rotmat3d:", 3, 3, self.inv_rotmat3d)
-
-
-def dst(p1, p2):
-    rv = np.linalg.norm(p1 - p2)
-    return rv
-
-class RocuMoveMode(Enum):
-    FollowTargetWithMoGen = 1
-    FollowTargetWithInvKin = 2
-    ReachabilityWithInvKin = 3
-
-class RocuConfiguator:
-    def __init__(self):
-        self.robot_config_path = "robot"
-        self.external_asset_path = "assetpath"
-        self.external_robot_configs_path = "config"
-        self.my_world = None
-        self.world_cfg = None
-        self.matman = None
 
 RocuConfig = RocuConfiguator()
 
@@ -293,20 +117,16 @@ class RocuWrapper:
         self.count_unique_solutions = True
 
         self.ik_solver = None
-        self.ik_solver_grid = None
         self.motion_gen = None
 
-        self.n_x = 9
-        self.n_y = 9
-        self.n_z = 9
-        self.max_x = 0.5
-        self.max_y = 0.5
-        self.max_z = 0.5
+        self.n_x, self.n_y, self.n_z = 9, 9, 9
+        self.max_x, self.max_y, self.max_z = 0.5, 0.5, 0.5
 
         self.grid_succ_rad = 40
         self.grid_fail_rad = 20
 
         self.grid_timer_tick = 20
+        self.rgm: ReachGridMan = ReachGridMan(self)
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
@@ -343,6 +163,10 @@ class RocuWrapper:
             case _:
                 carb.log_warn(f"Move Mode {mode} not implemented yet.")
 
+    def dst(self, p1, p2):
+        rv = np.linalg.norm(p1 - p2)
+        return rv
+
     def wc_to_rcc(self, pos, ori):
         return self.rocuTranman.wc_to_rcc(pos, ori)
 
@@ -369,10 +193,8 @@ class RocuWrapper:
         sp = state.ee_pos_seq.cpu()[0]
         sq = state.ee_quat_seq.cpu()[0]
         return sp, sq
-        # return self.motion_gen.get_start_pose()
 
-    def get_cur_pose(self):
-        # return self.motion_gen.get_cur_pose(joint_state)
+    def get_cur_eepose(self):
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 rollout_fn = self.motion_gen.rollout_fn
@@ -383,10 +205,6 @@ class RocuWrapper:
         sq = state.ee_quat_seq.cpu()[0]
         return sp, sq
 
-    def get_cur_pose_old(self, joint_state):
-        cur_pose =  self.motion_gen.get_cur_pose(joint_state)
-        return cur_pose
-
     def update_world(self, obstacles):
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
@@ -396,8 +214,7 @@ class RocuWrapper:
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
                 rv = None
-        if self.ik_solver_grid is not None:
-            self.ik_solver_grid.update_world(obstacles)
+        self.rgm.update_world(obstacles)
         return rv
 
     def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
@@ -454,52 +271,29 @@ class RocuWrapper:
             trim_steps=trim_steps,
         )
         self.motion_gen = MotionGen(self.motion_gen_config)
+        self.rgm.InitSolver(n_obstacle_cuboids, n_obstacle_mesh)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
-        self.InitPositionGridOffset()
-
-       #  self.robot._articulation_view.initialize() # don't do this - causes an exceptino - can't create phyics sim  view
 
     def SetGridSize(self, n_x=9, n_y=9, n_z=9):
         self.n_x = n_x
         self.n_y = n_y
         self.n_z = n_z
-        self.InitPositionGridOffset()
+        self.rgm.SetGridSize(n_x, n_y, n_z)
+        self.rgm.InitPositionGridOffset()
 
     def SetGridSpan(self, max_x=0.5, max_y=0.5, max_z=0.5):
         self.max_x = max_x
         self.max_y = max_y
         self.max_z = max_z
-        self.InitPositionGridOffset()
+        self.rgm.SetGridSpan(max_x, max_y, max_z)
+        self.rgm.InitPositionGridOffset()
 
     def SetGridTimererTick(self, timer_tick):
         self.grid_timer_tick = timer_tick
 
-    def InitPositionGridOffset(self):
-        self.gpr = self.get_pose_grid(self.n_x, self.n_y, self.n_z, self.max_x, self.max_y, self.max_z)
-        self.position_grid_offset = self.tensor_args.to_device(self.gpr)
-        pos = self.ik_solver_grid.get_retract_config().view(1, -1)
-        fk_state = self.ik_solver_grid.fk(pos)
-        self.goal_pose = fk_state.ee_pose
-        self.goal_pose = self.goal_pose.repeat(self.position_grid_offset.shape[0])
-        self.goal_pose.position += self.position_grid_offset
-
     def InitInvKinGrid(self, n_obstacle_cuboids, n_obstacle_mesh):
-        self.ik_config_grid = IKSolverConfig.load_from_robot_config(
-            self.robot_cfg,
-            self.world_cfg,
-            rotation_threshold=0.05,
-            position_threshold=0.005,
-            num_seeds=20,
-            self_collision_check=True,
-            self_collision_opt=True,
-            tensor_args=self.tensor_args,
-            use_cuda_graph=True,
-            collision_checker_type=CollisionCheckerType.MESH,
-            collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
-            # use_fixed_samples=True,
-        )
-        self.ik_solver_grid = IKSolver(self.ik_config_grid)
-        self.InitPositionGridOffset()
+        self.rgm.InitSolver(n_obstacle_cuboids, n_obstacle_mesh)
+        self.rgm.InitPositionGridOffset()
 
     def InitInvKin(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.world_cfg = RocuConfig.world_cfg
@@ -515,11 +309,9 @@ class RocuWrapper:
             use_cuda_graph=True,
             collision_checker_type=CollisionCheckerType.MESH,
             collision_cache={"obb": n_obstacle_cuboids, "mesh": n_obstacle_mesh},
-            # use_fixed_samples=True,
         )
         self.ik_solver = IKSolver(self.ik_config)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
-
 
     def StartStep(self, step_index):
         self.step_index = step_index
@@ -534,22 +326,22 @@ class RocuWrapper:
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 self.UpdateJointState()
-                self.realize_joint_alarms()
+                self.RealizeJointAlarms()
                 self.ProcessCollisionSpheres()
-                self.HandleTargetProcessing()
+                self.ProcessTarget()
                 requestPause = self.ExecuteMoGenCmdPlan()
             case RocuMoveMode.FollowTargetWithInvKin:
                 self.UpdateJointState()
-                self.realize_joint_alarms()
+                self.RealizeJointAlarms()
                 self.ProcessCollisionSpheres()
-                self.HandleTargetProcessing()
+                self.ProcessTarget()
                 requestPause = self.ExecuteInvKinCmdPlan()
             case RocuMoveMode.ReachabilityWithInvKin:
                 # TODO - implement reachability with InvKin
                 self.UpdateJointState()
-                self.realize_joint_alarms()
+                self.RealizeJointAlarms()
                 self.ProcessCollisionSpheres()
-                self.HandleTargetProcessing()
+                self.ProcessTarget()
                 requestPause = self.ExecuteGridInvKinCmdPlan()
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
@@ -650,13 +442,8 @@ class RocuWrapper:
         if self.upper_dof_lim is None:
             self.upper_dof_lim = self.robot.dof_properties["upper"]
             self.lower_dof_lim = self.robot.dof_properties["lower"]
-        # rcfg.dof_paths = art._prim_view._dof_paths[0] # why is this a list while the following ones are not?
-        # rcfg.dof_types = art._prim_view._dof_types
-        # rcfg.dof_names = art._prim_view._dof_names
-        # rcfg.dof_properties = art._prim_view._dof_properties
             dofpaths = self.robot._articulation_view._dof_paths[0]
             self.link_paths = get_link_paths(dofpaths)
-
 
         if np.any(np.isnan(self.sim_js.positions)):
             print("isaac sim has returned NAN joint position values.")
@@ -746,7 +533,7 @@ class RocuWrapper:
         if not self.vizi_spheres and self.spheres_visible:
             self.DeleteCollisionSpheres()
 
-    def HandleTargetProcessing(self):
+    def ProcessTarget(self):
 
         self.cube_position, self.cube_orientation = self.target.get_world_pose()
         match self.move_mode:
@@ -767,7 +554,7 @@ class RocuWrapper:
                 triggerGridInvKin = self.CalcMoGenTargetTrigger()
                 if triggerGridInvKin:
                     print("Triggering GridInvKin")
-
+                    # self.CalcReachabilityToTarget()
                     self.DoGridInvKinToTarget()
 
         self.past_pose = self.cube_position
@@ -784,6 +571,11 @@ class RocuWrapper:
         self.cube_orientation = ori
         return
 
+    def MoveTargetToEepose(self):
+        sp_rcc, sq_rcc = self.get_cur_eepose()
+        sp_wc, sq_wc = self.rcc_to_wc(sp_rcc, sq_rcc)
+        self.SetTargetPose(sp_wc, sq_wc)
+
     def CalcMoGenTargetTrigger(self):
         if self.past_pose is None:
             self.past_pose = self.cube_position
@@ -795,15 +587,10 @@ class RocuWrapper:
             self.past_orientation = self.cube_orientation
 
         self.static_robo = True
-        # robot_static = True
-        # velmag = np.max(np.abs(self.sim_js.velocities))
-        # if (velmag < 0.2) or reactive:
-        #     static_robo = True
-        #     pass
         cube_pos, cube_ori = self.cube_position, self.cube_orientation
-        cubeDiffFromTarget = (dst(cube_pos, self.target_pose) > 1e-3
-                             or dst(cube_ori, self.target_orientation) > 1e-3)
-        cubeStill = dst(self.past_pose, cube_pos) == 0.0 and dst(self.past_orientation, cube_ori) == 0.0
+        cubeDiffFromTarget = (self.dst(cube_pos, self.target_pose) > 1e-3
+                             or self.dst(cube_ori, self.target_orientation) > 1e-3)
+        cubeStill = self.dst(self.past_pose, cube_pos) == 0.0 and self.dst(self.past_orientation, cube_ori) == 0.0
 
         self.trigger = (cubeDiffFromTarget and cubeStill and self.static_robo)
         # print(f"trigger:{self.trigger} cubeDiffFromTarget:{cubeDiffFromTarget} cubeStill:{cubeStill}")
@@ -871,7 +658,6 @@ class RocuWrapper:
                 if x in cmd_plan.joint_names:
                     idx_list.append(self.robot.get_dof_index(x))
                     common_js_names.append(x)
-            # idx_list = [robot.get_dof_index(x) for x in sim_js_names]
 
             cmd_plan = cmd_plan.get_ordered_joint_state(common_js_names)
             nsteps = len(cmd_plan.position)
@@ -890,115 +676,27 @@ class RocuWrapper:
 
     def ShowReachability(self, clear=True):
         print(f"ShowReachability {self.robid}")
-        res = self.CalcReachabilityToTarget()
+        res = self.rgm.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
         if self.count_unique_solutions:
             unique = res.get_batch_unique_solution()
         else:
             unique = None
-        self.draw_points(self.goal_pose, res.success, unique=unique, clear=clear)
+        self.rgm.show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
         pass
 
-    def get_pose_grid(self, n_x, n_y, n_z, max_x, max_y, max_z):
-        x = np.linspace(-max_x, max_x, n_x)
-        y = np.linspace(-max_y, max_y, n_y)
-        z = np.linspace(-max_z, max_z, n_z)
-        x, y, z = np.meshgrid(x, y, z, indexing="ij")
-
-        position_arr = np.zeros((n_x * n_y * n_z, 3))
-        position_arr[:, 0] = x.flatten()
-        position_arr[:, 1] = y.flatten()
-        position_arr[:, 2] = z.flatten()
-        return position_arr
-
-    def draw_points(self, pose, success, unique=None, clear=True):
-        # Third Party
-        from omni.isaac.debug_draw import _debug_draw
-
-        draw = _debug_draw.acquire_debug_draw_interface()
-        N = 100
-        # if draw.get_num_points() > 0:
-        if clear:
-            draw.clear_points()
-        cpu_pos = pose.position.cpu().numpy()
-        b, _ = cpu_pos.shape
-        point_list = []
-        colors = []
-        sizes = []
-        multi_color =  (0, 0, 1, 0.25)
-        single_sucess_color = (0, 1, 0, 0.25)
-        error_color = (1, 0, 1, 0.25)
-        fail_color = (1, 0, 0, 0.25)
-        succ_rad = self.grid_succ_rad
-        fail_rad = self.grid_fail_rad
-        color_on_solution_number = self.count_unique_solutions and unique is not None
-        for i in range(b):
-            # get list of points:
-            # point_list += [(cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])]
-            pt_rcc = (cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])
-            pt_wc, qt_wc = self.rcc_to_wc(pt_rcc, [1, 0, 0, 0])
-            point_list += [pt_wc]
-            if unique is not None:
-                nsol = len(unique[i])
-            else:
-                nsol = 1
-            if success[i].item():
-                if color_on_solution_number:
-                    if nsol == 0:
-                        clr = error_color
-                    elif nsol == 1:
-                        clr = single_sucess_color
-                    else:
-                        clr = multi_color
-                else:
-                    clr = single_sucess_color
-                colors += [clr]
-                sizes += [succ_rad]
-            else:
-                colors += [fail_color]
-                sizes += [fail_rad]
-        # sizes = [40.0 for _ in range(b)]
-        draw.draw_points(point_list, colors, sizes)
+    def InitPositionGridOffsetElems(self, ee_pose):
+        self.rgm.InitGridSize(self.n_x, self.n_y, self.n_z,
+                              self.max_x, self.max_y, self.max_z,
+                              self.grid_succ_rad, self.grid_fail_rad)
+        self.rgm.get_pose_grid()
 
     def DoGridInvKinToTarget(self):
         rv = self.DoGridInvKinToPosOri(self.cube_position, self.cube_orientation)
         return rv
 
-    def CalcReachabilityToTarget(self):
-        rv = self.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
-        return rv
-
-    def CalcReachabilityToPosOri(self, pos, ori):
-        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
-        if type(ee_ori_rcc) is Gf.Quatd:
-            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
-
-        # compute curobo solution:
-        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
-        ik_goal = Pose(
-            position=self.tensor_args.to_device(ee_pos_rcc),
-            quaternion=self.tensor_args.to_device(ee_ori_rcc),
-        )
-
-        self.goal_pose.position[:] = ik_goal.position[:] + self.position_grid_offset
-        self.goal_pose.quaternion[:] = ik_goal.quaternion[:]
-
-        st_time = time.time()
-        ik_result = self.ik_solver_grid.solve_batch(self.goal_pose)
-        ntrue = torch.sum(ik_result.success).item()
-        ntry = len(ik_result.success)
-
-        elap = (time.time() - st_time)
-        selap = ik_result.solve_time
-        msg = f"IK completed: Poses: {str(self.goal_pose.batch)}  Success: {ntrue} of {ntry}  Solve time(s): {selap:.3f}  elap:{elap:3f}"
-        print(msg)
-
-        return ik_result
-
     def DoGridInvKinToPosOri(self, pos, ori):
-
-        ik_result = self.CalcReachabilityToPosOri(pos, ori)
-        # self.ik_result = ik_result
-        self.draw_points(self.goal_pose, ik_result.success)
+        ik_result = self.rgm.CalcReachabilityToPosOri(pos, ori)
+        self.rgm.show_reachability_cloud(self.rgm.goal_pose, ik_result.success)
 
         successfull = torch.any(ik_result.success)
         nsucess = torch.sum(ik_result.success).item()
@@ -1071,43 +769,6 @@ class RocuWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
-    def DoReachabilityToTarget(self):
-        rv = self.DoReachabilityToPosOri(self.cube_position, self.cube_orientation)
-        return rv
-
-    def DoReachabilityToPosOri(self, pos, ori):
-
-        ee_pos_rcc, ee_ori_rcc = self.rocuTranman.wc_to_rcc(pos, ori)
-        if type(ee_ori_rcc) is Gf.Quatd:
-            ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
-
-        # compute curobo solution:
-        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
-        ik_goal = Pose(
-            position=self.tensor_args.to_device(ee_pos_rcc),
-            quaternion=self.tensor_args.to_device(ee_ori_rcc),
-        )
-        st_time = time.time()
-        pos = self.ik_solver_grid.get_retract_config().view(1, -1)
-        fk_state = self.ik_solver_grid.fk(pos)
-        goal_pose = fk_state.ee_pose
-        goal_pose = goal_pose.repeat(self.position_grid_offset.shape[0])
-        goal_pose.position += self.position_grid_offset
-
-        ik_result = self.ik_solver_grid.solve_batch(goal_pose)
-
-        total_time = (time.time() - st_time)
-        print(
-            "Success, Solve Time(s), Total Time(s)",
-            torch.count_nonzero(ik_result.success).item(),
-            ik_result.solve_time,
-            total_time,
-            1.0 / total_time,
-            torch.mean(ik_result.position_error) * 100.0,
-            torch.mean(ik_result.rotation_error) * 100.0,
-        )
-        self.ik_result = ik_result
-
     def QueCmdPlan(self, cmd_plan, comment=""):
         # should do a plausiblity check on cmd_plan
         if comment == "":
@@ -1142,9 +803,6 @@ class RocuWrapper:
                     cmd_state.velocity.cpu().numpy(),
                     joint_indices=self.idx_list,
                 )
-            # set desired joint angles obtained from IK:
-            # print(f"Applying action: {art_action}")
-            #  articulation_controller.apply_action(art_action)
             self.ApplyAction(art_action)
             print("Applied Action - ArtAction:", art_action)
             self.cmd_idx += 1
@@ -1168,8 +826,8 @@ class RocuWrapper:
 
             pos = cmd_state.position.view(1, -1)
             self.robot.set_joint_positions(pos.cpu().numpy(), self.idx_list)
-            sp_wc_np, sq_wc_np = self.CalcPoseGrid(pos, needAsNumpy=True)
-            dist = dst(sp_wc_np, self.cube_position) + dst(sq_wc_np, self.cube_orientation)
+            sp_wc_np, sq_wc_np = self.rgm.CalcPoseGrid(pos, needAsNumpy=True)
+            dist = self.dst(sp_wc_np, self.cube_position) + self.dst(sq_wc_np, self.cube_orientation)
             # print(f"Dist:{dist} - {sp_wc_np} - {self.cube_position} ")
             if dist < self.grid_closeest_dist:
                 self.grid_closest = cmd_state
@@ -1188,27 +846,12 @@ class RocuWrapper:
                 if self.grid_closest is not None:
                     print("Moving closest to target closest_dist:", self.grid_closeest_dist)
                     pos = self.grid_closest.position.view(1, -1)
-                    sp_rcc, sq_rcc = self.CalcPoseGrid(pos)
-                    # print("sp_rcc:", sp_rcc, " sq_rcc:", sq_rcc)
-                    # print(" moving to pos:", pos, " idx_list:", self.idx_list)
                     self.robot.set_joint_positions(pos.cpu().numpy(), self.idx_list)
 
                 self.grid_closest = None      # this initialization should be done somewhere else in the next iteration
                 self.grid_closeest_dist = 1e6
 
         return requestPause
-
-    def CalcPoseGrid(self, joint_posistions, needAsNumpy=False):
-        fkstate = self.ik_solver_grid.fk(joint_posistions)
-        fk_pose = fkstate.ee_pose
-        sp_rcc, sq_rcc = fk_pose.position.squeeze(), fk_pose.quaternion.squeeze()
-        sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
-        if needAsNumpy:
-            sp_wc_np = self.rocuTranman.gfvec_to_numpy(sp_wc)
-            sq_wc_np = self.rocuTranman.quat_to_numpy(sq_wc)
-            return sp_wc_np, sq_wc_np
-        return sp_wc, sq_wc
-
 
     def ExecuteInvKinCmdPlan(self):
         requestPause = False
@@ -1223,8 +866,6 @@ class RocuWrapper:
                 )
                 self.ApplyAction(art_action)
                 print("Applied Action - ArtAction:", art_action)
-                # for _ in range(2):
-                #     self.my_world.step(render=False)
                 requestPause = True
             self.ik_result = None
             return requestPause
@@ -1233,7 +874,6 @@ class RocuWrapper:
         self.robmatskin = "default"
         self.alarmskin = "Red_Glass"
         self.show_joints_close_to_limits = False
-        # self.realize_joint_alarms(force=True)
         self.ensure_orimat()
 
     def check_alarm_status(self):
@@ -1275,20 +915,16 @@ class RocuWrapper:
     def toggle_show_joints_close_to_limits(self, notoggle=False):
         if not notoggle:
             self.show_joints_close_to_limits = not self.show_joints_close_to_limits
-        # print(f"toggle_show_joints_close_to_limits on {rcfg.robot_name} {rcfg.robot_id} - {rcfg.show_joints_close_to_limits}")
         if self.show_joints_close_to_limits:
             self.assign_alarm_skin()
             self.check_alarm_status()
-            self.realize_joint_alarms(force=True)
+            self.RealizeJointAlarms(force=True)
         else:
             if self.robmatskin == "default":
                 self.ensure_orimat()
-                # print("Reverting to original materials (default)")
                 apply_matdict_to_prim_and_children(self.stage, self.orimat, self.robot_prim_path)
             else:
-                 #print(f"Reverting to {rcfg.robmatskin}")
                 apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, self.robot_prim_path)
-        # print("toggle_show_joints_close_to_limits done")
         return self.show_joints_close_to_limits
 
     def assign_alarm_skin(self):
@@ -1297,7 +933,7 @@ class RocuWrapper:
         else:
             self.alarmskin = "Red_Glass"
 
-    def realize_joint_alarms(self, force=False):
+    def RealizeJointAlarms(self, force=False):
         # print(f"realize_joint_alarms force:{force}")
         if self.show_joints_close_to_limits:
             self.check_alarm_status()
@@ -1306,16 +942,11 @@ class RocuWrapper:
                     link_path = self.link_paths[j]
                     joint_in_alarm = jstate != "."
                     if joint_in_alarm:
-                        # print(f"   changing {link_path} to {rcfg.alarmskin} - inalarm:{joint_in_alarm}")
-                        # print(f"Joint {jn} is close to limit for {rcfg.robot_name} {rcfg.robot_id} link_path:{link_path}")
                         apply_material_to_prim_and_children(self.stage, self.matman, self.alarmskin, link_path)
                     else:
-                        # print(f"Joint {jn} is not close to limit for {rcfg.robot_name} {rcfg.robot_id} link_path:{link_path}")
                         if self.robmatskin == "default":
                             self.ensure_orimat()
-                            # print(f"   changing {link_path} to rcfg.orimat - inalarm:{joint_in_alarm}")
                             apply_matdict_to_prim_and_children(self.stage, self.orimat, link_path)
                         else:
-                            # print(f"   changing {link_path} to {rcfg.robmatskin} - inalarm:{joint_in_alarm}")
                             apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, link_path)
             self.last_jchk_str = copy.deepcopy(self.jchk_str)
