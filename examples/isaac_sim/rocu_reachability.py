@@ -193,6 +193,6 @@ class ReachGridMan():
         # sizes = [40.0 for _ in range(b)]
         draw.draw_points(point_list, colors, sizes)
 
-    def update_world(self, obstacles):
+    def UpdateWorldObsticles(self, obstacles):
         if self.ik_solver_grid is not None:
             self.ik_solver_grid.update_world(obstacles)

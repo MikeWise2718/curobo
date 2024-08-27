@@ -138,30 +138,50 @@ class RocuWrapper:
         self.j_names = self.robot_cfg["kinematics"]["cspace"]["joint_names"]
         self.default_config = self.robot_cfg["kinematics"]["cspace"]["retract_config"]
 
-    def SetRobotMoveMode(self, mode: RocuMoveMode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh):
-        self.move_mode = mode
-        match mode:
-            case RocuMoveMode.FollowTargetWithMoGen:
-                self.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh)
-                self.SetMoGenOptions(reactive=reactive,
-                                     reach_partial_pose=hold_pp,
-                                     hold_partial_pose=reach_pp,
-                                     constrain_grasp_approach=con_grasp
-                                     )
-                self.Warmup()
-                self.SetupMoGenPlanConfig()
-                self.CreateTarget()
-            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
-                self.InitInvKin(n_obstacle_cuboids, n_obstacle_mesh)
-                self.SetMoGenOptions(reactive=reactive,
-                                     reach_partial_pose=hold_pp,
-                                     hold_partial_pose=reach_pp,
-                                     constrain_grasp_approach=con_grasp
-                                     )
-                self.Warmup()
-                self.CreateTarget()
-            case _:
-                carb.log_warn(f"Move Mode {mode} not implemented yet.")
+# --------------- Initialization ------------------
+
+    def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
+        self.rocuTranman.set_transform(prerot=prerot, pos=pos, ori=ori)
+        rp, ro = self.rocuTranman.get_robot_base()
+        self.robot_name = f"robot_{self.robid}"
+        self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro, subroot=subroot, robot_name=self.robot_name)
+        self.articulation_controller = self.robot.get_articulation_controller()
+        self.init_alarm_skin()
+
+    def LoadRobotCfg(self, robot_pathname):
+        self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
+
+    def SetGridSize(self, n_x=9, n_y=9, n_z=9):
+        self.n_x = n_x
+        self.n_y = n_y
+        self.n_z = n_z
+        self.rgm.SetGridSize(n_x, n_y, n_z)
+        self.rgm.InitPositionGridOffset()
+
+    def SetGridSpan(self, max_x=0.5, max_y=0.5, max_z=0.5):
+        self.max_x = max_x
+        self.max_y = max_y
+        self.max_z = max_z
+        self.rgm.SetGridSpan(max_x, max_y, max_z)
+        self.rgm.InitPositionGridOffset()
+
+    def SetGridTimererTick(self, timer_tick):
+        self.grid_timer_tick = timer_tick
+
+    def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
+                        constrain_grasp_approach=None, vizi_spheres=None):
+        if reactive is not None:
+            self.reactive = reactive
+        if reach_partial_pose is not None:
+            self.reach_partial_pose = reach_partial_pose
+        if hold_partial_pose is not None:
+            self.hold_partial_pose = hold_partial_pose
+        if constrain_grasp_approach is not None:
+            self.constrain_grasp_approach = constrain_grasp_approach
+        if vizi_spheres is not None:
+            self.vizi_spheres = vizi_spheres
+
+# ------------------ Utilities-------------------
 
     def dst(self, p1, p2):
         rv = np.linalg.norm(p1 - p2)
@@ -205,41 +225,41 @@ class RocuWrapper:
         sq = state.ee_quat_seq.cpu()[0]
         return sp, sq
 
-    def update_world(self, obstacles):
-        match self.move_mode:
+# ------------------ Motion Generation Intialization -------------------
+
+    def SetupMoGenPlanConfig(self):
+        self.plan_config = MotionGenPlanConfig(
+            enable_graph=False,
+            enable_graph_attempt=2,
+            max_attempts=self.max_attempts,
+            enable_finetune_trajopt=True,
+            parallel_finetune=True,
+        )
+
+    def SetRobotMoveMode(self, mode: RocuMoveMode, reactive, reach_pp, hold_pp, con_grasp, n_obstacle_cuboids, n_obstacle_mesh):
+        self.move_mode = mode
+        match mode:
             case RocuMoveMode.FollowTargetWithMoGen:
-                rv = self.motion_gen.update_world(obstacles)
+                self.InitMotionGen(n_obstacle_cuboids, n_obstacle_mesh)
+                self.SetMoGenOptions(reactive=reactive,
+                                     reach_partial_pose=hold_pp,
+                                     hold_partial_pose=reach_pp,
+                                     constrain_grasp_approach=con_grasp
+                                     )
+                self.Warmup()
+                self.SetupMoGenPlanConfig()
+                self.CreateTarget()
             case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
-                rv = self.ik_solver.update_world(obstacles)
+                self.InitInvKin(n_obstacle_cuboids, n_obstacle_mesh)
+                self.SetMoGenOptions(reactive=reactive,
+                                     reach_partial_pose=hold_pp,
+                                     hold_partial_pose=reach_pp,
+                                     constrain_grasp_approach=con_grasp
+                                     )
+                self.Warmup()
+                self.CreateTarget()
             case _:
-                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
-                rv = None
-        self.rgm.update_world(obstacles)
-        return rv
-
-    def LoadAndPositionRobot(self, prerot, pos, ori, subroot=""):
-        self.rocuTranman.set_transform(prerot=prerot, pos=pos, ori=ori)
-        rp, ro = self.rocuTranman.get_robot_base()
-        self.robot_name = f"robot_{self.robid}"
-        self.robot, self.robot_prim_path = add_robot_to_scene(self.robot_cfg, self.my_world, position=rp, orient=ro, subroot=subroot, robot_name=self.robot_name)
-        self.articulation_controller = self.robot.get_articulation_controller()
-        self.init_alarm_skin()
-
-    def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
-                        constrain_grasp_approach=None, vizi_spheres=None):
-        if reactive is not None:
-            self.reactive = reactive
-        if reach_partial_pose is not None:
-            self.reach_partial_pose = reach_partial_pose
-        if hold_partial_pose is not None:
-            self.hold_partial_pose = hold_partial_pose
-        if constrain_grasp_approach is not None:
-            self.constrain_grasp_approach = constrain_grasp_approach
-        if vizi_spheres is not None:
-            self.vizi_spheres = vizi_spheres
-
-    def LoadRobotCfg(self, robot_pathname):
-        self.robot_cfg = load_yaml(robot_pathname)["robot_cfg"]
+                carb.log_warn(f"Move Mode {mode} not implemented yet.")
 
     def InitMotionGen(self, n_obstacle_cuboids, n_obstacle_mesh):
         trajopt_dt = None
@@ -274,23 +294,6 @@ class RocuWrapper:
         self.rgm.InitSolver(n_obstacle_cuboids, n_obstacle_mesh)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
 
-    def SetGridSize(self, n_x=9, n_y=9, n_z=9):
-        self.n_x = n_x
-        self.n_y = n_y
-        self.n_z = n_z
-        self.rgm.SetGridSize(n_x, n_y, n_z)
-        self.rgm.InitPositionGridOffset()
-
-    def SetGridSpan(self, max_x=0.5, max_y=0.5, max_z=0.5):
-        self.max_x = max_x
-        self.max_y = max_y
-        self.max_z = max_z
-        self.rgm.SetGridSpan(max_x, max_y, max_z)
-        self.rgm.InitPositionGridOffset()
-
-    def SetGridTimererTick(self, timer_tick):
-        self.grid_timer_tick = timer_tick
-
     def InitInvKinGrid(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.rgm.InitSolver(n_obstacle_cuboids, n_obstacle_mesh)
         self.rgm.InitPositionGridOffset()
@@ -312,41 +315,6 @@ class RocuWrapper:
         )
         self.ik_solver = IKSolver(self.ik_config)
         self.InitInvKinGrid(n_obstacle_cuboids, n_obstacle_mesh)
-
-    def StartStep(self, step_index):
-        self.step_index = step_index
-        if step_index == 1:
-            self.Reset()
-
-        if self.circle_target:
-            self.UpdateCirclingTarget()
-
-    def EndStep(self)->bool:
-        requestPause = False
-        match self.move_mode:
-            case RocuMoveMode.FollowTargetWithMoGen:
-                self.UpdateJointState()
-                self.RealizeJointAlarms()
-                self.ProcessCollisionSpheres()
-                self.ProcessTarget()
-                requestPause = self.ExecuteMoGenCmdPlan()
-            case RocuMoveMode.FollowTargetWithInvKin:
-                self.UpdateJointState()
-                self.RealizeJointAlarms()
-                self.ProcessCollisionSpheres()
-                self.ProcessTarget()
-                requestPause = self.ExecuteInvKinCmdPlan()
-            case RocuMoveMode.ReachabilityWithInvKin:
-                # TODO - implement reachability with InvKin
-                self.UpdateJointState()
-                self.RealizeJointAlarms()
-                self.ProcessCollisionSpheres()
-                self.ProcessTarget()
-                requestPause = self.ExecuteGridInvKinCmdPlan()
-            case _:
-                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
-
-        return requestPause
 
     def Reset(self):
         self.idx_list = [self.robot.get_dof_index(x) for x in self.j_names]
@@ -373,68 +341,54 @@ class RocuWrapper:
             case _:
                 carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
 
-    def CreateTarget(self, target_pos=None, target_ori=None):
+# ------------------- Motion Generation Exection -------------------
 
-        if target_pos is None or target_ori is None:
-            sp_rcc, sq_rcc = self.get_start_pose()
-            sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
-            if type(sq_wc) is Gf.Quatd:
-                sq_wc = quatd_to_list4(sq_wc)
+    def UpdateWorldObsticles(self, obstacles):
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                rv = self.motion_gen.update_world(obstacles)
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
+                rv = self.ik_solver.update_world(obstacles)
+            case _:
+                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
+                rv = None
+        self.rgm.UpdateWorldObsticles(obstacles)
+        return rv
 
-        if target_pos is None:
-            target_pos = sp_wc
+    def StartStep(self, step_index):
+        self.step_index = step_index
+        if step_index == 1:
+            self.Reset()
 
-        if target_ori is None:
-            target_ori = sq_wc
-
-        self.target = cuboid.VisualCuboid(
-            f"/World/target_{self.robid}",
-            position=target_pos,
-            orientation=target_ori,
-            color=np.array([1.0, 0, 0]),
-            size=0.05,
-        )
-        self.cube_position = target_pos
-        self.cube_orientation = target_ori
-
-        self.curcen, self.curori = self.target.get_world_pose()
-        self.curvel = 0.02
-        self.curang = 0
-        self.currad = 0.1
-        self.circle_target = False
-
-        return self.target
-
-    def UpdateCirclingTarget(self):
-        self.curang += self.curvel
-        newpos = np.zeros(3)
-        newpos[0] = self.curcen[0] + self.currad * np.cos(self.curang)
-        newpos[1] = self.curcen[1] + self.currad * np.sin(self.curang)
-        newpos[2] = self.curcen[2]
-        self.target.set_world_pose(
-            position=newpos,
-            orientation=self.curori
-        )
-
-    def InitCirclingTargetValues(self):
-        self.curcen, self.curori = self.target.get_world_pose()
-        self.curvel = 0.02
-        self.curang = 0
-        self.currad = 0.1
-
-    def ToggleCirclingTarget(self):
-        self.circle_target = not self.circle_target
         if self.circle_target:
-            self.InitCirclingTargetValues()
+            self.UpdateCirclingTarget()
 
-    def SetupMoGenPlanConfig(self):
-        self.plan_config = MotionGenPlanConfig(
-            enable_graph=False,
-            enable_graph_attempt=2,
-            max_attempts=self.max_attempts,
-            enable_finetune_trajopt=True,
-            parallel_finetune=True,
-        )
+    def EndStep(self) -> bool:
+        requestPause = False
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                self.UpdateJointState()
+                self.RealizeJointAlarms()
+                self.ProcessCollisionSpheres()
+                self.ProcessTarget()
+                requestPause = self.ExecuteMoGenCmdPlan()
+            case RocuMoveMode.FollowTargetWithInvKin:
+                self.UpdateJointState()
+                self.RealizeJointAlarms()
+                self.ProcessCollisionSpheres()
+                self.ProcessTarget()
+                requestPause = self.ExecuteInvKinCmdPlan()
+            case RocuMoveMode.ReachabilityWithInvKin:
+                # TODO - implement reachability with InvKin
+                self.UpdateJointState()
+                self.RealizeJointAlarms()
+                self.ProcessCollisionSpheres()
+                self.ProcessTarget()
+                requestPause = self.ExecuteGridInvKinCmdPlan()
+            case _:
+                carb.log_warn(f"Move Mode {self.move_mode} not implemented yet.")
+
+        return requestPause
 
     def UpdateJointState(self):
         self.sim_js = self.robot.get_joints_state()
@@ -466,6 +420,8 @@ class RocuWrapper:
             self.cu_js.acceleration[:] = self.past_cmd.acceleration
         # self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
         self.cu_js = self.cu_js.get_ordered_joint_state(self.j_names)
+
+# -----------------  Collision Sphere Visulaization Code ---------------------
 
     def CreateCollisionSpheres(self):
         # get a fresh list of spheres:
@@ -533,25 +489,79 @@ class RocuWrapper:
         if not self.vizi_spheres and self.spheres_visible:
             self.DeleteCollisionSpheres()
 
-    def ProcessTarget(self):
+# ----------------------- Target Processing Code --------------------
+    def CreateTarget(self, target_pos=None, target_ori=None):
 
+        if target_pos is None or target_ori is None:
+            sp_rcc, sq_rcc = self.get_start_pose()
+            sp_wc, sq_wc = self.rocuTranman.rcc_to_wc(sp_rcc, sq_rcc)
+            if type(sq_wc) is Gf.Quatd:
+                sq_wc = quatd_to_list4(sq_wc)
+
+        if target_pos is None:
+            target_pos = sp_wc
+
+        if target_ori is None:
+            target_ori = sq_wc
+
+        self.target = cuboid.VisualCuboid(
+            f"/World/target_{self.robid}",
+            position=target_pos,
+            orientation=target_ori,
+            color=np.array([1.0, 0, 0]),
+            size=0.05,
+        )
+        self.cube_position = target_pos
+        self.cube_orientation = target_ori
+
+        self.curcen, self.curori = self.target.get_world_pose()
+        self.curvel = 0.02
+        self.curang = 0
+        self.currad = 0.1
+        self.circle_target = False
+
+        return self.target
+
+    def UpdateCirclingTarget(self):
+        self.curang += self.curvel
+        newpos = np.zeros(3)
+        newpos[0] = self.curcen[0] + self.currad * np.cos(self.curang)
+        newpos[1] = self.curcen[1] + self.currad * np.sin(self.curang)
+        newpos[2] = self.curcen[2]
+        self.target.set_world_pose(
+            position=newpos,
+            orientation=self.curori
+        )
+
+    def InitCirclingTargetValues(self):
+        self.curcen, self.curori = self.target.get_world_pose()
+        self.curvel = 0.02
+        self.curang = 0
+        self.currad = 0.1
+
+    def ToggleCirclingTarget(self):
+        self.circle_target = not self.circle_target
+        if self.circle_target:
+            self.InitCirclingTargetValues()
+
+    def ProcessTarget(self):
         self.cube_position, self.cube_orientation = self.target.get_world_pose()
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
-                triggerMoGen = self.CalcMoGenTargetTrigger()
+                triggerMoGen = self.CalcTargetTrigger()
                 if triggerMoGen:
                     print("Triggering MoGen")
 
                     self.DoMoGenToTarget()
             case RocuMoveMode.FollowTargetWithInvKin:
-                triggerInvKin = self.CalcMoGenTargetTrigger()
+                triggerInvKin = self.CalcTargetTrigger()
                 if triggerInvKin:
                     print("Triggering InvKin")
 
                     self.DoInvKinToTarget()
 
             case RocuMoveMode.ReachabilityWithInvKin:
-                triggerGridInvKin = self.CalcMoGenTargetTrigger()
+                triggerGridInvKin = self.CalcTargetTrigger()
                 if triggerGridInvKin:
                     print("Triggering GridInvKin")
                     # self.CalcReachabilityToTarget()
@@ -576,7 +586,7 @@ class RocuWrapper:
         sp_wc, sq_wc = self.rcc_to_wc(sp_rcc, sq_rcc)
         self.SetTargetPose(sp_wc, sq_wc)
 
-    def CalcMoGenTargetTrigger(self):
+    def CalcTargetTrigger(self):
         if self.past_pose is None:
             self.past_pose = self.cube_position
         if self.target_pose is None:
@@ -599,6 +609,8 @@ class RocuWrapper:
             self.trigger = self.cur_cmd_plan is None
 
         return self.trigger
+
+# ----------------------- Arm Movement and Command Plan Processing Code --------------------
 
     def ApplyAction(self, art_action):
         self.articulation_controller.apply_action(art_action)
@@ -674,16 +686,6 @@ class RocuWrapper:
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
 
-    def ShowReachability(self, clear=True):
-        print(f"ShowReachability {self.robid}")
-        res = self.rgm.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
-        if self.count_unique_solutions:
-            unique = res.get_batch_unique_solution()
-        else:
-            unique = None
-        self.rgm.show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
-        pass
-
     def InitPositionGridOffsetElems(self, ee_pose):
         self.rgm.InitGridSize(self.n_x, self.n_y, self.n_z,
                               self.max_x, self.max_y, self.max_z,
@@ -754,7 +756,9 @@ class RocuWrapper:
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
         )
         st_time = time.time()
-        ik_result = self.ik_solver.solve_single(ik_goal, self.cu_js.position.view(1,-1), self.cu_js.position.view(1,1,-1))
+        retract_pos = self.cu_js.position.view(1, -1)
+        seed_pos = self.cu_js.position.view(1, 1, -1)
+        ik_result = self.ik_solver.solve_single(ik_goal, retract_pos, seed_pos)
         total_time = (time.time() - st_time)
         print(
             "Success, Solve Time(s), Total Time(s)",
@@ -870,6 +874,17 @@ class RocuWrapper:
             self.ik_result = None
             return requestPause
 
+    def ShowReachabilityGrid(self, clear=True):
+        print(f"ShowReachability {self.robid}")
+        res = self.rgm.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
+        if self.count_unique_solutions:
+            unique = res.get_batch_unique_solution()
+        else:
+            unique = None
+        self.rgm.show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
+        pass
+
+# ----------------------- Joint Alarm Code ---------------------------
     def init_alarm_skin(self):
         self.robmatskin = "default"
         self.alarmskin = "Red_Glass"
@@ -879,14 +894,14 @@ class RocuWrapper:
     def check_alarm_status(self):
         self.jchk_str = ""
         self.jchk_str_val = ""
-        for j,jn in enumerate(self.sim_js_names):
+        for j, jn in enumerate(self.sim_js_names):
             jpos = self.sim_js.positions[j]
             llim = self.lower_dof_lim[j]
             ulim = self.upper_dof_lim[j]
             denom = ulim - llim
             if denom == 0:
                 denom = 1
-            pct = 100*(jpos - llim)/denom
+            pct = 100 * (jpos - llim) / denom
             self.jchk_str_val += f"{pct:.0f} "
             if pct < 10:
                 self.jchk_str += "L"

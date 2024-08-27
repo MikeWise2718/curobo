@@ -373,9 +373,9 @@ def main():
                     setcamview("right-view")
                     print("You pressed ‘wr' for right-view.")
                 else:
-                    rocuWrap1.ShowReachability(clear=True)
+                    rocuWrap1.ShowReachabilityGrid(clear=True)
                     if rocuWrap2 is not None:
-                        rocuWrap2.ShowReachability(clear=False)
+                        rocuWrap2.ShowReachabilityGrid(clear=False)
                     print("You pressed ‘r’ - showing reachability")
 
             elif keyboard.is_pressed("w"):
@@ -433,9 +433,9 @@ def main():
             ).get_collision_check_world()
             print(f"obstacle objects:{len(obstacles.objects)}")
 
-            rocuWrap1.update_world(obstacles)
+            rocuWrap1.UpdateWorldObsticles(obstacles)
             if rocuWrap2 is not None:
-                rocuWrap2.update_world(obstacles)
+                rocuWrap2.UpdateWorldObsticles(obstacles)
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
