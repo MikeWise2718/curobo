@@ -38,7 +38,6 @@ from helper import add_extensions
 from omni.isaac.core import World
 
 ########### OV #################
-from omni.isaac.core.utils.viewports import set_camera_view
 import omni
 
 # CuRobo
@@ -54,7 +53,8 @@ from curobo.util_file import (
 )
 
 
-from mgrut import get_args, get_vek
+from mgr_ut import get_args, get_vek
+from mgr_keyman import KeyMan, setcamview
 from rocuwrap import RocuWrapper, RocuMoveMode, RocuConfig
 import curobo.curobolib as curobolib
 from matman import MatMan
@@ -85,22 +85,6 @@ def DefineTrays(stage, matman):
     mm.AddMotoTray("tray4", "000000", rot=[a90,0,zang],pos=[+xoff,-yoff,0.03])
     return mm
 
-def setcamview(viewsel):
-    if viewsel is None:
-        return
-    viewsel = viewsel.lower()
-    match viewsel:
-        case "top-view" | "t":
-            set_camera_view(eye=[0.0, 0, 2.5], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-        case "front-view" | "f":
-            set_camera_view(eye=[-2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-        case "back-view" | "b":
-            set_camera_view(eye=[2.5, 0.0, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-        case "left-view" | "l":
-            set_camera_view(eye=[0.0, +2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-        case "right-view" | "r":
-            set_camera_view(eye=[0.0, -2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
-
 
 def main():
     # ---------------------------------
@@ -127,6 +111,7 @@ def main():
     n_obstacle_mesh = 100
 
     usd_help = UsdHelper()
+
 
     # ---------------------------------
     #    World Initialization
@@ -224,6 +209,8 @@ def main():
     else:
         mm: MotoMan = None
 
+    keyman: KeyMan = KeyMan(simulation_app, rocuWrap1, rocuWrap2, mm)
+
     # Setup Grid
     if args.ngrid is not None:
         ng = args.ngrid
@@ -268,17 +255,12 @@ def main():
     setcamview(viewsel)
 
     timeline = omni.timeline.get_timeline_interface()
-    zingle_step = False
-            # self.timeline.play()
+
+    enable_reset = True # reset only on first play
+
     # ---------------------------------
     #    LOOP
     # ---------------------------------
-    wpressedtime = loop_start
-    ppressedtime = loop_start
-
-    traycmd = None
-    traynum = "0"
-
     while simulation_app.is_running():
 
         # ---------------------------------
@@ -287,158 +269,7 @@ def main():
         dokeyboard = step_index > 10
 
         if dokeyboard:
-            if keyboard.is_pressed("a"):
-                k = keyboard.read_key()
-                rocuWrap1.ToggleCirclingTarget()
-                if rocuWrap2 is not None:
-                    rocuWrap2.ToggleCirclingTarget()
-                print(f"You pressed ‘a’. circle_target is now:{rocuWrap1.circle_target}")
-
-            elif keyboard.is_pressed("b"):
-                k = keyboard.read_key()
-                if time.time() - wpressedtime < 1.0:
-                    setcamview("back-view")
-                print("You pressed ‘wb’ for back-view.")
-
-            elif keyboard.is_pressed("*"):
-                k = keyboard.read_key()
-                rocuWrap1.curvel *= 1.5
-                if rocuWrap2 is not None:
-                    rocuWrap2.curvel = rocuWrap1.curvel
-                print(f"You pressed ‘*’. curvel:{rocuWrap1.curvel}")
-
-            elif keyboard.is_pressed("/"):
-                k = keyboard.read_key()
-                rocuWrap1.curvel /= 1.5
-                if rocuWrap2 is not None:
-                    rocuWrap2.curvel = rocuWrap1.curvel
-                print(f"You pressed ‘/’. curvel:{rocuWrap1.curvel}")
-
-            elif keyboard.is_pressed("c"):
-                k = keyboard.read_key()
-                print("You pressed ‘c’ - will reset object to start pose.")
-                sp_rcc, sq_rcc = rocuWrap1.get_start_pose()  # this is the robots starting pose in rcc
-                sp_wc, sq_wc = rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
-                rocuWrap1.SetTargetPose(sp_wc, sq_wc)
-                if rocuWrap2 is not None:
-                    sp_rcc, sq_rcc = rocuWrap2.get_start_pose()
-                    sp_wc, sq_wc = rocuWrap2.rcc_to_wc(sp_rcc, sq_rcc)
-                    rocuWrap2.SetTargetPose(sp_wc, sq_wc)
-
-            elif keyboard.is_pressed("d"):
-                k = keyboard.read_key()
-                print("You pressed ‘d’ - will move to robot's current end-effector pose.")
-                if rocuWrap1.cu_js is not None:
-                    rocuWrap1.MoveTargetToEepose()
-                if rocuWrap2 is not None:
-                    if rocuWrap2.cu_js is not None:
-                        # sp_rcc, sq_rcc = rocuWrap2.get_cur_pose(rocuWrap2.cu_js)
-                        rocuWrap2.MoveTargetToEepose()
-
-            elif keyboard.is_pressed("e"):
-                k = keyboard.read_key()
-                if time.time() - wpressedtime < 1.0:
-                    setcamview("front-view")
-                print("You pressed ‘we’ for front-view.")
-
-            elif keyboard.is_pressed("q"):
-                k = keyboard.read_key()
-                break
-
-            elif keyboard.is_pressed("l"):
-                k = keyboard.read_key()
-                if time.time() - wpressedtime < 1.0:
-                    setcamview("left-view")
-                print("You pressed ‘wf’ for left-view.")
-
-            elif keyboard.is_pressed("m"):
-                k = keyboard.read_key()
-                rocuWrap1.toggle_material()
-                rocuWrap1.check_alarm_status()
-                if rocuWrap2 is not None:
-                    rocuWrap2.toggle_material()
-                    rocuWrap2.check_alarm_status()
-                print("You pressed ‘m’")
-
-            elif keyboard.is_pressed("t"):
-                k = keyboard.read_key()
-                if time.time() - wpressedtime < 1.0:
-                    setcamview("top-view")
-                    print("You pressed ‘wt’ for top-view.")
-                else:
-                    rocuWrap1.toggle_show_joints_close_to_limits()
-                    if rocuWrap2 is not None:
-                        rocuWrap2.toggle_show_joints_close_to_limits()
-                    print("You pressed ‘t’ for show joints close to limits.")
-
-            elif keyboard.is_pressed("p"):
-                k = keyboard.read_key()
-                ppressedtime = time.time()
-                print("You pressed ‘p’")
-
-            elif keyboard.is_pressed("r"):
-                k = keyboard.read_key()
-                if time.time() - wpressedtime < 1.0:
-                    setcamview("right-view")
-                    print("You pressed ‘wr' for right-view.")
-                else:
-                    rocuWrap1.ShowReachabilityGrid(clear=True)
-                    if rocuWrap2 is not None:
-                        rocuWrap2.ShowReachabilityGrid(clear=False)
-                    print("You pressed ‘r’ - showing reachability")
-
-            elif keyboard.is_pressed("w"):
-                k = keyboard.read_key()
-                wpressedtime = time.time()
-                print("You pressed ‘w’")
-
-            elif keyboard.is_pressed("v"):
-                k = keyboard.read_key()
-                rocuWrap1.vizi_spheres = not rocuWrap1.vizi_spheres
-                if rocuWrap2 is not None:
-                    rocuWrap2.vizi_spheres = rocuWrap1.vizi_spheres
-                print(f"You pressed 'v' - vizi_spheres is now {rocuWrap1.vizi_spheres}.")
-
-            elif keyboard.is_pressed("z"):
-                k = keyboard.read_key()
-                zingle_step = not zingle_step
-                print(f"You pressed 'z' - for zingle stepping - now {zingle_step}.")
-
-            elif keyboard.is_pressed("0"):
-                k = keyboard.read_key()
-                print("You pressed ‘0’")
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_0"
-
-            elif keyboard.is_pressed("1"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_1"
-
-            elif keyboard.is_pressed("2"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_2"
-
-            elif keyboard.is_pressed("3"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_3"
-
-            elif keyboard.is_pressed("4"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_4"
-
-            elif keyboard.is_pressed("5"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_5"
-
-            elif keyboard.is_pressed("6"):
-                k = keyboard.read_key()
-                if time.time() - ppressedtime < 1.0:
-                    traycmd = f"p_{traynum}_6"
+            keyman.ProcessKeys()
 
         # ---------------------------------
         #    World Processing
@@ -453,9 +284,10 @@ def main():
                 last_play_time = time.time()
             continue
 
-        if step_index == 1: # step index will be set to 1 when play is pressed, so we should reset only
+        if enable_reset: # step index will be set to 1 when play is pressed, so we should reset only
             print(f"resetting world step:{step_index}")
             my_world.reset()
+            enable_reset = False
 
         rocuWrap1.StartStep(step_index)
         if rocuWrap2 is not None:
@@ -485,9 +317,7 @@ def main():
             print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
-        # position and orientation of target virtual cube:
-
-        if zingle_step:
+        if keyman.zingle_step:
             print("Pauseing timeline - zingle stepping")
             timeline.pause()
 
@@ -495,14 +325,18 @@ def main():
         if rocuWrap2 is not None:
             rocuWrap2.EndStep()
 
-        if traycmd is not None:
-            print(f"executing traycmd:{traycmd}")
-            cmd, tray_num, phone_num = traycmd.split("_")
-            tray: MotoTray = mm.GetMotoTrayByIdx(int(tray_num))
-            p_pos, p_ori = tray.get_trayslot_pose_idx_quat(int(phone_num))
-            print("p_pos:", p_pos, "   p_ori:", p_ori)
+        if keyman.TrayCommandReady():
+            print(f"executing traycmd:{keyman.traycmd}")
+            cmd, traynum, slot_num = keyman.GetTrayCommand()
+            tray: MotoTray = mm.GetMotoTrayByIdx(traynum)
+            p_pos, p_ori = tray.get_trayslot_pose_idx_quat(slot_num)
+            if cmd == "o":
+                p_pos[2] += 0.20
+            print(f"cmd:{cmd} p_pos:{p_pos} p_ori:{p_ori}")
             rocuWrap1.SetTargetPose(p_pos, p_ori)
-            traycmd = None
+
+    elap = time.time() - loop_start
+    print(f"Simulation done after {elap:.3f} secs and {step_index} steps")
 
     simulation_app.close()
 
