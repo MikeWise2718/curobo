@@ -140,15 +140,15 @@ class WrapBase(WrapConfig):
         self.update_params(goal)
         if seed is None:
             seed = self.get_init_act()
-            print("getting random_seed")
-            print("random_seed_1.shape:", seed.shape)
-            log_info("getting random seed")
+            # print("getting random_seed")
+            # print("random_seed_1.shape:", seed.shape)
+            # log_info("getting random seed")
         else:
             seed = seed.detach().clone()
-            print("random_seed_2.shape:", seed.shape)
+            # print("random_seed_2.shape:", seed.shape)
         start_time = time.time()
         if not self._init_solver:
-            msg = "Solver was not initialized, warming up solver"
+            msg = "Solver was not initialized, warming up solver in warp_base.py"
             log_info(msg)
             print(msg)
             logmsg(msg)

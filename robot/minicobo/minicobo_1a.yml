@@ -157,7 +157,7 @@ robot_cfg:
 
         cspace:
             joint_names: ['Joint1', 'Joint2', 'Joint3', 'Joint4', 'Joint5', 'Joint6']
-            retract_config:  [0.20, 0.20, 0.20, 0.20, 0.20, 0.20]
+            retract_config:  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00]
             null_space_weight:  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             cspace_distance_weight: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
             max_jerk: 500.0

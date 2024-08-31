@@ -1038,7 +1038,7 @@ class IKSolver(IKSolverConfig):
         coord_position_seed = self.get_seed(
             num_seeds, goal_buffer.goal_pose, use_nn_seed, seed_config
         )
-        print("coord_position_seed", coord_position_seed.shape)
+        # print("coord_position_seed", coord_position_seed.shape)
 
         if newton_iters is not None:
             self.solver.newton_optimizer.outer_iters = newton_iters

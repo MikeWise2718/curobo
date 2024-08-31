@@ -32,6 +32,7 @@ import torch
 
 from rocu_components import RocuConfiguator, RocuMoveMode, RocuTranMan
 from mgr_ut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
+from omni.isaac.debug_draw import _debug_draw
 
 args = get_args()
 
@@ -52,6 +53,7 @@ class ReachGridMan():
         self.count_unique_solutions = True
         self.pose_metric = PoseCostMetric()
         self.num_targets = 0
+        self.reachability_grid_visible = False
 
     def InitSolver(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.ik_config_grid = IKSolverConfig.load_from_robot_config(
@@ -148,13 +150,15 @@ class ReachGridMan():
             return sp_wc_np, sq_wc_np
         return sp_wc, sq_wc
 
-    def _show_reachability_cloud(self, pose, success, unique=None, clear=True):
-        # Third Party
-        from omni.isaac.debug_draw import _debug_draw
 
+    def ClearReachabilityGrid(self):
         draw = _debug_draw.acquire_debug_draw_interface()
-        N = 100
-        # if draw.get_num_points() > 0:
+        draw.clear_points()
+        self.reachability_grid_visible  = False
+
+    def _show_reachability_grid(self, pose, success, unique=None, clear=True):
+        self.reachability_grid_visible  = True
+        draw = _debug_draw.acquire_debug_draw_interface()
         if clear:
             draw.clear_points()
         cpu_pos = pose.position.cpu().numpy()

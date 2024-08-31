@@ -2982,7 +2982,9 @@ class MotionGen(MotionGenConfig):
         if plan_config.finetune_dt_scale is None:
             plan_config.finetune_dt_scale = self.finetune_dt_scale
         for n in range(plan_config.max_attempts):
-            log_info("MG Iter: " + str(n))
+            msg = "plan_config - MG Iter: " + str(n) + " of " + str(plan_config.max_attempts)
+            log_info(msg)
+            print(msg)
             result = self._plan_from_solve_state(
                 solve_state,
                 start_state,

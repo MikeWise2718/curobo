@@ -58,6 +58,7 @@ class RocuWrapper:
 
     def __init__(self, robid):
         self.robid = robid
+        self.name = "robot "+robid
         self.Initialize()
 
     def Initialize(self):
@@ -83,10 +84,11 @@ class RocuWrapper:
         self.world_cfg = None
         self.stage = self.my_world.stage
         self.cu_js = None
+        self.sim_js_names = []
 
-        self.spheres = None
-        self.spherenames = None
-        self.spheres_visible = False
+        self.coli_spheres = None
+        self.coli_spherenames = None
+        self.coli_spheres_visible = False
 
         self.past_pose = None
         self.past_orientation = None
@@ -127,6 +129,10 @@ class RocuWrapper:
 
         self.grid_timer_tick = 20
         self.rgm: ReachGridMan = ReachGridMan(self)
+
+        self.jchk_str = ""
+        self.last_jchk_str = ""
+        self.jchk_str_val = ""
 
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
@@ -328,12 +334,12 @@ class RocuWrapper:
         match self.move_mode:
             case RocuMoveMode.FollowTargetWithMoGen:
                 start_warmup = time.time()
-                print("Warming up MoGen...")
+                print(f"Warming up MoGen for {self.robot_name}...")
                 self.motion_gen.warmup(enable_graph=True, warmup_js_trajopt=False, parallel_finetune=True)
                 elap = time.time() - start_warmup
                 print(f"Curobo MoGen is Ready and Warmed-up - took:{elap:.2f} secs")
             case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
-                print("Warming up InvKin...")
+                print(f"Warming up InvKin for {self.robot_name}...")
                 start_warmup = time.time()
                 elap = time.time() - start_warmup
                 print(f"Curobo InvKin is Ready and Warmed-up - took:{elap:.2f} secs")
@@ -421,21 +427,35 @@ class RocuWrapper:
         # self.cu_js = self.cu_js.get_ordered_joint_state(self.motion_gen.kinematics.joint_names)
         self.cu_js = self.cu_js.get_ordered_joint_state(self.j_names)
 
+    def GetKinematics(self):
+        kine = None
+        match self.move_mode:
+            case RocuMoveMode.FollowTargetWithMoGen:
+                kine = self.motion_gen.kinematics
+            case RocuMoveMode.FollowTargetWithInvKin | RocuMoveMode.ReachabilityWithInvKin:
+                kine = self.ik_solver.kinematics
+        return kine
+
+
 # -----------------  Collision Sphere Visulaization Code ---------------------
+
+    def ToggleCollisionSphereVisiblity(self):
+        self.vizi_spheres = not self.vizi_spheres
 
     def CreateCollisionSpheres(self):
         # get a fresh list of spheres:
-        if self.motion_gen is None:
-            carb.log_warn("MotionGen not initialized - can't do collision sphers")
+        kine = self.GetKinematics()
+        if kine is None:
+            carb.log_warn("Can't find kinematics - can't do collision sphers")
             return
-        self.sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
-        if self.spheres is None:
+        self.coli_sph_list = kine.get_robot_as_spheres(self.cu_js.position)
+        if self.coli_spheres is None:
             config_spheres = self.robot_cfg["kinematics"]["collision_spheres"]
-            self.spheres = []
-            self.spherenames = []
+            self.coli_spheres = []
+            self.coli_spherenames = []
             # create spheres:
             ncreated = 0
-            for sidx, sph in enumerate(self.sph_list[0]):
+            for sidx, sph in enumerate(self.coli_sph_list[0]):
                 sphentry = get_sphere_entry(config_spheres, sidx)
                 sname = "/curobo/robot_sphere_" + str(sidx)
                 clr = np.array([0, 0.8, 0.2])
@@ -456,37 +476,41 @@ class RocuWrapper:
                     radius=float(sph.radius),
                     color=clr,
                 )
-                self.spheres.append(sp)
-                self.spherenames.append(sname)
+                self.coli_spheres.append(sp)
+                self.coli_spherenames.append(sname)
                 ncreated += 1
             print(f"Created {ncreated} Spheres")
 
     def UpdateCollistionSpherePositions(self):
-        self.sph_list = self.motion_gen.kinematics.get_robot_as_spheres(self.cu_js.position)
+        kine = self.GetKinematics()
+        if kine is None:
+            # carb.log_warn("Can't find kinematics - can't do collision sphers")
+            return
+        self.coli_sph_list = kine.get_robot_as_spheres(self.cu_js.position)
         s_ori = np.array([1, 0, 0, 0])
-        for sidx, sph in enumerate(self.sph_list[0]):
+        for sidx, sph in enumerate(self.coli_sph_list[0]):
             if not np.isnan(sph.position[0]):
                 sp_wc, _ = self.rocuTranman.rcc_to_wc(sph.position, s_ori)
-                self.spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
-                self.spheres[sidx].set_radius(float(sph.radius))
+                self.coli_spheres[sidx].set_world_pose(position=np.ravel(sp_wc))
+                self.coli_spheres[sidx].set_radius(float(sph.radius))
 
     def DeleteCollisionSpheres(self):
-        if self.spherenames is not None:
-            for sn in self.spherenames:
+        if self.coli_spherenames is not None:
+            for sn in self.coli_spherenames:
                 self.stage.RemovePrim(sn)
-        self.spheres = None
-        self.spherenames = None
-        self.spheres_visible = False
+        self.coli_spheres = None
+        self.coli_spherenames = None
+        self.coli_spheres_visible = False
 
     def ProcessCollisionSpheres(self):
         if self.vizi_spheres:
-            if self.spheres is None:
+            if self.coli_spheres is None:
                 self.CreateCollisionSpheres()
             else:
                 self.UpdateCollistionSpherePositions()
-            self.spheres_visible = True
+            self.coli_spheres_visible = True
 
-        if not self.vizi_spheres and self.spheres_visible:
+        if not self.vizi_spheres and self.coli_spheres_visible:
             self.DeleteCollisionSpheres()
 
 # ----------------------- Target Processing Code --------------------
@@ -697,7 +721,7 @@ class RocuWrapper:
 
     def DoGridInvKinToPosOri(self, pos, ori):
         ik_result = self.rgm.CalcReachabilityToPosOri(pos, ori)
-        self.rgm._show_reachability_cloud(self.rgm.goal_pose, ik_result.success)
+        self.rgm._show_reachability_grid(self.rgm.goal_pose, ik_result.success)
 
         successfull = torch.any(ik_result.success)
         nsucess = torch.sum(ik_result.success).item()
@@ -759,15 +783,21 @@ class RocuWrapper:
         seed_pos = self.cu_js.position.view(1, 1, -1)
         ik_result = self.ik_solver.solve_single(ik_goal, retract_pos, seed_pos)
         total_time = (time.time() - st_time)
-        print(
-            "Success, Solve Time(s), Total Time(s)",
-            torch.count_nonzero(ik_result.success).item(),
-            ik_result.solve_time,
-            total_time,
-            1.0 / total_time,
-            torch.mean(ik_result.position_error) * 100.0,
-            torch.mean(ik_result.rotation_error) * 100.0,
-        )
+        solve_time = ik_result.solve_time
+        succount = torch.count_nonzero(ik_result.success).item(),
+        pos_err = torch.mean(ik_result.position_error) * 100.0
+        rot_err = torch.mean(ik_result.rotation_error) * 100.0
+        msg = f"Finished - success:{succount} total_time {total_time:.3f} solve_time:{solve_time:.3f} pos_err:{pos_err:.3f} rot_err:{rot_err:.3f}"
+        print(msg)
+        # print(
+        #     "Finished, Solve Time(s), Total Time(s)",
+        #     torch.count_nonzero(ik_result.success).item(),
+        #     ik_result.solve_time,
+        #     total_time,
+        #     1.0 / total_time,
+        #     torch.mean(ik_result.position_error) * 100.0,
+        #     torch.mean(ik_result.rotation_error) * 100.0,
+        # )
         self.ik_result = ik_result
         self.target_pose = self.cube_position
         self.target_orientation = self.cube_orientation
@@ -857,18 +887,26 @@ class RocuWrapper:
         return requestPause
 
     def ExecuteInvKinCmdPlan(self):
+        # print("ExecuteInvKinCmdPlan")
         requestPause = False
         if self.ik_result is not None:
-            if torch.count_nonzero(self.ik_result.success) > 0:
+            succount = torch.count_nonzero(self.ik_result.success)
+            print("ExecuteInvKinCmdPlan success count:", succount)
+            if succount > 0:
                 joint_positions = self.ik_result.js_solution.position[0]
                 jp_numpy = joint_positions.cpu().numpy()
-                art_action = ArticulationAction(
-                    jp_numpy,
-                    None,
-                    joint_indices=self.idx_list,
-                )
-                self.ApplyAction(art_action)
-                print("Applied Action - ArtAction:", art_action)
+                use_apply_action = False
+                if use_apply_action:
+                    art_action = ArticulationAction(
+                        jp_numpy,
+                        None,
+                        joint_indices=self.idx_list,
+                    )
+                    self.ApplyAction(art_action)
+                    print("Applied Action - ArtAction:", art_action)
+                else:
+                    self.robot.set_joint_positions(jp_numpy, self.idx_list)
+                    print("Set Joint Pos:", jp_numpy)
                 requestPause = True
             self.ik_result = None
             return requestPause
@@ -880,14 +918,18 @@ class RocuWrapper:
             unique = res.get_batch_unique_solution()
         else:
             unique = None
-        self.rgm._show_reachability_cloud(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
+        self.rgm._show_reachability_grid(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
         pass
+
+    def ClearReachabilityGrid(self):
+        self.rgm.ClearReachabilityGrid()
+
 
 # ----------------------- Joint Alarm Code ---------------------------
     def init_alarm_skin(self):
         self.robmatskin = "default"
         self.alarmskin = "Red_Glass"
-        self.show_joints_close_to_limits = False
+        self.show_joints_close_to_limits = True
         self.ensure_orimat()
 
     def check_alarm_status(self):
@@ -919,7 +961,7 @@ class RocuWrapper:
 
     def toggle_material(self):
         if self.robmatskin == "default":
-            self.robmatskin = "Red_Glass"
+            self.robmatskin = "Blue_Glass"
             apply_material_to_prim_and_children(self.stage, self.matman, self.robmatskin, self.robot_prim_path)
         else:
             self.robmatskin = "default"
@@ -951,6 +993,9 @@ class RocuWrapper:
         # print(f"realize_joint_alarms force:{force}")
         if self.show_joints_close_to_limits:
             self.check_alarm_status()
+            if self.last_jchk_str=="":  # first time
+                self.last_jchk_str = copy.deepcopy(self.jchk_str)
+                return
             for j, jstate in enumerate(self.jchk_str):
                 if force or (jstate != self.last_jchk_str[j]):
                     link_path = self.link_paths[j]

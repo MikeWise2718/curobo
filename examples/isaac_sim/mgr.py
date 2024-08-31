@@ -14,7 +14,6 @@ from torch.fx.experimental.symbolic_shapes import expect_true
 import torch
 import time
 import os
-import keyboard
 
 a = torch.zeros(4, device="cuda:0")
 
@@ -155,26 +154,28 @@ def main():
     pos1 = get_vek(args.robpos)
     ori1 = get_vek(args.robori)
     numrobs = 1
+    zz = 0.79  # above this the jaka will not be able to reach tray slot number 5
 
     match args.jakas:
         case "R":
-            prerot1, pos1, ori1 = [0, 0, 60], [-0.2, 0, 1], [0, 150, 180]
+            prerot1, pos1, ori1 = [0, 0, 60], [-0.2, 0, zz], [0, 150, 180]
             numrobs = 1
         case "L":
-            prerot1, pos1, ori1 = [0, 0, -90], [+0.2, 0, 1], [0, -150, 180]
+            prerot1, pos1, ori1 = [0, 0, -90], [+0.2, 0, zz], [0, -150, 180]
             numrobs = 1
         case "LR":
-            prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
-            prerot2, pos2, ori2 = [0, 0, +60], [-0.05, 0, 1], [0, +150, 180]
+            prerot1, pos1, ori1 = [0, 0, -90], [+0.05, 0, zz], [0, -150, 180]
+            prerot2, pos2, ori2 = [0, 0, +60], [-0.05, 0, zz], [0, +150, 180]
             numrobs = 2
         case "RL":
-            prerot1, pos1, ori1 = [0, 0, +60], [-0.05, 0, 1], [0, +150, 180]
-            prerot2, pos2, ori2 = [0, 0, -90], [+0.05, 0, 1], [0, -150, 180]
+            prerot1, pos1, ori1 = [0, 0, +60], [-0.05, 0, zz], [0, +150, 180]
+            prerot2, pos2, ori2 = [0, 0, -90], [+0.05, 0, zz], [0, -150, 180]
             numrobs = 2
         case _:
             print("Bad Jaka specification")
 
     # Setup Robots
+    keyman: KeyMan = KeyMan(simulation_app)
 
     # mode = RocuMoveMode.FollowTargetWithMoGen
     modesel = args.movmode
@@ -209,7 +210,7 @@ def main():
     else:
         mm: MotoMan = None
 
-    keyman: KeyMan = KeyMan(simulation_app, rocuWrap1, rocuWrap2, mm)
+    keyman.AddObjects(rocuWrap1, rocuWrap2, mm)
 
     # Setup Grid
     if args.ngrid is not None:
@@ -278,6 +279,7 @@ def main():
         my_world.step(render=True)
         step_index = my_world.current_time_step_index
         if not my_world.is_playing():
+            keyman.ProcessKeys()
             elap = time.time() - last_play_time
             if elap > 60:
                 print(f"**** Click Play to start simulation ***** si:{step_index} elap:{elap:.2f}")
