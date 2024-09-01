@@ -52,6 +52,7 @@ class KeyMan():
         loop_start = time.time()
         self.a_pressed_time = loop_start
         self.c_pressed_time = loop_start
+        self.g_pressed_time = loop_start
         self.o_pressed_time = loop_start
         self.p_pressed_time = loop_start
         self.r_pressed_time = loop_start
@@ -85,12 +86,10 @@ class KeyMan():
         msgs.append(indent2+"z - zingle stepping")
         msgs.append(indent1+"Target-cube manipulation")
         msgs.append(indent2+"ct - circle target")
-        msgs.append(indent2+"* - increase target-cube velocity")
-        msgs.append(indent2+"/ - decrease target-cube velocity")
-        msgs.append(indent2+"c - reset target-cube to start pose")
-        msgs.append(indent2+"d - reset target-cube to current end-effector pose")
-        msgs.append(indent2+"pN - move target to the phone postion N")
-        msgs.append(indent2+"oN - move target to 20 cm above the phone postion N")
+        msgs.append(indent2+"c* - increase target-cube velocity")
+        msgs.append(indent2+"c/ - decrease target-cube velocity")
+        msgs.append(indent2+"cc - reset target-cube to start pose")
+        msgs.append(indent2+"cd - reset target-cube to current end-effector pose")
         msgs.append(indent1+"View commands")
         msgs.append(indent2+"wt - top view")
         msgs.append(indent2+"wr - right view")
@@ -99,9 +98,21 @@ class KeyMan():
         msgs.append(indent2+"wfq - front view")
         msgs.append(indent1+"Robot commands")
         msgs.append(indent2+"aN - make robot arm N to active robot")
-        msgs.append(indent2+"m - toggle material")
+        msgs.append(indent2+"am - toggle material")
         msgs.append(indent2+"al - show joints close to limits")
-        msgs.append(indent2+"tN - make tray N the active tray")
+        msgs.append(indent1+"Tray commands")
+        msgs.append(indent2+"tN - make tray N the active tray - current tray is"+str(self.traynum))
+        msgs.append(indent2+"pN - move target to the phone postion N on tray")
+        msgs.append(indent2+"oN - move target to 20 cm above the phone postion N")
+        msgs.append(indent1+"Grid commands")
+        msgs.append(indent2+"gr - draw or redraw grid")
+        msgs.append(indent2+"gc - clear grid")
+        msgs.append(indent2+"g* - finer grid (more points)")
+        msgs.append(indent2+"g/ - decrease grid (less points)")
+        msgs.append(indent2+"ge - extend grid span (more volume)")
+        msgs.append(indent2+"gd - decrease grid span (less volume)")
+        msgs.append(indent2+"gm - toggle between debug sphere mode and OV sphere mode")
+        msgs.append(indent2+"gs - rotate grid filter between show all, show success only, show fail only")
         for msg in msgs:
             print(msg)
         self.DumpHotKeys()
@@ -110,134 +121,155 @@ class KeyMan():
     def ProcessKeys(self):
 
         now = time.time()
-        if keyboard.is_pressed("a"):
+        if keyboard.is_pressed("*"):
             k = keyboard.read_key()
-            self.a_pressed_time = now
-            # self.rocuWrap1.ToggleCirclingTarget()
-            # if self.rocuWrap2 is not None:
-            #     self.rocuWrap2.ToggleCirclingTarget()
-            print(f"You pressed ‘a’.")
-
-        elif keyboard.is_pressed("b"):
-            k = keyboard.read_key()
-            if time.time() - self.w_pressed_time < 1.0:
-                setcamview("back-view")
-            print("You pressed ‘wb’ for back-view.")
-
-        elif keyboard.is_pressed("*"):
-            k = keyboard.read_key()
-            self.rocuWrap1.curvel *= 1.5
-            if self.rocuWrap2 is not None:
-                self.rocuWrap2.curvel = self.rocuWrap1.curvel
-            print(f"You pressed ‘*’. curvel:{self.rocuWrap1.curvel}")
+            if now - self.c_pressed_time < 1.0:
+                print(f"You pressed a* curvel:{self.curRocu.curvel}")
+                self.curRocu.curvel *= 1.5
+            elif now - self.g_pressed_time < 1.0:
+                print(f"You pressed g* increasing grid size.")
+                self.curRocu.ChangeGridSize(1.5)
 
         elif keyboard.is_pressed("/"):
             k = keyboard.read_key()
             if k=="?":
-                print(f"You pressed ‘?’. - getting help  l:{k}")
+                print(f"You pressed ? - getting help  l:{k}")
                 self.PrintHelp()
             else:
-                self.rocuWrap1.curvel /= 1.5
-                if self.rocuWrap2 is not None:
-                    self.rocuWrap2.curvel = self.rocuWrap1.curvel
-                print(f"You pressed ‘/’. curvel:{self.rocuWrap1.curvel}   l:{k}")
+                if now - self.c_pressed_time < 1.0:
+                    self.curRocu.curvel /= 1.5
+                    print(f"You pressed a/. curvel:{self.curRocu.curvel}   l:{k}")
+                elif now - self.g_pressed_time < 1.0:
+                    print(f"You pressed g/ decreasing grid size.")
+                    self.curRocu.ChangeGridSize(0.6666667)
+
+        elif keyboard.is_pressed("a"):
+            k = keyboard.read_key()
+            self.a_pressed_time = now
+            print(f"You pressed a.")
+
+        elif keyboard.is_pressed("b"):
+            k = keyboard.read_key()
+            if now - self.w_pressed_time < 1.0:
+                setcamview("back-view")
+            print("You pressed wb for back-view.")
 
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
-            if now - self.r_pressed_time < 1.0:
+            if now - self.g_pressed_time < 1.0:
                 self.curRocu.ClearReachabilityGrid()
-                print("You pressed ‘rc’ - clearing reachability")
+                print("You pressed rc - clearing reachability")
             else:
                 self.c_pressed_time = now
-                # print("You pressed ‘c’ - will reset object to start pose.")
-                # sp_rcc, sq_rcc = self.rocuWrap1.get_start_pose()  # this is the robots starting pose in rcc
-                # sp_wc, sq_wc = self.rocuWrap1.rcc_to_wc(sp_rcc, sq_rcc)
-                # self.curRocu.SetTargetPose(sp_wc, sq_wc)
+                print("You pressed c")
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
             if now - self.w_pressed_time < 1.0:
                 setcamview("diag-view")
-            else:
-                print("You pressed ‘d’ - will move to robot's current end-effector pose.")
+                print("You pressed wd for diag-view.")
+            elif now - self.c_pressed_time < 1.0:
+                print("You pressed cd - will move to robot's current end-effector pose.")
                 if self.curRocu.cu_js is not None:
                     self.curRocu.MoveTargetToEepose()
+            elif now - self.a_pressed_time < 1.0:
+                print("You pressed ad - will move to robot's start pose.")
+                if self.curRocu.cu_js is not None:
+                    self.curRocu.MoveTargetToStartPose()
+            elif now - self.g_pressed_time < 1.0:
+                self.curRocu.ChangeGridSpan(0.6666667)
+                print("You pressed gd to decrease grid span")
+            else:
+                self.d_pressed_time = now
+                print("You pressed d")
+
+        elif keyboard.is_pressed("e"):
+            k = keyboard.read_key()
+            if now - self.g_pressed_time < 1.0:
+                self.curRocu.ChangeGridSpan(1.5)
+                print("You pressed ge to extend grid span")
+
 
         elif keyboard.is_pressed("f"):
             k = keyboard.read_key()
             if now - self.w_pressed_time < 1.0:
                 setcamview("front-view")
-                print("You pressed ‘wf’ for front-view.")
+                print("You pressed wf for front-view.")
+
+        elif keyboard.is_pressed("g"):
+            k = keyboard.read_key()
+            self.g_pressed_time = now
+            print("You pressed g")
 
 
         elif keyboard.is_pressed("l"):
             k = keyboard.read_key()
             if now - self.w_pressed_time < 1.0:
                 setcamview("left-view")
-            print("You pressed ‘wf’ for left-view.")
+            print("You pressed wf for left-view.")
 
         elif keyboard.is_pressed("m"):
             k = keyboard.read_key()
-            self.curRocu.toggle_material()
-            self.curRocu.check_alarm_status()
-            print("You pressed ‘m’")
-
-        elif keyboard.is_pressed("t"):
-            k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
-                setcamview("top-view")
-                print("You pressed ‘wt’ for top-view.")
-            elif now - self.a_pressed_time < 1.0:
-                self.curRocu.ToggleCirclingTarget()
-                print("You pressed ‘at’ for rotate target.")
-            else:
-                self.t_pressed_time = now
-                # self.rocuWrap1.toggle_show_joints_close_to_limits()
-                # if self.rocuWrap2 is not None:
-                #     self.rocuWrap2.toggle_show_joints_close_to_limits()
-                # print("You pressed ‘t’ for show joints close to limits.")
-
-        elif keyboard.is_pressed("p"):
-            k = keyboard.read_key()
-            self.p_pressed_time = now
-            self.op_pressed_time = now
-            self.traycmdchar = "p"
-            print("You pressed ‘p’")
+            if now - self.a_pressed_time < 1.0:
+                self.curRocu.toggle_material()
+                self.curRocu.check_alarm_status()
+                print("You pressed am - changing material on arm")
+            elif now - self.g_pressed_time < 1.0:
+                self.curRocu.ToggleDebugSphereMode()
+                print("You pressed gm - toggling debug sphere mode")
 
         elif keyboard.is_pressed("o"):
             k = keyboard.read_key()
             self.o_pressed_time = now
             self.op_pressed_time = now
             self.traycmdchar = "o"
-            print("You pressed ‘o’")
+            print("You pressed o")
+
+        elif keyboard.is_pressed("p"):
+            k = keyboard.read_key()
+            self.p_pressed_time = now
+            self.op_pressed_time = now
+            self.traycmdchar = "p"
+            print("You pressed p")
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
-            print("You pressed ‘q’ - will exit simulation.")
+            print("You pressed q - will exit simulation.")
             self.sim.close()
 
         elif keyboard.is_pressed("r"):
             k = keyboard.read_key()
             if now - self.w_pressed_time < 1.0:
                 setcamview("right-view")
-                print("You pressed ‘wr' for right-view.")
+                print("You pressed wr for right-view.")
             else:
-                if now - self.r_pressed_time < 1.0:
+                if now - self.g_pressed_time < 1.0:
                     self.curRocu.ShowReachabilityGrid(clear=True)
-                    print("You pressed ‘rr’ - showing reachability")
+                    print("You pressed rr - showing reachability")
                 else:
                     self.r_pressed_time = now
-                    print("You pressed ‘r’ ")
+                    print("You pressed r ")
+
+        elif keyboard.is_pressed("t"):
+            k = keyboard.read_key()
+            if now - self.w_pressed_time < 1.0:
+                setcamview("top-view")
+                print("You pressed wt for top-view.")
+            elif now - self.a_pressed_time < 1.0:
+                self.curRocu.ToggleCirclingTarget()
+                print("You pressed ‘at’ for rotate target.")
+            else:
+                self.t_pressed_time = now
 
         elif keyboard.is_pressed("w"):
             k = keyboard.read_key()
             self.w_pressed_time = now
-            print("You pressed ‘w’")
+            print("You pressed w")
 
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
             self.curRocu.ToggleCollisionSphereVisiblity()
-            print(f"You pressed 'v' - vizi_spheres is now {self.rocuWrap1.vizi_spheres}.")
+            print(f"You pressed v - vizi_spheres is now {self.curRocu.vizi_spheres}.")
 
         elif keyboard.is_pressed("z"):
             k = keyboard.read_key()
@@ -246,12 +278,12 @@ class KeyMan():
 
         elif keyboard.is_pressed("0"):
             k = keyboard.read_key()
-            print("You pressed ‘0’")
+            print("You pressed 0")
             if now - self.op_pressed_time < 1.0:
                 self.traycmd = f"{self.traycmdchar}_{self.traynum}_0"
             if now - self.t_pressed_time < 1.0:
                self.traynum = 0
-               print(f"You pressed ‘t0’ - curTray is now {self.traynum}")
+               print(f"You pressed t0 - curTray is now {self.traynum}")
 
         elif keyboard.is_pressed("1"):
             k = keyboard.read_key()
@@ -259,10 +291,10 @@ class KeyMan():
                 self.traycmd = f"{self.traycmdchar}_{self.traynum}_1"
             if now - self.a_pressed_time < 1.0:
                self.curRocu = self.rocuWrap1
-               print(f"You pressed ‘a1’ - curRocu is now {self.curRocu.name}")
+               print(f"You pressed a1 - curRocu is now {self.curRocu.name}")
             if now - self.t_pressed_time < 1.0:
                self.traynum = 1
-               print(f"You pressed ‘t1’ - curTray is now {self.traynum}")
+               print(f"You pressed t1 - curTray is now {self.traynum}")
 
         elif keyboard.is_pressed("2"):
             k = keyboard.read_key()
@@ -270,10 +302,10 @@ class KeyMan():
                 self.traycmd = f"{self.traycmdchar}_{self.traynum}_2"
             if now - self.a_pressed_time < 1.0:
                self.curRocu = self.rocuWrap2
-               print(f"You pressed ‘a2’ - curRocu is now {self.curRocu.name}")
+               print(f"You pressed a2 - curRocu is now {self.curRocu.name}")
             if now - self.t_pressed_time < 1.0:
                self.traynum = 2
-               print(f"You pressed ‘t2’ - curTray is now {self.traynum}")
+               print(f"You pressed t2 - curTray is now {self.traynum}")
 
         elif keyboard.is_pressed("3"):
             k = keyboard.read_key()
@@ -281,7 +313,7 @@ class KeyMan():
                 self.traycmd = f"{self.traycmdchar}_{self.traynum}_3"
             if now - self.t_pressed_time < 1.0:
                self.traynum = 3
-               print(f"You pressed ‘t3’ - curTray is now {self.traynum}")
+               print(f"You pressed t3 - curTray is now {self.traynum}")
 
         elif keyboard.is_pressed("4"):
             k = keyboard.read_key()

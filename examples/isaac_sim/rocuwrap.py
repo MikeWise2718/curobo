@@ -171,6 +171,18 @@ class RocuWrapper:
         self.rgm.SetGridSpan(max_x, max_y, max_z)
         self.rgm.InitPositionGridOffset()
 
+    def ChangeGridSpan(self, fak = 1.5):
+        if self.rgm is not None:
+            self.rgm.ChangeGridSpan(fak)
+        else:
+            print("In ChangeGridSpan rgm is None")
+
+    def ChangeGridSize(self, fak = 1.5):
+        if self.rgm is not None:
+            self.rgm.ChangeGridSize(fak)
+        else:
+            print("In ChangeGridSize rgm is None")
+
     def SetGridTimererTick(self, timer_tick):
         self.grid_timer_tick = timer_tick
 
@@ -911,7 +923,7 @@ class RocuWrapper:
             self.ik_result = None
             return requestPause
 
-    def ShowReachabilityGrid(self, clear=True):
+    def ShowReachabilityGridOld(self, clear=True):
         print(f"ShowReachability {self.robid}")
         res = self.rgm.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
         if self.count_unique_solutions:
@@ -919,10 +931,21 @@ class RocuWrapper:
         else:
             unique = None
         self.rgm._show_reachability_grid(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
-        pass
+
+    def ShowReachabilityGrid(self, clear=True):
+        print(f"ShowReachability {self.robid}")
+        self.rgm.ShowReachabilityGridToPosOri(self.cube_position, self.cube_orientation)
+
 
     def ClearReachabilityGrid(self):
         self.rgm.ClearReachabilityGrid()
+
+    def ToggleDebugSphereMode(self):
+        self.rgm.ToggleDebugSphereMode()
+
+    def RotateGridFilter(self):
+        self.rgm.RotateGridFilter()
+
 
 
 # ----------------------- Joint Alarm Code ---------------------------

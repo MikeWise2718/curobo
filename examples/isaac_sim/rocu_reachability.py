@@ -13,6 +13,7 @@
 from torch.fx.experimental.symbolic_shapes import expect_true
 import time
 import numpy as np
+from enum import Enum
 
 # CuRobo
 # from curobo.wrap.reacher.ik_solver import IKSolver, IKSolverConfig
@@ -39,13 +40,24 @@ args = get_args()
 
 RocuConfig = RocuConfiguator()
 
+
+class GridRenderStyle(Enum):
+    DEBUG_SPHERES = 1
+    OV_SPHERES = 2
+
+class GridRenderFilter(Enum):
+    ALL = 1
+    SUCCESS_ONLY = 2
+    FAIL_ONLY = 3
+
+
 class ReachGridMan():
     def __init__(self, robot):
         self.robot = robot
         self.tensor_args = robot.tensor_args
         self.tranman = robot.rocuTranman
-        self.ik_config_grid = None
-        self.ik_solver_grid = None
+        self.ik_config_grid: IKSolverConfig = None
+        self.ik_solver_grid: IKSolver = None
         self.n_x, self.n_y, self.n_z = 9, 9, 9
         self.max_x, self.max_y, self.max_z = 0.5, 0.5, 0.5
         self.grid_succ_rad = 40
@@ -54,8 +66,12 @@ class ReachGridMan():
         self.pose_metric = PoseCostMetric()
         self.num_targets = 0
         self.reachability_grid_visible = False
+        self.grid_render_style = GridRenderStyle.DEBUG_SPHERES
+        self.grid_render_filter = GridRenderFilter.ALL
 
     def InitSolver(self, n_obstacle_cuboids, n_obstacle_mesh):
+        self.n_obstacle_cuboids = n_obstacle_cuboids
+        self.n_obstacle_mesh = n_obstacle_mesh
         self.ik_config_grid = IKSolverConfig.load_from_robot_config(
             self.robot.robot_cfg,
             self.robot.world_cfg,
@@ -150,6 +166,66 @@ class ReachGridMan():
             return sp_wc_np, sq_wc_np
         return sp_wc, sq_wc
 
+    def ToggleDebugSphereMode(self):
+        if self.grid_render_style == GridRenderStyle.DEBUG_SPHERES:
+            self.grid_render_style = GridRenderStyle.OV_SPHERES
+        else:
+            self.grid_render_style = GridRenderStyle.DEBUG_SPHERES
+        print(f"Grid render style: {self.grid_render_style}")
+
+    def RotateGridFilter(self):
+        match self.grid_render_filter:
+            case GridRenderFilter.ALL:
+                self.grid_render_filter = GridRenderFilter.SUCCESS_ONLY
+            case GridRenderFilter.SUCCESS_ONLY:
+                self.grid_render_filter = GridRenderFilter.FAIL_ONLY
+            case GridRenderFilter.FAIL_ONLY:
+                self.grid_render_filter = GridRenderFilter.ALL
+        print(f"Grid render filter: {self.grid_render_filter}")
+
+    def ChangeGridSize(self, fak = 1.5):
+        show = self.reachability_grid_visible
+        if show:
+            self.ClearReachabilityGrid()
+
+
+        # we need to reinitialize the solvers since the cuda graph has changed - which takes awhile
+        self.InitSolver(self.n_obstacle_cuboids, self.n_obstacle_mesh)
+        self.InitPositionGridOffset()
+
+        self.ik_solver_grid = IKSolver(self.ik_config_grid)
+        self.n_x = int(self.n_x*fak)
+        self.n_y = int(self.n_y*fak)
+        self.n_z = int(self.n_z*fak)
+        print(f"New grid size: {self.n_x}x{self.n_y}x{self.n_z} for a total of {self.n_x*self.n_y*self.n_z} poses")
+        self.SetGridSize(self.n_x, self.n_y, self.n_z)
+        self.InitPositionGridOffset()
+        if show:
+            self.ShowReachabilityGridToPosOri(self.last_pos, self.last_ori)
+
+    def ChangeGridSpan(self, fak = 1.5):
+        show = self.reachability_grid_visible
+        if show:
+            self.ClearReachabilityGrid()
+        self.max_x = self.max_x*fak
+        self.max_y = self.max_y*fak
+        self.max_z = self.max_z*fak
+        self.SetGridSpan(self.max_x, self.max_y, self.max_z)
+        self.InitPositionGridOffset()
+        if show:
+            self.ShowReachabilityGridToPosOri(self.last_pos, self.last_ori)
+
+    def ShowReachabilityGridToPosOri(self, pos, ori, clear=True):
+        self.last_pos = pos
+        self.last_ori = ori
+        res = self.CalcReachabilityToPosOri(pos, ori)
+        if self.count_unique_solutions:
+            unique = res.get_batch_unique_solution()
+        else:
+            unique = None
+        self._show_reachability_grid(self.goal_pose, res.success, unique=unique, clear=clear)
+
+
 
     def ClearReachabilityGrid(self):
         draw = _debug_draw.acquire_debug_draw_interface()
@@ -158,6 +234,10 @@ class ReachGridMan():
 
     def _show_reachability_grid(self, pose, success, unique=None, clear=True):
         self.reachability_grid_visible  = True
+        self.cur_pose = pose
+        self.cur_success = success
+        self.cur_unique = unique
+
         draw = _debug_draw.acquire_debug_draw_interface()
         if clear:
             draw.clear_points()
@@ -171,7 +251,11 @@ class ReachGridMan():
         error_color = (1, 0, 1, 0.25)
         fail_color = (1, 0, 0, 0.25)
         succ_rad = self.grid_succ_rad
+        if self.grid_render_filter == GridRenderFilter.FAIL_ONLY:
+            succ_rad = 0
         fail_rad = self.grid_fail_rad
+        if self.grid_render_filter == GridRenderFilter.SUCCESS_ONLY:
+            fail_rad = 0
         color_on_solution_number = self.count_unique_solutions and unique is not None
         for i in range(b):
             # get list of points:
@@ -199,7 +283,13 @@ class ReachGridMan():
                 colors += [fail_color]
                 sizes += [fail_rad]
         # sizes = [40.0 for _ in range(b)]
-        draw.draw_points(point_list, colors, sizes)
+        if self.grid_render_style==GridRenderStyle.DEBUG_SPHERES:
+            draw.draw_points(point_list, colors, sizes)
+        else:
+            self.RenderOvSpheres(point_list, colors, sizes)
+
+    def RenderOvSpheres(self, point_list, colors, sizes):
+        pass
 
     def UpdateWorldObsticles(self, obstacles):
         if self.ik_solver_grid is not None:
