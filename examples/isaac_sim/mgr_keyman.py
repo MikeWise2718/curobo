@@ -88,11 +88,15 @@ class KeyMan():
         grid_render_filter:GridRenderFilter = GridRenderFilter.ALL
         grid_render_style:GridRenderStyle = GridRenderStyle.DEBUG_SPHERES
         currobo = "None"
+        grid_size = -1
+        grid_span = -1
         if self.curRocu is not None and self.curRocu.rgm is not None:
             rgm: ReachGridMan = self.curRocu.rgm
             nseeds = rgm.nseeds
             grid_render_filter = rgm.grid_render_filter
             grid_render_style = rgm.grid_render_style
+            grid_size = rgm.n_x
+            grid_span = rgm.max_x
             currobo = self.curRocu.name
 
         msgs.append(indent1+"General Cp,,amds")
@@ -122,14 +126,14 @@ class KeyMan():
         msgs.append(indent1+"Grid commands")
         msgs.append(indent2+"gr - draw or redraw grid")
         msgs.append(indent2+"gc - clear grid")
-        msgs.append(indent2+"g* - finer grid (more points)")
-        msgs.append(indent2+"g/ - decrease grid (less points)")
-        msgs.append(indent2+"ge - extend grid span (more volume)")
-        msgs.append(indent2+"gd - decrease grid span (less volume)")
+        msgs.append(indent2+f"g* - finer grid (more points) current:{grid_size}")
+        msgs.append(indent2+f"g/ - decrease grid (less points) current:{grid_size}")
+        msgs.append(indent2+f"ge - extend grid span (more volume) curren:{grid_span}")
+        msgs.append(indent2+f"gd - decrease grid span (less volume) curren:{grid_span}")
         msgs.append(indent2+f"gs - change grid render style - current mode is {grid_render_style}")
         msgs.append(indent2+f"gf - change grid render filter - current filter is {grid_render_filter}")
-        msgs.append(indent2+f"gp - increase number of seeds by factor 2 - current number of seeds is {nseeds}")
-        msgs.append(indent2+f"gq - decrease number of seeds by factor 2 - current number of seeds is {nseeds}")
+        msgs.append(indent2+f"gp - increase number of seeds by factor 2 - current:{nseeds}")
+        msgs.append(indent2+f"gq - decrease number of seeds by factor 2 - current:{nseeds}")
 
         for msg in msgs:
             print(msg)

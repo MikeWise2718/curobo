@@ -82,6 +82,13 @@ class GridRenderFilter(Enum):
             index = len(members) - 1
         return members[index]
 
+class GridSolutionProp(Enum):
+    NOTHING = 0
+    UNIQUE = 1
+    MULTI = 2
+    SUCCESSFUL = 3
+    FAILED = 4
+    ALARMED = 5
 
 class ReachGridMan():
     def __init__(self, robot):
@@ -285,18 +292,15 @@ class ReachGridMan():
         draw.clear_points()
         self.reachability_grid_visible  = False
 
-    def _show_reachability_grid(self, pose, success, unique=None, clear=True):
+    def _prep_reachability_grid(self, pose, success, unique=None, clear=True):
         self.reachability_grid_visible  = True
         self.cur_pose = pose
         self.cur_success = success
         self.cur_unique = unique
 
-        draw = _debug_draw.acquire_debug_draw_interface()
-        if clear:
-            draw.clear_points()
-        cpu_pos = pose.position.cpu().numpy()
-        b, _ = cpu_pos.shape
-        point_list = []
+        pos = pose.position.cpu().numpy()
+        npos, _ = pos.shape
+        points = []
         colors = []
         sizes = []
         multi_color =  (0, 0, 1, 0.25)
@@ -310,12 +314,12 @@ class ReachGridMan():
         if self.grid_render_filter == GridRenderFilter.SUCCESS_ONLY:
             fail_rad = 0
         color_on_solution_number = self.count_unique_solutions and unique is not None
-        for i in range(b):
+        for i in range(npos):
             # get list of points:
             # point_list += [(cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])]
-            pt_rcc = (cpu_pos[i, 0], cpu_pos[i, 1], cpu_pos[i, 2])
-            pt_wc, qt_wc = self.tranman.rcc_to_wc(pt_rcc, [1, 0, 0, 0])
-            point_list += [pt_wc]
+            pt_rcc = (pos[i, 0], pos[i, 1], pos[i, 2])
+            pt_wc, _ = self.tranman.rcc_to_wc(pt_rcc, [1, 0, 0, 0])
+            points += [pt_wc]
             if unique is not None:
                 nsol = len(unique[i])
             else:
@@ -336,11 +340,21 @@ class ReachGridMan():
             else:
                 colors += [fail_color]
                 sizes += [fail_rad]
-        # sizes = [40.0 for _ in range(b)]
+        return points, colors, sizes
+
+    def _show_reachability_grid(self, pose, success, unique=None, clear=True):
+
+        (points, colors, sizes) = self._prep_reachability_grid(pose, success, unique, clear)
+
         if self.grid_render_style==GridRenderStyle.DEBUG_SPHERES:
-            draw.draw_points(point_list, colors, sizes)
+            draw = _debug_draw.acquire_debug_draw_interface()
+            if clear:
+                draw.clear_points()
+            draw.draw_points(points, colors, sizes)
         else:
-            self.RenderOvSpheres(point_list, colors, sizes)
+            if clear:
+                pass
+            self.RenderOvSpheres(points, colors, sizes)
 
     def RenderOvSpheres(self, point_list, colors, sizes):
         pass
