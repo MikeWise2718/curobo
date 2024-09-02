@@ -382,7 +382,10 @@ def main():
             ntrue = torch.sum(result.success).item()
             ntry = len(result.success)
             elap = result.solve_time
-            msg = f"IK completed: Poses: {str(goal_pose.batch)}  Success: {ntrue} of {ntry}  Time(s): {elap}"
+            nposes = str(goal_pose.batch)
+            nseeds = str(ik_solver.config.num_seeds)
+            natts = nposes*nseeds
+            msg = f"IK completed: Poses: {nposes} Seeds:{nseeds} Attempts:{natts}  Poses solved: {ntrue}/{ntry}  Time(s): {elap}"
             print(msg)
             # get spheres and flags:
             draw_points(goal_pose, result.success)

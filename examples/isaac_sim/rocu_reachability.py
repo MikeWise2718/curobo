@@ -40,15 +40,47 @@ args = get_args()
 
 RocuConfig = RocuConfiguator()
 
-
 class GridRenderStyle(Enum):
     DEBUG_SPHERES = 1
     OV_SPHERES = 2
+
+    def next(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) + 1
+        if index >= len(members):
+            index = 0
+        return members[index]
+
+    def prev(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) - 1
+        if index < 0:
+            index = len(members) - 1
+        return members[index]
+
 
 class GridRenderFilter(Enum):
     ALL = 1
     SUCCESS_ONLY = 2
     FAIL_ONLY = 3
+
+    def next(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) + 1
+        if index >= len(members):
+            index = 0
+        return members[index]
+
+    def prev(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) - 1
+        if index < 0:
+            index = len(members) - 1
+        return members[index]
 
 
 class ReachGridMan():
@@ -68,6 +100,7 @@ class ReachGridMan():
         self.reachability_grid_visible = False
         self.grid_render_style = GridRenderStyle.DEBUG_SPHERES
         self.grid_render_filter = GridRenderFilter.ALL
+        self.nseeds = 8
 
     def InitSolver(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.n_obstacle_cuboids = n_obstacle_cuboids
@@ -77,7 +110,7 @@ class ReachGridMan():
             self.robot.world_cfg,
             rotation_threshold=0.05,
             position_threshold=0.005,
-            num_seeds=20,
+            num_seeds=self.nseeds,
             self_collision_check=True,
             self_collision_opt=True,
             tensor_args=self.tensor_args,
@@ -134,7 +167,7 @@ class ReachGridMan():
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
         # compute curobo solution:
-        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        # print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
         ik_goal = Pose(
             position=self.tensor_args.to_device(ee_pos_rcc),
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
@@ -150,7 +183,10 @@ class ReachGridMan():
 
         elap = (time.time() - st_time)
         selap = ik_result.solve_time
-        msg = f"IK completed: Poses: {str(self.goal_pose.batch)}  Success: {ntrue} of {ntry}  Solve time(s): {selap:.3f}  elap:{elap:3f}"
+        nposes = self.goal_pose.batch
+        nseeds = self.ik_solver_grid._num_seeds
+        natts = nposes*nseeds
+        msg = f"IK fin: Poses: {nposes} Seeds:{nseeds} Atts:{natts}  Poses solved: {ntrue}/{ntry}  Solve time: {selap:.3f}  elap:{elap:3f}"
         print(msg)
 
         return ik_result
@@ -166,34 +202,53 @@ class ReachGridMan():
             return sp_wc_np, sq_wc_np
         return sp_wc, sq_wc
 
-    def ToggleDebugSphereMode(self):
-        if self.grid_render_style == GridRenderStyle.DEBUG_SPHERES:
-            self.grid_render_style = GridRenderStyle.OV_SPHERES
-        else:
-            self.grid_render_style = GridRenderStyle.DEBUG_SPHERES
-        print(f"Grid render style: {self.grid_render_style}")
+    def ChangeNumSeeds(self, fak = 1.5):
+        self.nseeds = int(self.nseeds*fak)
+        show = self.reachability_grid_visible
+        if show:
+            self.ClearReachabilityGrid()
+        self.ik_config_grid.num_seeds = self.nseeds
+        print(f"ReachGridMan - 1: New seed size: {self.ik_config_grid.num_seeds}")
+        self.InitSolver(self.n_obstacle_cuboids, self.n_obstacle_mesh)
+        self.InitPositionGridOffset()
+        if show:
+            self.ShowReachabilityGridToPosOri(self.last_pos, self.last_ori)
+        print(f"ReachGridMan - 2: New seed size: {self.ik_config_grid.num_seeds}")
+        return self.nseeds
 
-    def RotateGridFilter(self):
-        match self.grid_render_filter:
-            case GridRenderFilter.ALL:
-                self.grid_render_filter = GridRenderFilter.SUCCESS_ONLY
-            case GridRenderFilter.SUCCESS_ONLY:
-                self.grid_render_filter = GridRenderFilter.FAIL_ONLY
-            case GridRenderFilter.FAIL_ONLY:
-                self.grid_render_filter = GridRenderFilter.ALL
-        print(f"Grid render filter: {self.grid_render_filter}")
+    def ChangeGridRenderFilter(self, filter=None):
+        show = self.reachability_grid_visible
+        if show:
+            self.ClearReachabilityGrid()
+        if filter is not None:
+            self.grid_render_filter = filter
+        else:
+            self.grid_render_filter = self.grid_render_filter.next()
+        self.InitPositionGridOffset()
+        if show:
+            self.ShowReachabilityGridToPosOri(self.last_pos, self.last_ori)
+        return self.grid_render_filter
+
+    def ChangeGridRenderStyle(self, style=None):
+        show = self.reachability_grid_visible
+        if show:
+            self.ClearReachabilityGrid()
+        if style is not None:
+            self.grid_render_style = style
+        else:
+            self.grid_render_style = self.grid_render_style.next()
+        self.InitPositionGridOffset()
+        if show:
+            self.ShowReachabilityGridToPosOri(self.last_pos, self.last_ori)
+        return self.grid_render_style
 
     def ChangeGridSize(self, fak = 1.5):
         show = self.reachability_grid_visible
         if show:
             self.ClearReachabilityGrid()
 
-
         # we need to reinitialize the solvers since the cuda graph has changed - which takes awhile
         self.InitSolver(self.n_obstacle_cuboids, self.n_obstacle_mesh)
-        self.InitPositionGridOffset()
-
-        self.ik_solver_grid = IKSolver(self.ik_config_grid)
         self.n_x = int(self.n_x*fak)
         self.n_y = int(self.n_y*fak)
         self.n_z = int(self.n_z*fak)
@@ -224,8 +279,6 @@ class ReachGridMan():
         else:
             unique = None
         self._show_reachability_grid(self.goal_pose, res.success, unique=unique, clear=clear)
-
-
 
     def ClearReachabilityGrid(self):
         draw = _debug_draw.acquire_debug_draw_interface()
@@ -275,6 +328,7 @@ class ReachGridMan():
                         clr = single_sucess_color
                     else:
                         clr = multi_color
+                        print("found multi-solution")
                 else:
                     clr = single_sucess_color
                 colors += [clr]

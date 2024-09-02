@@ -24,6 +24,7 @@ from omni.isaac.core.utils.viewports import set_camera_view
 import omni.kit.hotkeys.core
 
 from rocuwrap import RocuWrapper
+from rocu_reachability import ReachGridMan, GridRenderFilter, GridRenderStyle
 
 def setcamview(viewsel):
     if viewsel is None:
@@ -43,7 +44,6 @@ def setcamview(viewsel):
         case "right-view" | "r":
             set_camera_view(eye=[0.0, -2.5, 1.0], target=[0, 0, 0], camera_prim_path="/OmniverseKit_Persp")
 
-
 class KeyMan():
     def __init__(self, sim):
         self.sim = sim
@@ -55,13 +55,17 @@ class KeyMan():
         self.g_pressed_time = loop_start
         self.o_pressed_time = loop_start
         self.p_pressed_time = loop_start
+        self.q_pressed_time = loop_start
         self.r_pressed_time = loop_start
         self.s_pressed_time = loop_start
         self.t_pressed_time = loop_start
+        self.u_pressed_time = loop_start
+        self.v_pressed_time = loop_start
         self.w_pressed_time = loop_start
         self.op_pressed_time = loop_start
         self.traycmd = None
         self.traynum = 1
+        self.nseeds = 8
         self.traycmdchar = "p"
         self.DeRegisterAllHotKeys()
         self.rocuWrap1: RocuWrapper = None
@@ -80,6 +84,17 @@ class KeyMan():
         msgs.append("mgr Keyboard Commands")
         indent1 = "  "
         indent2 = indent1 + indent1
+        nseeds = -1
+        grid_render_filter:GridRenderFilter = GridRenderFilter.ALL
+        grid_render_style:GridRenderStyle = GridRenderStyle.DEBUG_SPHERES
+        currobo = "None"
+        if self.curRocu is not None and self.curRocu.rgm is not None:
+            rgm: ReachGridMan = self.curRocu.rgm
+            nseeds = rgm.nseeds
+            grid_render_filter = rgm.grid_render_filter
+            grid_render_style = rgm.grid_render_style
+            currobo = self.curRocu.name
+
         msgs.append(indent1+"General Cp,,amds")
         msgs.append(indent2+"? - help")
         msgs.append(indent2+"q - quit")
@@ -91,17 +106,17 @@ class KeyMan():
         msgs.append(indent2+"cc - reset target-cube to start pose")
         msgs.append(indent2+"cd - reset target-cube to current end-effector pose")
         msgs.append(indent1+"View commands")
-        msgs.append(indent2+"wt - top view")
-        msgs.append(indent2+"wr - right view")
-        msgs.append(indent2+"wl - left view")
-        msgs.append(indent2+"wb - back view")
-        msgs.append(indent2+"wfq - front view")
+        msgs.append(indent2+"vt - top view")
+        msgs.append(indent2+"vr - right view")
+        msgs.append(indent2+"vl - left view")
+        msgs.append(indent2+"vb - back view")
+        msgs.append(indent2+"vf - front view")
         msgs.append(indent1+"Robot commands")
-        msgs.append(indent2+"aN - make robot arm N to active robot")
+        msgs.append(indent2+f"aN - make robot arm N to active robot - current:{currobo}")
         msgs.append(indent2+"am - toggle material")
         msgs.append(indent2+"al - show joints close to limits")
         msgs.append(indent1+"Tray commands")
-        msgs.append(indent2+"tN - make tray N the active tray - current tray is"+str(self.traynum))
+        msgs.append(indent2+f"tN - make tray N the active tray - current tray is {self.traynum}")
         msgs.append(indent2+"pN - move target to the phone postion N on tray")
         msgs.append(indent2+"oN - move target to 20 cm above the phone postion N")
         msgs.append(indent1+"Grid commands")
@@ -111,12 +126,14 @@ class KeyMan():
         msgs.append(indent2+"g/ - decrease grid (less points)")
         msgs.append(indent2+"ge - extend grid span (more volume)")
         msgs.append(indent2+"gd - decrease grid span (less volume)")
-        msgs.append(indent2+"gm - toggle between debug sphere mode and OV sphere mode")
-        msgs.append(indent2+"gs - rotate grid filter between show all, show success only, show fail only")
+        msgs.append(indent2+f"gs - change grid render style - current mode is {grid_render_style}")
+        msgs.append(indent2+f"gf - change grid render filter - current filter is {grid_render_filter}")
+        msgs.append(indent2+f"gp - increase number of seeds by factor 2 - current number of seeds is {nseeds}")
+        msgs.append(indent2+f"gq - decrease number of seeds by factor 2 - current number of seeds is {nseeds}")
+
         for msg in msgs:
             print(msg)
         self.DumpHotKeys()
-
 
     def ProcessKeys(self):
 
@@ -150,9 +167,9 @@ class KeyMan():
 
         elif keyboard.is_pressed("b"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("back-view")
-            print("You pressed wb for back-view.")
+            print("You pressed vb for back-view.")
 
         elif keyboard.is_pressed("c"):
             k = keyboard.read_key()
@@ -165,9 +182,9 @@ class KeyMan():
 
         elif keyboard.is_pressed("d"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("diag-view")
-                print("You pressed wd for diag-view.")
+                print("You pressed vd for diag-view.")
             elif now - self.c_pressed_time < 1.0:
                 print("You pressed cd - will move to robot's current end-effector pose.")
                 if self.curRocu.cu_js is not None:
@@ -189,12 +206,15 @@ class KeyMan():
                 self.curRocu.ChangeGridSpan(1.5)
                 print("You pressed ge to extend grid span")
 
-
         elif keyboard.is_pressed("f"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("front-view")
-                print("You pressed wf for front-view.")
+                print("You pressed vf for front-view.")
+            elif now - self.g_pressed_time < 1.0:
+                cur = self.curRocu.ChangeGridRenderFilter()
+                print(f"You pressed gf for change grid filter - now:{cur}.")
+
 
         elif keyboard.is_pressed("g"):
             k = keyboard.read_key()
@@ -204,9 +224,9 @@ class KeyMan():
 
         elif keyboard.is_pressed("l"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("left-view")
-            print("You pressed wf for left-view.")
+            print("You pressed vf for left-view.")
 
         elif keyboard.is_pressed("m"):
             k = keyboard.read_key()
@@ -214,9 +234,6 @@ class KeyMan():
                 self.curRocu.toggle_material()
                 self.curRocu.check_alarm_status()
                 print("You pressed am - changing material on arm")
-            elif now - self.g_pressed_time < 1.0:
-                self.curRocu.ToggleDebugSphereMode()
-                print("You pressed gm - toggling debug sphere mode")
 
         elif keyboard.is_pressed("o"):
             k = keyboard.read_key()
@@ -227,34 +244,51 @@ class KeyMan():
 
         elif keyboard.is_pressed("p"):
             k = keyboard.read_key()
-            self.p_pressed_time = now
-            self.op_pressed_time = now
-            self.traycmdchar = "p"
-            print("You pressed p")
+            if now - self.g_pressed_time < 1.0:
+                print("You pressed gp for increase seeds.")
+                self.curRocu.ChangeNumSeeds(2.0)
+            else:
+                self.p_pressed_time = now
+                self.op_pressed_time = now
+                self.traycmdchar = "p"
+                print("You pressed p")
 
         elif keyboard.is_pressed("q"):
             k = keyboard.read_key()
-            print("You pressed q - will exit simulation.")
-            self.sim.close()
+            if now - self.g_pressed_time < 1.0:
+                print("You pressed gq for decrease seeds.")
+                self.curRocu.ChangeNumSeeds(0.5)
+            if now - self.q_pressed_time < 1.0:
+                print("You pressed qq - will exit simulation.")
+                self.sim.close()
+            else:
+                self.q_pressed_time = now
+                print("You pressed q")
 
         elif keyboard.is_pressed("r"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("right-view")
-                print("You pressed wr for right-view.")
+                print("You pressed vr for right-view.")
             else:
                 if now - self.g_pressed_time < 1.0:
                     self.curRocu.ShowReachabilityGrid(clear=True)
-                    print("You pressed rr - showing reachability")
+                    print("You pressed gr - showing reachability")
                 else:
                     self.r_pressed_time = now
                     print("You pressed r ")
 
+        elif keyboard.is_pressed("s"):
+            k = keyboard.read_key()
+            if now - self.g_pressed_time < 1.0:
+                cur = self.curRocu.ChangeGridRenderStyle()
+                print(f"You pressed gs for change grid style - now:{cur}")
+
         elif keyboard.is_pressed("t"):
             k = keyboard.read_key()
-            if now - self.w_pressed_time < 1.0:
+            if now - self.v_pressed_time < 1.0:
                 setcamview("top-view")
-                print("You pressed wt for top-view.")
+                print("You pressed vt for top-view.")
             elif now - self.a_pressed_time < 1.0:
                 self.curRocu.ToggleCirclingTarget()
                 print("You pressed ‘at’ for rotate target.")
@@ -266,10 +300,19 @@ class KeyMan():
             self.w_pressed_time = now
             print("You pressed w")
 
+        elif keyboard.is_pressed("u"):
+            k = keyboard.read_key()
+            self.u_pressed_time = now
+            print("You pressed u")
+
         elif keyboard.is_pressed("v"):
             k = keyboard.read_key()
-            self.curRocu.ToggleCollisionSphereVisiblity()
-            print(f"You pressed v - vizi_spheres is now {self.curRocu.vizi_spheres}.")
+            if now - self.v_pressed_time < 1.0:
+                self.curRocu.ToggleCollisionSphereVisiblity()
+                print(f"You pressed vv - vizi_spheres is now {self.curRocu.vizi_spheres}.")
+            else:
+                self.v_pressed_time = now
+                print("You pressed v")
 
         elif keyboard.is_pressed("z"):
             k = keyboard.read_key()
@@ -325,7 +368,6 @@ class KeyMan():
             if now - self.op_pressed_time < 1.0:
                 self.traycmd = f"{self.traycmdchar}_{self.traynum}_5"
 
-
     def TrayCommandReady(self):
         rv = False
         ok = self.traycmd is not None
@@ -367,6 +409,3 @@ class KeyMan():
                 print(f"Failed to deregister hotkey:{hotkey} {e}")
         discovered_hotkeys = hotkey_registry.get_all_hotkeys()
         print(f"After deleteion there are now {len(discovered_hotkeys)} hotkeys.")
-
-        # To delete hotkey
-        # hotkey_registry.deregister_hotkey("omni.kit.manipulator.tool.snap", "S")

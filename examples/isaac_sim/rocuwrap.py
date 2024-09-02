@@ -50,6 +50,9 @@ from rocu_components import RocuConfiguator, RocuMoveMode, RocuTranMan
 from mgr_ut import get_args, get_vek, print_mat, list4to_quatd, quatd_to_list4, get_sphere_entry
 from rocu_reachability import ReachGridMan
 
+from rocu_reachability import GridRenderFilter, GridRenderStyle
+
+
 args = get_args()
 
 RocuConfig = RocuConfiguator()
@@ -134,6 +137,8 @@ class RocuWrapper:
         self.last_jchk_str = ""
         self.jchk_str_val = ""
 
+        self.nseed = 20
+
         # robot_cfg = load_yaml(robot_cfg_path)["robot_cfg"]
         self.LoadRobotCfg(self.robot_config_path)
 
@@ -185,6 +190,27 @@ class RocuWrapper:
 
     def SetGridTimererTick(self, timer_tick):
         self.grid_timer_tick = timer_tick
+
+    def ChangeNumSeeds(self, fak = 2):
+        if self.rgm is not None:
+            return self.rgm.ChangeNumSeeds(fak)
+        else:
+            print("In ChangeNumSeeds rgm is None")
+            return -1
+
+    def ChangeGridRenderFilter(self, filter: GridRenderFilter=None):
+        if self.rgm is not None:
+            return self.rgm.ChangeGridRenderFilter(filter)
+        else:
+            print("In ChangeGridRenderFilter rgm is None")
+            return "None"
+
+    def ChangeGridRenderStyle(self, style: GridRenderStyle=None):
+        if self.rgm is not None:
+            return self.rgm.ChangeGridRenderStyle(style)
+        else:
+            print("In ChangeGridRenderStyle rgm is None")
+            return "None"
 
     def SetMoGenOptions(self, reactive=None, reach_partial_pose=None, hold_partial_pose=None,
                         constrain_grasp_approach=None, vizi_spheres=None):
@@ -661,7 +687,7 @@ class RocuWrapper:
         if type(ee_ori_rcc) is Gf.Quatd:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
-        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        # print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
         # compute curobo solution:
         ik_goal = Pose(
             # position=tensor_args.to_device(ee_translation_goal),
@@ -785,7 +811,7 @@ class RocuWrapper:
             ee_ori_rcc = quatd_to_list4(ee_ori_rcc)
 
         # compute curobo solution:
-        print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
+        # print("ik_goal-p:", ee_pos_rcc, " q:", ee_ori_rcc)
         ik_goal = Pose(
             position=self.tensor_args.to_device(ee_pos_rcc),
             quaternion=self.tensor_args.to_device(ee_ori_rcc),
