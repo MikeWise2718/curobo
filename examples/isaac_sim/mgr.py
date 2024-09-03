@@ -248,8 +248,8 @@ def main():
     my_world.scene.add_default_ground_plane()
     step_index = 0
 
-    last_play_time = 0
     loop_start = time.time()
+    last_play_time = loop_start - 60.01
 
     # Front view
     viewsel = args.view
@@ -308,6 +308,16 @@ def main():
                     rocuWrap1.robot_prim_path,
                     "/World/target",
                     "/World/defaultGroundPlane",
+                    "/World/moto_tray_0",
+                    "/World/moto_tray_1",
+                    "/World/moto_tray_2",
+                    "/World/moto_tray_3",
+                    "/World/moto50mp_0",
+                    "/World/moto50mp_1",
+                    "/World/moto50mp_2",
+                    "/World/moto50mp_3",
+                    "/World/moto50mp_4",
+                    "/World/moto50mp_5",
                     "/curobo",
                 ],
             ).get_collision_check_world()
@@ -334,7 +344,11 @@ def main():
             p_pos, p_ori = tray.get_trayslot_pose_idx_quat(slot_num)
             if cmd == "o":
                 p_pos[2] += 0.20
+            if cmd == "p":
+                p_pos[2] += 0.01
             print(f"cmd:{cmd} p_pos:{p_pos} p_ori:{p_ori}")
+            # p_ori = np.array([1.0, 0.0, 0.0, 0.0])
+            # print(f"cmd:{cmd} p_pos:{p_pos} p_ori:{p_ori}")
             rocuWrap1.SetTargetPose(p_pos, p_ori)
 
     elap = time.time() - loop_start

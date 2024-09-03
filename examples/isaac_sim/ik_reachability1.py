@@ -306,7 +306,7 @@ def main():
             continue
 
         if step_index == 50 or step_index % 500 == 0.0:  # and cmd_plan is None:
-            print("Updating world, reading w.r.t.", robot_prim_path)
+            print(f"Updating world, reading w.r.t.{robot_prim_path} step: {step_index}")
             obstacles = usd_help.get_obstacles_from_stage(
                 # only_paths=[obstacles_path],
                 reference_prim_path=robot_prim_path,
@@ -319,7 +319,6 @@ def main():
             ).get_collision_check_world()
             print([x.name for x in obstacles.objects])
             ik_solver.update_world(obstacles)
-            print("Updated World")
             carb.log_info("Synced CuRobo world from stage.")
 
         # position and orientation of target virtual cube:

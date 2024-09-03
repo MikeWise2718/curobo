@@ -758,10 +758,10 @@ class RocuWrapper:
         return rv
 
     def DoGridInvKinToPosOri(self, pos, ori):
-        ik_result = self.rgm.CalcReachabilityToPosOri(pos, ori)
-        self.rgm._show_reachability_grid(self.rgm.goal_pose, ik_result.success)
+        ik_result = self.rgm.CalcReachabilityAroundPosOri(pos, ori)
+        self.rgm.BuildReachabilityGrid(ik_result, self.rgm.goal_pose)
 
-        successfull = torch.any(ik_result.success)
+        successful = torch.any(ik_result.success)
         nsucess = torch.sum(ik_result.success).item()
 
         if self.num_targets == 1:
@@ -779,7 +779,7 @@ class RocuWrapper:
                 hold_vec = self.motion_gen.tensor_args.to_device(self.hold_partial_pose)
                 self.pose_metric = PoseCostMetric(hold_partial_pose=True, hold_vec_weight=hold_vec)
 
-        if successfull:
+        if successful:
             self.num_targets += 1
             cmd_plan = ik_result.js_solution[ik_result.success]
             # get only joint names that are in both:
@@ -949,14 +949,14 @@ class RocuWrapper:
             self.ik_result = None
             return requestPause
 
-    def ShowReachabilityGridOld(self, clear=True):
-        print(f"ShowReachability {self.robid}")
-        res = self.rgm.CalcReachabilityToPosOri(self.cube_position, self.cube_orientation)
-        if self.count_unique_solutions:
-            unique = res.get_batch_unique_solution()
-        else:
-            unique = None
-        self.rgm._show_reachability_grid(self.rgm.goal_pose, res.success, unique=unique, clear=clear)
+    # def ShowReachabilityGridOld(self, clear=True):
+    #     print(f"ShowReachability {self.robid}")
+    #     res = self.rgm.CalcReachabilityAroundPosOri(self.cube_position, self.cube_orientation)
+    #     if self.count_unique_solutions:
+    #         unique = res.get_batch_unique_solution()
+    #     else:
+    #         unique = None
+    #     self.rgm._show_reachability_grid(res.solution, self.rgm.goal_pose, res.success, unique=unique, clear=clear)
 
     def ShowReachabilityGrid(self, clear=True):
         print(f"ShowReachability {self.robid}")

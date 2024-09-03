@@ -65,7 +65,6 @@ class KeyMan():
         self.op_pressed_time = loop_start
         self.traycmd = None
         self.traynum = 1
-        self.nseeds = 8
         self.traycmdchar = "p"
         self.DeRegisterAllHotKeys()
         self.rocuWrap1: RocuWrapper = None
@@ -107,7 +106,7 @@ class KeyMan():
         msgs.append(indent2+"ct - circle target")
         msgs.append(indent2+"c* - increase target-cube velocity")
         msgs.append(indent2+"c/ - decrease target-cube velocity")
-        msgs.append(indent2+"cc - reset target-cube to start pose")
+        # msgs.append(indent2+"cc - reset target-cube to start pose")
         msgs.append(indent2+"cd - reset target-cube to current end-effector pose")
         msgs.append(indent1+"View commands")
         msgs.append(indent2+"vt - top view")
@@ -193,10 +192,10 @@ class KeyMan():
                 print("You pressed cd - will move to robot's current end-effector pose.")
                 if self.curRocu.cu_js is not None:
                     self.curRocu.MoveTargetToEepose()
-            elif now - self.a_pressed_time < 1.0:
-                print("You pressed ad - will move to robot's start pose.")
-                if self.curRocu.cu_js is not None:
-                    self.curRocu.MoveTargetToStartPose()
+            # elif now - self.a_pressed_time < 1.0:
+            #     print("You pressed ad - will move to robot's start pose.")
+            #     if self.curRocu.cu_js is not None:
+            #         self.curRocu.MoveTargetToStartPose()
             elif now - self.g_pressed_time < 1.0:
                 self.curRocu.ChangeGridSpan(0.6666667)
                 print("You pressed gd to decrease grid span")
