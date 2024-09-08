@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "mgr (ur5e)",
+      "type": "python",
+      "request": "launch",
+      "cwd": "${workspaceRoot}",
+      "program": "examples/isaac_sim/mgr.py",
+      "python": "c:/Users/mwise/AppData/Local/ov/pkg/isaac-sim-4.0.0/python.bat",
+      "console": "integratedTerminal",
+      "args": [
+          "--robot", "ur5e.yml",
+      ],
+    },
+    {
+      "name": "Python: Attach to ... something",
+      "type": "python",
+      "request": "attach",
+      "localRoot": "${workspaceFolder}",
+      "remoteRoot": "${workspaceFolder}",
+      "port": 3000,
+      "host": "localhost",
+      "subProcess": true,
+      "runtimeArgs": [
+        "-preserve-symlinks",
+        "-preserve-symlinks-main",
+      ]
+    }
+  ]
+}

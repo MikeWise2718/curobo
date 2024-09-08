@@ -317,7 +317,7 @@ class MotoMan:
     def __init__(self, stage, matman: MatMan):
         self._stage = stage
         # self.current_extension_path = get_extension_path_from_name("JakaControl")
-        self.current_extension_path = "d:/ov/exts/JakaControl"
+        self.current_extension_path = "c:/ov/exts/JakaControl"
         self._moto50mp_list = []
         self._moto_tray_list = []
         self._matman = matman

@@ -6,8 +6,8 @@ robot_cfg:
         usd_flip_joints: {}
         usd_flip_joint_limits: []
 
-        urdf_path: "d:/ov/jaka_curobo/ur5e/ur5e/ur5e.urdf"
-        asset_root_path: "d:/ov/jaka_curobo/ur5e/"
+        urdf_path: "c:/ov/jaka_curobo/ur5e/ur5e/ur5e.urdf"
+        asset_root_path: "c:/ov/jaka_curobo/ur5e/"
 
         base_link: "base_link"
         ee_link: "tool0"
