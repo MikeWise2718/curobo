@@ -83,6 +83,28 @@ class GridRenderFilter(Enum):
             index = len(members) - 1
         return members[index]
 
+class GridRenderSlicerMode(Enum):
+    ALL = 1
+    X_SLICE = 2
+    Y_SLICE = 3
+    Z_SLICE = 4
+
+    def next(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) + 1
+        if index >= len(members):
+            index = 0
+        return members[index]
+
+    def prev(self):
+        cls = self.__class__
+        members = list(cls)
+        index = members.index(self) - 1
+        if index < 0:
+            index = len(members) - 1
+        return members[index]
+
 class GridSolutionProp(Enum):
     NOTHING = 0
     UNIQUE = 1
@@ -109,6 +131,8 @@ class ReachGridMan():
         self.grid_render_style = GridRenderStyle.DEBUG_SPHERES
         self.grid_render_filter = GridRenderFilter.ALL
         self.nseeds = 8
+        self.slicer_mode = GridRenderSlicerMode.ALL
+        self.slice = 0
 
     def InitSolver(self, n_obstacle_cuboids, n_obstacle_mesh):
         self.n_obstacle_cuboids = n_obstacle_cuboids
@@ -128,6 +152,15 @@ class ReachGridMan():
             # use_fixed_samples=True,
         )
         self.ik_solver_grid = IKSolver(self.ik_config_grid)
+
+    def ChangeGridSlicerMode(self):
+        self.slicer_mode = self.slicer_mode.next()
+        print(f"New slicer mode: {self.slicer_mode}")
+        return self.slicer_mode
+
+    def ChangeGridSlicerValue(self, inc):
+        self.slice += inc
+        print(f"New slicer value: {self.slice}")
 
     def InitGridSize(self, n_x, n_y, n_z, max_x, max_y, max_z, grid_succ_rad=40, grid_fail_rad=20):
         self.n_x, self.n_y, self.n_z = n_x, n_y, n_z

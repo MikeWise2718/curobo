@@ -198,6 +198,20 @@ class RocuWrapper:
             print("In ChangeNumSeeds rgm is None")
             return -1
 
+    def ChangeGridSlicerValue(self, slicer: int):
+        if self.rgm is not None:
+            return self.rgm.ChangeGridSlicerValue(slicer)
+        else:
+            print("In ChangeGridSlicer rgm is None")
+            return -1
+
+    def ChangeGridSlicerMode(self):
+        if self.rgm is not None:
+            return self.rgm.ChangeGridSlicerMode()
+        else:
+            print("In ChangeGridSlicerMode rgm is None")
+            return -1
+
     def ChangeGridRenderFilter(self, filter: GridRenderFilter=None):
         if self.rgm is not None:
             return self.rgm.ChangeGridRenderFilter(filter)

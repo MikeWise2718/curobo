@@ -141,6 +141,14 @@ class KeyMan():
     def ProcessKeys(self):
 
         now = time.time()
+        if keyboard.is_pressed("+"):
+            k = keyboard.read_key()
+            self.curRocu.ChangeGridSlicerValue(+1)
+
+        if keyboard.is_pressed("-"):
+            k = keyboard.read_key()
+            self.curRocu.ChangeGridSlicerValue(-1)
+
         if keyboard.is_pressed("*"):
             k = keyboard.read_key()
             if now - self.c_pressed_time < 1.0:
@@ -218,12 +226,10 @@ class KeyMan():
                 cur = self.curRocu.ChangeGridRenderFilter()
                 print(f"You pressed gf for change grid filter - now:{cur}.")
 
-
         elif keyboard.is_pressed("g"):
             k = keyboard.read_key()
             self.g_pressed_time = now
             print("You pressed g")
-
 
         elif keyboard.is_pressed("l"):
             k = keyboard.read_key()
@@ -237,6 +243,9 @@ class KeyMan():
                 self.curRocu.toggle_material()
                 self.curRocu.check_alarm_status()
                 print("You pressed am - changing material on arm")
+            elif now - self.g_pressed_time < 1.0:
+                print("You pressed gm - changing grid slicer mode")
+                self.curRocu.ChangeGridSlicerMode()
 
         elif keyboard.is_pressed("o"):
             k = keyboard.read_key()
